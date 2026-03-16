@@ -29,7 +29,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
             const language = lang === 'hi' ? 'Hindi' : (lang === 'hinglish' ? 'Hinglish' : 'English');
 
             const [aiRes, youtubeVideos] = await Promise.all([
-                fetch('https://vidya-backend-mn5g.onrender.com/ask', {
+                fetch('https://vidya-backend-mm5g.onrender.com/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -62,7 +62,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
 
     const fetchYouTubeVideos = async (concept, grade) => {
         try {
-            const res = await fetch('https://vidya-backend-mn5g.onrender.com/search-videos', {
+            const res = await fetch('https://vidya-backend-mm5g.onrender.com/search-videos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
