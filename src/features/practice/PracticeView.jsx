@@ -36,8 +36,8 @@ const PracticeView = ({ t, selectedClass, lang, userId, activeSuggestion, onClea
         const fetchData = async () => {
             try {
                 const [suggestionRes, profileRes] = await Promise.all([
-                    fetch(`http://localhost:8000/suggestion/${userId || "test_user_123"}`),
-                    fetch(`http://localhost:8000/profile/${userId || "test_user_123"}`)
+                    fetch(`https://vidya-backend-mn5g.onrender.com/suggestion/${userId || "test_user_123"}`),
+                    fetch(`https://vidya-backend-mn5g.onrender.com/profile/${userId || "test_user_123"}`)
                 ]);
 
                 const suggestionData = await suggestionRes.json();
@@ -57,7 +57,7 @@ const PracticeView = ({ t, selectedClass, lang, userId, activeSuggestion, onClea
 
     const syncMemory = async (topicLabel, finalScore) => {
         try {
-            await fetch('http://localhost:8000/sync-memory', {
+            await fetch('https://vidya-backend-mn5g.onrender.com/sync-memory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -90,7 +90,7 @@ const PracticeView = ({ t, selectedClass, lang, userId, activeSuggestion, onClea
             const gradeMatch = selectedClass.match(/\d+/);
             const grade = gradeMatch ? parseInt(gradeMatch[0]) : 6;
 
-            const response = await fetch('http://localhost:8000/explain-mistake', {
+            const response = await fetch('https://vidya-backend-mn5g.onrender.com/explain-mistake', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -130,7 +130,7 @@ const PracticeView = ({ t, selectedClass, lang, userId, activeSuggestion, onClea
             const grade = gradeMatch ? parseInt(gradeMatch[0]) : 6;
             const language = lang === 'hi' ? 'Hindi' : 'English';
 
-            const response = await fetch('http://localhost:8000/generate-quiz', {
+            const response = await fetch('https://vidya-backend-mn5g.onrender.com/generate-quiz', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -209,7 +209,7 @@ const PracticeView = ({ t, selectedClass, lang, userId, activeSuggestion, onClea
 
         try {
             const mistakes = quiz.filter((q, idx) => q.answer !== finalAnswers[idx]);
-            const response = await fetch('http://localhost:8000/debrief', {
+            const response = await fetch('https://vidya-backend-mn5g.onrender.com/debrief', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

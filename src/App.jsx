@@ -74,7 +74,7 @@ const AppContent = () => {
       setUserId(cleanPhone);
 
       try {
-        const apiUrl = `http://localhost:8000/profile/${cleanPhone}`;
+        const apiUrl = `https://vidya-backend-mn5g.onrender.com/profile/${cleanPhone}`;
 
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error(`Server returned ${response.status}`);
@@ -110,7 +110,7 @@ const AppContent = () => {
     try {
       const cleanPhone = phone.trim();
       // Save profile to backend for Phase 21
-      await fetch('http://localhost:8000/profile', {
+      await fetch('https://vidya-backend-mn5g.onrender.com/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

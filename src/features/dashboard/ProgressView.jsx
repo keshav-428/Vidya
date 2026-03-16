@@ -10,7 +10,7 @@ const ProgressView = ({ t, selectedClass, userId }) => {
     React.useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/history/${userId || 'test_user_123'}`);
+                const response = await fetch(`https://vidya-backend-mn5g.onrender.com/history/${userId || 'test_user_123'}`);
                 const data = await response.json();
                 setHistory(data.history || []);
             } catch (err) {

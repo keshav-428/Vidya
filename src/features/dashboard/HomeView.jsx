@@ -19,13 +19,13 @@ const HomeView = ({ t, name, selectedExam, practiceTime, selectedClass, painPoin
                 const grade = gradeMatch ? parseInt(gradeMatch[0]) : 6;
 
                 const [briefingRes, suggestionRes] = await Promise.all([
-                    fetch('http://localhost:8000/briefing', {
+                    fetch('https://vidya-backend-mn5g.onrender.com/briefing', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ user_id: userId || "test_user_123", name: name, grade: grade }),
                         signal: controller.signal
                     }),
-                    fetch(`http://localhost:8000/suggestion/${userId || "test_user_123"}`, {
+                    fetch(`https://vidya-backend-mn5g.onrender.com/suggestion/${userId || "test_user_123"}`, {
                         signal: controller.signal
                     })
                 ]);
