@@ -1,0 +1,28 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist
+dist-ssr
+*.local
+
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# IDEs
+.vscode
+.idea
+.DS_Store
+.vercel
+
+# Backend
+backend/.env
+backend/venv/
+backend/__pycache__/
+backend/*.json
+*.pyc
+

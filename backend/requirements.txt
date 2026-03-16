@@ -1,0 +1,8 @@
+fastapi[standard]
+uvicorn
+google-generativeai
+firebase-admin
+pymupdf
+langchain-text-splitters
+python-dotenv
+numpy

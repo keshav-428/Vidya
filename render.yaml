@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: vidya-backend
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "cd backend && echo $VERTEX_KEY_JSON > vertex_key.json && echo $FIREBASE_KEY_JSON > firebase_key.json && export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/vertex_key.json && export FIREBASE_CREDENTIALS=$(pwd)/firebase_key.json && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10.0"
+      - key: GOOGLE_GENAI_USE_VERTEXAI
+        value: "TRUE"
+      - key: GOOGLE_CLOUD_PROJECT
+        value: "480385031389"
+      - key: GOOGLE_CLOUD_LOCATION
+        value: "us-central1"
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: VERTEX_KEY_JSON
+        sync: false
+      - key: FIREBASE_KEY_JSON
+        sync: false
