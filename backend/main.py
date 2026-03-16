@@ -65,6 +65,10 @@ class ProfileUpdate(BaseModel):
     exam: str
     language: str
 
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "Vidya Backend is running (Root)"}
+
 @app.get("/ping")
 def ping():
     return {"status": "ok", "message": "Vidya Backend is running"}
