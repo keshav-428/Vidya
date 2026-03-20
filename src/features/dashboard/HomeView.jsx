@@ -1,115 +1,194 @@
+import { API_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
-import { Clock, Trophy, ChevronRight, CheckCircle2, Play, Lock, Sparkles } from 'lucide-react';
-import { topicsMap } from '../../utils/constants';
-import VidyaBot from '../../components/VidyaBot';
+import { ChevronRight, Sparkles, Flame, Trophy, BookOpen, TrendingUp } from 'lucide-react';
+import { logActivity } from '../../services/activity';
 
-const HomeView = ({ t, name, selectedExam, practiceTime, selectedClass, painPoint, userId, onStartSuggestion }) => {
-    const [briefing, setBriefing] = useState("");
+const HomeView = ({ t, name, selectedExam, practiceTime, selectedClass, painPoint, lang, userId, onStartSuggestion }) => {
+    const language = lang === 'hi' ? 'Hindi' : lang === 'hinglish' ? 'Hinglish' : 'English';
+    const [briefing, setBriefing] = useState('');
     const [suggestion, setSuggestion] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const currentTopics = topicsMap[selectedClass] || topicsMap['Class 6'];
+    const [history, setHistory] = useState([]);
+    const [streak, setStreak] = useState(0);
+    const [xp, setXp] = useState(0);
+    const [isDataLoading, setIsDataLoading] = useState(true);
+
+    const firstName = name?.split(' ')[0] || 'Student';
+    const hour = new Date().getHours();
+    const greetingKey = hour < 12 ? 'goodMorning' : hour < 17 ? 'goodAfternoon' : 'goodEvening';
+    const greeting = t[greetingKey] || (hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening');
+    const today = new Date().toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const defaultBriefing = t.defaultBriefing?.replace('{name}', firstName) || `Ready to learn, ${firstName}? Pick a topic and let's go!`;
 
     useEffect(() => {
-        const fetchBriefing = async () => {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        // Fetch history, suggestion and profile in parallel (non-blocking)
+        const fetchData = async () => {
+            try {
+                const [historyRes, suggestionRes, profileRes] = await Promise.all([
+                    fetch(`${API_URL}/history/${userId || 'test_user_123'}`),
+                    fetch(`${API_URL}/suggestion/${userId || 'test_user_123'}`),
+                    fetch(`${API_URL}/profile/${userId || 'test_user_123'}`)
+                ]);
+                const [historyData, suggestionData, profileData] = await Promise.all([
+                    historyRes.json(),
+                    suggestionRes.json(),
+                    profileRes.json()
+                ]);
+                const history = historyData.history || [];
+                setHistory(history);
+                setSuggestion(suggestionData);
+                setStreak(profileData.profile?.memory_graph?.streak || 0);
+                setXp(profileData.profile?.xp || 0);
+                fetchBriefing(history.length === 0);
+            } catch (err) {
+                console.error('HomeView data fetch error:', err);
+                fetchBriefing(true);
+            } finally {
+                setIsDataLoading(false);
+            }
+        };
 
+        // Fetch briefing separately — it's slow, don't block the page
+        const fetchBriefing = async (isFirstVisit) => {
+            if (isFirstVisit) {
+                setBriefing(t.welcomeBriefing?.replace('{name}', firstName) || `Welcome to Vidya, ${firstName}! Start your first quiz to kick off your learning journey.`);
+                return;
+            }
             try {
                 const gradeMatch = selectedClass.match(/\d+/);
                 const grade = gradeMatch ? parseInt(gradeMatch[0]) : 6;
-
-                const [briefingRes, suggestionRes] = await Promise.all([
-                    fetch('https://vidya-backend-mm5g.onrender.com/briefing', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userId || "test_user_123", name: name, grade: grade }),
-                        signal: controller.signal
-                    }),
-                    fetch(`https://vidya-backend-mm5g.onrender.com/suggestion/${userId || "test_user_123"}`, {
-                        signal: controller.signal
-                    })
-                ]);
-
-                clearTimeout(timeoutId);
-
-                const briefingData = await briefingRes.json();
-                const suggestionData = await suggestionRes.json();
-
-                setBriefing(briefingData.briefing);
-                setSuggestion(suggestionData);
-            } catch (err) {
-                console.error("HomeView fetch error:", err);
-                setBriefing(`Hey ${name.split(' ')[0]}! Ready to crush some Math today?`);
-            } finally {
-                setIsLoading(false);
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 8000);
+                const res = await fetch(`${API_URL}/briefing`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId || 'test_user_123', name, grade, language }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+                const data = await res.json();
+                setBriefing(data.briefing);
+            } catch {
+                // keep the default already shown
             }
         };
-        fetchBriefing();
-    }, [name, selectedClass, userId]);
+
+        fetchData();
+        logActivity(userId, 'session_start', { grade: selectedClass });
+    }, [userId, name, selectedClass]);
+
+    const recentQuizzes = history.slice(0, 3);
+    const avgScore = history.length > 0
+        ? Math.round(history.reduce((acc, h) => acc + (h.score / h.total) * 100, 0) / history.length)
+        : null;
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+
+            {/* Header */}
             <div>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight">{t.hello}, {name.split(' ')[0]}! 👋</h2>
-                <div className="flex items-center gap-2 mt-1">
-                    <Clock size={12} className="text-slate-400" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedExam} • {practiceTime} path</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{today}</p>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{greeting}, {firstName}!</h2>
+                <p className="text-xs font-bold text-slate-400 mt-0.5 mb-3">{selectedExam}</p>
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+                        <Flame size={12} className="text-orange-500 fill-orange-400" />
+                        <span className="text-[10px] font-black text-orange-600">{streak} {t.dayStreak || 'day streak'}</span>
+                    </div>
+                    {avgScore !== null && (
+                        <div className="flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100">
+                            <TrendingUp size={12} className="text-indigo-500" />
+                            <span className="text-[10px] font-black text-indigo-600">{avgScore}% {t.avg || 'avg'}</span>
+                        </div>
+                    )}
+                    {history.length > 0 && (
+                        <div className="flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                            <Trophy size={12} className="text-emerald-500" />
+                            <span className="text-[10px] font-black text-emerald-600">{history.length} {t.quizzesLabel || 'quizzes'}</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            <VidyaBot message={briefing || "Waking up your study companion..."} isLoading={isLoading} />
-
-            {suggestion && !isLoading && (
-                <div className="bg-white border-2 border-indigo-100 rounded-[32px] p-6 shadow-sm animate-in slide-in-from-right-8 duration-700">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-100">
-                            <Sparkles size={18} />
-                        </div>
-                        <div>
-                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block leading-none">Smart Suggestion</span>
-                            <span className="text-sm font-black text-slate-800">Your Next Best Move</span>
-                        </div>
+            {/* Smart Suggestion — most actionable, shown first */}
+            {isDataLoading ? (
+                <div className="bg-slate-50 rounded-[28px] p-5 animate-pulse h-32" />
+            ) : suggestion ? (
+                <div className="bg-slate-900 rounded-[32px] p-6 shadow-xl relative overflow-hidden group">
+                    <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                        <Sparkles size={100} className="text-white" />
                     </div>
-                    <p className="text-xs font-bold text-slate-600 leading-relaxed mb-6">
-                        {suggestion.reason}
-                    </p>
-                    <button
-                        onClick={() => onStartSuggestion(suggestion)}
-                        className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-50 active:scale-95 transition-all"
-                    >
-                        Start {suggestion.topic} Quiz <ChevronRight size={16} />
-                    </button>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="px-2 py-1 bg-indigo-500/30 rounded-lg text-[9px] font-black text-indigo-300 uppercase tracking-widest">{t.aiPickForYou || 'AI Pick for You'}</span>
+                        </div>
+                        <h3 className="text-lg font-black text-white leading-tight mb-1">{suggestion.topic}</h3>
+                        <p className="text-xs font-bold text-slate-400 leading-relaxed mb-5">{suggestion.reason}</p>
+                        <button
+                            onClick={() => { logActivity(userId, 'suggestion_clicked', { topic: suggestion.topic, reason: suggestion.reason }); onStartSuggestion(suggestion); }}
+                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-900/40 active:scale-95 transition-all"
+                        >
+                            {t.startQuiz || 'Start Quiz'} <ChevronRight size={14} />
+                        </button>
+                    </div>
                 </div>
-            )}
+            ) : null}
 
-            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[32px] p-6 shadow-xl shadow-slate-200 group">
-                <Trophy size={140} className="absolute -right-8 -bottom-8 text-white/5 rotate-12 group-hover:rotate-6 transition-transform duration-500" />
-                <div className="relative z-10">
-                    <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest mb-3">Live Alert</span>
-                    <h3 className="text-2xl font-black text-white leading-tight mb-1">{t.mockExam}</h3>
-                    <p className="text-indigo-100 font-bold text-sm mb-6 opacity-80">{t.examTime}</p>
-                    <button className="flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-black/10 active:scale-95 transition-all">{t.joinArena} <ChevronRight size={18} /></button>
+            {/* Vidya Briefing — compact inline card */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-[24px] p-4 flex items-start gap-3">
+                <div className="size-8 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
+                    <Sparkles size={14} className="text-white" />
+                </div>
+                <div>
+                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">{t.vidyaSays || 'Vidya says'}</p>
+                    <p className="text-xs font-bold text-indigo-900 leading-relaxed">{briefing || defaultBriefing}</p>
                 </div>
             </div>
-            <section className="space-y-6">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t.learningPath}</h4>
-                <div className="space-y-0 relative">
-                    <div className="absolute left-6 top-8 bottom-8 w-1 bg-slate-100 rounded-full"></div>
-                    <div className="relative flex items-start gap-6 pb-12 group">
-                        <div className="relative z-10 size-12 bg-green-100 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-transform group-hover:scale-110"><CheckCircle2 className="text-green-600" size={24} strokeWidth={2.5} /></div>
-                        <div className="pt-2"><h5 className="text-lg font-black text-slate-400 line-through tracking-tight">{t[currentTopics[0].label]}</h5><span className="text-[10px] font-bold text-green-600 uppercase tracking-widest">{t.completed}</span></div>
-                    </div>
-                    <div className="relative flex items-start gap-6 pb-12 group">
-                        <div className="absolute inset-0 bg-yellow-50/50 -mx-4 rounded-3xl -z-0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="relative z-10 size-12 bg-yellow-400 rounded-full flex items-center justify-center border-4 border-white shadow-lg animate-bounce duration-[2000ms]"><Play className="text-white fill-white ml-1" size={24} /></div>
-                        <div className="pt-2 flex-1 relative z-10"><h5 className="text-lg font-black text-slate-900 tracking-tight">{t[painPoint] || t[currentTopics[1].label]}</h5><div className="flex items-center gap-3 mt-2"><div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div className="w-1/3 h-full bg-yellow-400 rounded-full"></div></div><span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">{t.active}</span></div></div>
-                    </div>
-                    <div className="relative flex items-start gap-6 group">
-                        <div className="relative z-10 size-12 bg-slate-100 rounded-full flex items-center justify-center border-4 border-white shadow-sm opacity-50 grayscale"><Lock className="text-slate-400" size={20} /></div>
-                        <div className="pt-2 opacity-40"><h5 className="text-lg font-black text-slate-900 tracking-tight">{t[currentTopics[2].label]}</h5><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.locked}</span></div>
-                    </div>
+
+            {/* Recent Activity */}
+            <section className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.recentActivity || 'Recent Activity'}</h4>
+                    {history.length > 0 && (
+                        <span className="text-[10px] font-black text-indigo-400">{history.length} {t.quizzesTotal || 'quizzes total'}</span>
+                    )}
                 </div>
+
+                {isDataLoading ? (
+                    <div className="space-y-3">
+                        {[1, 2].map(i => <div key={i} className="h-16 bg-slate-50 rounded-[20px] animate-pulse" />)}
+                    </div>
+                ) : recentQuizzes.length > 0 ? (
+                    <div className="space-y-3">
+                        {recentQuizzes.map((h, i) => {
+                            const pct = Math.round((h.score / h.total) * 100);
+                            const isGood = pct >= 60;
+                            return (
+                                <div key={i} className="bg-white border border-slate-100 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`size-10 rounded-2xl flex items-center justify-center ${isGood ? 'bg-emerald-50' : 'bg-orange-50'}`}>
+                                            <BookOpen size={16} className={isGood ? 'text-emerald-600' : 'text-orange-500'} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-black text-slate-900">{h.topic}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{h.score}/{h.total} {t.correct || 'correct'}</p>
+                                        </div>
+                                    </div>
+                                    <div className={`px-3 py-1.5 rounded-xl text-xs font-black ${isGood ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-500'}`}>
+                                        {pct}%
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="bg-white border-2 border-dashed border-slate-100 rounded-[24px] p-6 text-center">
+                        <Trophy size={28} className="text-slate-200 mx-auto mb-2" />
+                        <p className="text-xs font-black text-slate-400">{t.noQuizzesYet || 'No quizzes yet'}</p>
+                        <p className="text-[10px] font-bold text-slate-300 mt-0.5">{t.noQuizzesSub || 'Complete your first quiz to see results here'}</p>
+                    </div>
+                )}
             </section>
+
         </div>
     );
 };

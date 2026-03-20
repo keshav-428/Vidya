@@ -37,42 +37,50 @@ def retrieve_context(query: str, grade: int = 6, top_k: int = 5):
     Simulates vector search in Firestore by retrieving documents for the grade
     and calculating similarity locally (Fallback for simple local dev).
     """
+    if not db:
+        return []
+
     try:
         query_vector = get_query_embedding(query)
     except Exception as e:
         print(f"Warning: Embedding failure, falling back to keyword search: {e}")
         # Fallback to simple keyword search if embeddings are down/quota hit
-        candidates = db.collection('ncert_knowledge_base').where('metadata.grade', '==', grade).stream()
-        keyword_results = []
-        for doc in candidates:
-            data = doc.to_dict()
-            content = data.get('content', '').lower()
-            if query.lower() in content:
-                keyword_results.append({
-                    "content": data.get('content'),
-                    "score": 0.5, # Mid-level score for keywords
-                    "metadata": data.get('metadata')
-                })
-        return keyword_results[:top_k]
+        try:
+            candidates = db.collection('ncert_knowledge_base').where('metadata.grade', '==', grade).stream()
+            keyword_results = []
+            for doc in candidates:
+                data = doc.to_dict()
+                content = data.get('content', '').lower()
+                if query.lower() in content:
+                    keyword_results.append({
+                        "content": data.get('content'),
+                        "score": 0.5,
+                        "metadata": data.get('metadata')
+                    })
+            return keyword_results[:top_k]
+        except Exception as fe:
+            print(f"Warning: Firestore unavailable, returning empty context: {fe}")
+            return []
 
     # ... Proceed with normal vector search if embedding succeeded ...
-    candidates = db.collection('ncert_knowledge_base').where('metadata.grade', '==', grade).stream()
-    
-    results = []
-    for doc in candidates:
-        data = doc.to_dict()
-        doc_vector = data.get('embedding')
-        if doc_vector:
-            score = cosine_similarity(query_vector, doc_vector)
-            results.append({
-                "content": data.get('content'),
-                "score": score,
-                "metadata": data.get('metadata')
-            })
-    
-    # Sort by similarity score descending
-    results.sort(key=lambda x: x['score'], reverse=True)
-    return results[:top_k]
+    try:
+        candidates = db.collection('ncert_knowledge_base').where('metadata.grade', '==', grade).stream()
+        results = []
+        for doc in candidates:
+            data = doc.to_dict()
+            doc_vector = data.get('embedding')
+            if doc_vector:
+                score = cosine_similarity(query_vector, doc_vector)
+                results.append({
+                    "content": data.get('content'),
+                    "score": score,
+                    "metadata": data.get('metadata')
+                })
+        results.sort(key=lambda x: x['score'], reverse=True)
+        return results[:top_k]
+    except Exception as fe:
+        print(f"Warning: Firestore unavailable, returning empty context: {fe}")
+        return []
 
 def generate_answer(query: str, context: list, language: str = "English"):
     """

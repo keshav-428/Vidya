@@ -19,3 +19,16 @@ services:
         sync: false
       - key: FIREBASE_KEY_JSON
         sync: false
+
+  - type: web
+    name: vidya-frontend
+    env: static
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: "https://vidya-backend-mm5g.onrender.com"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

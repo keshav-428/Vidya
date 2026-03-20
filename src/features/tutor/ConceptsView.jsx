@@ -1,6 +1,8 @@
+import { API_URL } from '../../config';
 import React, { useState } from 'react';
 import { Plus, Brain, Sparkles, HelpCircle, CheckCircle2, ArrowLeft, Play, ExternalLink, FileText, Layout, Smartphone, Share2 } from 'lucide-react';
 import VidyaBot from '../../components/VidyaBot';
+import { logActivity } from '../../services/activity';
 
 const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSuggestion }) => {
     const [conceptStep, setConceptStep] = useState('input'); // 'input', 'loading', 'studio'
@@ -10,6 +12,8 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
     const [videos, setVideos] = useState([]);
     const [error, setError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [realWorld, setRealWorld] = useState([]);
+    const [isLoadingRealWorld, setIsLoadingRealWorld] = useState(false);
 
     const handleExplain = async (e, customQuery = null) => {
         if (e) e.preventDefault();
@@ -22,6 +26,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
         setLesson({ explanation: '', key_principle: '', common_mistake: '' });
         setSuggestions([]);
         setVideos([]);
+        setRealWorld([]);
 
         try {
             const gradeMatch = selectedClass.match(/\d+/);
@@ -29,7 +34,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
             const language = lang === 'hi' ? 'Hindi' : (lang === 'hinglish' ? 'Hinglish' : 'English');
 
             const [aiRes, youtubeVideos] = await Promise.all([
-                fetch('https://vidya-backend-mm5g.onrender.com/ask', {
+                fetch(`${API_URL}/ask`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -53,6 +58,15 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
             setSuggestions(aiData.suggestions || []);
             setVideos(youtubeVideos);
             setConceptStep('studio');
+            logActivity(userId, 'concept_searched', { query, grade, video_count: youtubeVideos.length });
+
+            // Lazy-load real world uses after studio is shown
+            setIsLoadingRealWorld(true);
+            fetch(`${API_URL}/real-world`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: query, grade })
+            }).then(r => r.json()).then(d => setRealWorld(d.uses || [])).catch(() => {}).finally(() => setIsLoadingRealWorld(false));
         } catch (err) {
             console.error(err);
             setError(err.message);
@@ -62,7 +76,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
 
     const fetchYouTubeVideos = async (concept, grade) => {
         try {
-            const res = await fetch('https://vidya-backend-mm5g.onrender.com/search-videos', {
+            const res = await fetch(`${API_URL}/search-videos`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -95,7 +109,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
     if (conceptStep === 'loading') {
         return (
             <div className="flex-1 flex flex-col items-center justify-center min-h-[500px] animate-in fade-in duration-500">
-                <VidyaBot message="Gathering NCERT sources and building your visual guide..." isLoading={true} />
+                <VidyaBot message={t.gatheringNote || "Gathering NCERT sources and building your visual guide..."} isLoading={true} />
                 <div className="w-48 h-1.5 bg-slate-100 rounded-full mt-8 overflow-hidden">
                     <div className="h-full bg-indigo-600 animate-[loading_2.5s_linear_infinite]"></div>
                 </div>
@@ -110,10 +124,10 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                 <div className="flex items-center justify-between">
                     <button onClick={() => setConceptStep('input')} className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors">
                         <ArrowLeft size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Library</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{t.backToLibrary || 'Library'}</span>
                     </button>
                     <div className="bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">Learning Studio</span>
+                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">{t.learningStudio || 'Learning Studio'}</span>
                     </div>
                 </div>
 
@@ -121,7 +135,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                     {/* Concept Title Bar */}
                     <div className="bg-slate-900 p-6 flex items-center justify-between">
                         <div className="min-w-0">
-                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] block mb-1">Studying Now</span>
+                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] block mb-1">{t.studyingNow || 'Studying Now'}</span>
                             <h2 className="text-xl font-black text-white tracking-tight truncate">{conceptQuery}</h2>
                         </div>
                         <div className="p-3 bg-white/10 rounded-2xl text-white shrink-0">
@@ -141,7 +155,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                         {lesson.key_principle && (
                             <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-6 animate-in slide-in-from-left duration-500">
                                 <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                    <div className="size-1.5 bg-emerald-500 rounded-full animate-pulse" /> Key Principle
+                                    <div className="size-1.5 bg-emerald-500 rounded-full animate-pulse" /> {t.keyPrinciple || 'Key Principle'}
                                 </h4>
                                 <p className="text-xs font-black text-emerald-800 leading-relaxed italic">
                                     {lesson.key_principle}
@@ -153,11 +167,37 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                         {lesson.common_mistake && (
                             <div className="bg-rose-50 border border-rose-100 rounded-3xl p-6 animate-in slide-in-from-right duration-500">
                                 <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                    <div className="size-1.5 bg-rose-500 rounded-full animate-pulse" /> Common Mistake
+                                    <div className="size-1.5 bg-rose-500 rounded-full animate-pulse" /> {t.commonMistake || 'Common Mistake'}
                                 </h4>
                                 <p className="text-xs font-bold text-rose-800 leading-relaxed">
                                     {lesson.common_mistake}
                                 </p>
+                            </div>
+                        )}
+
+                        {/* Real World Uses */}
+                        {(isLoadingRealWorld || realWorld.length > 0) && (
+                            <div className="bg-amber-50 border border-amber-100 rounded-3xl p-5 animate-in slide-in-from-bottom-4 duration-500">
+                                <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                    <div className="size-1.5 bg-amber-500 rounded-full" /> {t.realLifeTitle || "Where You'll See This In Real Life"}
+                                </h4>
+                                {isLoadingRealWorld ? (
+                                    <div className="space-y-2">
+                                        {[1,2,3].map(i => <div key={i} className="h-10 bg-amber-100/60 rounded-2xl animate-pulse" />)}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2.5">
+                                        {realWorld.map((item, i) => (
+                                            <div key={i} className="flex items-start gap-3 bg-white rounded-2xl p-3 border border-amber-100">
+                                                <span className="text-xl leading-none mt-0.5">{item.emoji}</span>
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-800">{item.title}</p>
+                                                    <p className="text-[10px] font-bold text-slate-500 leading-relaxed mt-0.5">{item.example}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -168,13 +208,13 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                                 disabled={isSaving}
                                 className="px-4 py-2 bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95 disabled:opacity-50"
                             >
-                                <Sparkles size={14} className={isSaving ? "animate-spin" : ""} /> {isSaving ? 'SAVING...' : '+10 XP → SAVE'}
+                                <Sparkles size={14} className={isSaving ? "animate-spin" : ""} /> {isSaving ? (t.saved || 'Saved!') : (t.saveNote || 'Save Note')}
                             </button>
                             <button
                                 onClick={handleStartQuiz}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-100 active:scale-95 transition-all"
                             >
-                                <Play size={14} /> QUIZ ME ON THIS
+                                <Play size={14} /> {t.quizMeThis || 'Quiz Me On This'}
                             </button>
                         </div>
                     </div>
@@ -184,7 +224,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                 {suggestions.length > 0 && (
                     <div className="space-y-3">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-                            <Sparkles size={12} className="text-indigo-400" /> Next Questions
+                            <Sparkles size={12} className="text-indigo-400" /> {t.nextQuestions || 'Next Questions'}
                         </h4>
                         <div className="flex flex-wrap gap-2">
                             {suggestions.map((s, idx) => (
@@ -204,8 +244,8 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                 {videos.length > 0 && (
                     <div className="space-y-4 pt-4 border-t border-slate-100">
                         <div className="flex items-center justify-between px-2">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Visual Guide</h4>
-                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded ring-1 ring-indigo-100">Verified</span>
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.visualGuide || 'Visual Guide'}</h4>
+                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded ring-1 ring-indigo-100">{t.verified || 'Verified'}</span>
                         </div>
                         <div className="grid grid-cols-1 gap-3">
                             {videos.map((video, idx) => (
@@ -214,6 +254,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                                     href={video.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    onClick={() => logActivity(userId, 'video_clicked', { title: video.title, topic: query })}
                                     className="group flex items-center gap-4 p-3 bg-white border border-slate-100 rounded-[24px] hover:border-indigo-200 transition-all shadow-sm active:scale-[0.98]"
                                 >
                                     <div className="relative shrink-0 w-24 aspect-video rounded-xl bg-slate-50 overflow-hidden">
@@ -236,7 +277,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                                         </h5>
                                         <div className="flex items-center gap-1.5 mt-1 border-t border-slate-50 pt-1 text-slate-400">
                                             <ExternalLink size={10} />
-                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em]">YouTube Tutorial</span>
+                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em]">{t.youtubeTutorial || 'YouTube Tutorial'}</span>
                                         </div>
                                     </div>
                                 </a>
@@ -253,8 +294,8 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
             {/* Library Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Concept Library</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Grounding knowledge from NCERT source</p>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.conceptLibraryTitle || 'Concept Library'}</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t.conceptLibrarySub || 'Grounding knowledge from NCERT source'}</p>
                 </div>
                 <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100">
                     <Brain size={24} />
@@ -266,7 +307,7 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                     type="text"
                     value={conceptQuery}
                     onChange={(e) => setConceptQuery(e.target.value)}
-                    placeholder="Ask about Integers, Fractions, or Geometry..."
+                    placeholder={t.conceptPlaceholder2 || "Ask about Integers, Fractions, or Geometry..."}
                     className="w-full p-6 bg-white border-2 border-slate-100 rounded-[32px] text-slate-900 placeholder-slate-300 font-bold focus:outline-none focus:border-indigo-500 transition-all shadow-sm group-hover:shadow-md"
                 />
                 <button
@@ -279,10 +320,10 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
 
             <div className="grid grid-cols-2 gap-4">
                 {[
-                    { title: "What is HCF?", icon: HelpCircle, color: "bg-orange-50 text-orange-600" },
-                    { title: "Laws of Exponents", icon: Layout, color: "bg-indigo-50 text-indigo-600" },
-                    { title: "Visualizing Area", icon: FileText, color: "bg-emerald-50 text-emerald-600" },
-                    { title: "Integer Rules", icon: CheckCircle2, color: "bg-slate-50 text-slate-600" }
+                    { title: t.chip1 || "What is HCF?", icon: HelpCircle, color: "bg-orange-50 text-orange-600" },
+                    { title: t.chip2 || "Laws of Exponents", icon: Layout, color: "bg-indigo-50 text-indigo-600" },
+                    { title: t.chip3 || "Visualizing Area", icon: FileText, color: "bg-emerald-50 text-emerald-600" },
+                    { title: t.chip4 || "Integer Rules", icon: CheckCircle2, color: "bg-slate-50 text-slate-600" }
                 ].map((item, idx) => (
                     <button
                         key={idx}
@@ -304,9 +345,9 @@ const ConceptsView = ({ t, selectedExam, selectedClass, lang, userId, onStartSug
                     <Sparkles size={80} className="text-white" />
                 </div>
                 <div className="relative z-10">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] block mb-2">Personalized Studio</span>
-                    <h3 className="text-white text-lg font-black tracking-tight mb-2">Learn with Multimodality</h3>
-                    <p className="text-indigo-200/60 text-xs font-bold leading-relaxed mb-6">Ask a doubt and Vidya will ground her response from NCERT textbooks while finding verified video tutorials for you.</p>
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] block mb-2">{t.personalizedStudio || 'Personalized Studio'}</span>
+                    <h3 className="text-white text-lg font-black tracking-tight mb-2">{t.learnMultimodality || 'Learn with Multimodality'}</h3>
+                    <p className="text-indigo-200/60 text-xs font-bold leading-relaxed mb-6">{t.studioDesc || 'Ask a doubt and Vidya will ground her response from NCERT textbooks while finding verified video tutorials for you.'}</p>
                 </div>
             </div>
             <style jsx="true">{` .hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } @keyframes loading { 0% { width: 0; } 100% { width: 100%; } } `}</style>

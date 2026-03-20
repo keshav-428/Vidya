@@ -1,10 +1,4 @@
 import {
-    Ghost,
-    Cat,
-    Dog,
-    Apple,
-    Rocket,
-    Gamepad2,
     BookOpen,
     Star,
     BrainCircuit,
@@ -21,12 +15,12 @@ import {
 } from 'lucide-react';
 
 export const avatars = [
-    { id: 'ghost', icon: Ghost, color: 'bg-purple-100 text-purple-600' },
-    { id: 'cat', icon: Cat, color: 'bg-orange-100 text-orange-600' },
-    { id: 'dog', icon: Dog, color: 'bg-blue-100 text-blue-600' },
-    { id: 'apple', icon: Apple, color: 'bg-red-100 text-red-600' },
-    { id: 'rocket', icon: Rocket, color: 'bg-indigo-100 text-indigo-600' },
-    { id: 'gamepad', icon: Gamepad2, color: 'bg-green-100 text-green-600' },
+    { id: 'ghost',   emoji: '👻', color: 'bg-purple-100' },
+    { id: 'lion',    emoji: '🦁', color: 'bg-amber-100'  },
+    { id: 'tiger',   emoji: '🐯', color: 'bg-orange-100' },
+    { id: 'fox',     emoji: '🦊', color: 'bg-red-100'    },
+    { id: 'panda',   emoji: '🐼', color: 'bg-slate-100'  },
+    { id: 'unicorn', emoji: '🦄', color: 'bg-pink-100'   },
 ];
 
 export const topicsMap = {
@@ -88,4 +82,4 @@ export const timeCommitments = [
 ];
 
 export const classes = ['Class 6', 'Class 7', 'Class 8'];
-export const exams = ['CBSE Mathematics'];
+export const exams = ['CBSE Mathematics', 'Olympiad'];

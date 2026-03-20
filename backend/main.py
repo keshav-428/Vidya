@@ -1,10 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 from database import get_db
 import rag_service
 import quiz_service
 import vidya_service
+import exam_service
 from dotenv import load_dotenv
 from dotenv import load_dotenv
 import os
@@ -28,10 +30,12 @@ class QuestionRequest(BaseModel):
     language: str = "English"
 
 class QuizRequest(BaseModel):
-    topic: str
+    topic: Optional[str] = None    # legacy single-topic
+    topics: Optional[list] = None  # multi-topic
     grade: int
     language: str = "English"
-    focus_points: str = None
+    focus_points: Optional[str] = None
+    difficulty: str = "Medium"
 
 class BriefingRequest(BaseModel):
     user_id: str
@@ -60,10 +64,34 @@ class ExplainMistakeRequest(BaseModel):
 
 class ProfileUpdate(BaseModel):
     user_id: str
-    name: str
+    name: Optional[str] = None
+    grade: Optional[int] = None
+    exam: Optional[str] = None
+    language: Optional[str] = None
+    email: Optional[str] = None
+
+class PaperRequest(BaseModel):
+    topics: list
     grade: int
-    exam: str
-    language: str
+    total_marks: int = 40
+    language: str = "English"
+    difficulty: str = "Medium"
+
+class GradePaperRequest(BaseModel):
+    images: list          # base64-encoded JPEG strings
+    paper: dict           # full paper JSON with sections/questions
+    grade: int
+    total_marks: int = 40
+    language: str = "English"
+
+class ActivityRequest(BaseModel):
+    user_id: str
+    event_type: str
+    data: Optional[dict] = {}
+
+class RealWorldRequest(BaseModel):
+    topic: str
+    grade: int = 6
 
 @app.get("/")
 def read_root():
@@ -126,8 +154,13 @@ async def search_videos(request: QuestionRequest): # Re-using QuestionRequest fo
 @app.post("/generate-quiz")
 async def generate_quiz_endpoint(request: QuizRequest):
     try:
-        quiz = quiz_service.generate_quiz(request.topic, request.grade, request.language, request.focus_points)
+        topic_list = request.topics or ([request.topic] if request.topic else [])
+        if not topic_list:
+            raise HTTPException(status_code=400, detail="No topics provided")
+        quiz = quiz_service.generate_quiz(topic_list, request.grade, request.language, request.focus_points, request.difficulty)
         return {"quiz": quiz}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -226,9 +259,64 @@ async def update_profile(request: ProfileUpdate):
             "name": request.name,
             "grade": request.grade,
             "exam": request.exam,
-            "language": request.language
+            "language": request.language,
+            "email": request.email
         })
         return {"status": "success"}
     except Exception as e:
         print(f"Error in POST /profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/report/{user_id}")
+async def get_report(user_id: str):
+    try:
+        report = vidya_service.get_report_data(user_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="Student not found")
+        return report
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-paper")
+async def generate_paper_endpoint(request: PaperRequest):
+    try:
+        paper = quiz_service.generate_paper(request.topics, request.grade, request.total_marks, request.language, request.difficulty)
+        return {"paper": paper}
+    except Exception as e:
+        print(f"Error in /generate-paper: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/real-world")
+async def real_world_uses(request: RealWorldRequest):
+    try:
+        result = vidya_service.get_real_world_uses(request.topic, request.grade)
+        return {"uses": result}
+    except Exception as e:
+        print(f"Error in /real-world: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/activity")
+async def track_activity(request: ActivityRequest):
+    try:
+        vidya_service.log_activity(request.user_id, request.event_type, request.data or {})
+    except Exception:
+        pass  # never fail the client for tracking
+    return {"status": "ok"}
+
+@app.post("/grade-paper")
+async def grade_paper_endpoint(request: GradePaperRequest):
+    try:
+        if not request.images:
+            raise HTTPException(status_code=400, detail="No images provided")
+        result = exam_service.grade_paper_from_images(
+            request.images, request.paper, request.grade, request.total_marks, request.language
+        )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /grade-paper: {e}")
         raise HTTPException(status_code=500, detail=str(e))
