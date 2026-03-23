@@ -105,8 +105,12 @@ const AppContent = () => {
         const langCode = storedLang === 'Hindi' ? 'hi' : storedLang === 'Hinglish' ? 'hinglish' : storedLang === 'English' ? 'en' : storedLang || lang;
         setLang(langCode);
         logActivity(uid, 'login', { method });
-        setIsLoggedIn(true);
-        navigate('/home');
+        if (!data.profile.diagnostic?.completed) {
+          setStep('diagnostic');
+        } else {
+          setIsLoggedIn(true);
+          navigate('/home');
+        }
       } else {
         setStep('profile');
       }
