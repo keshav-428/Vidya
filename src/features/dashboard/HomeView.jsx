@@ -1,6 +1,6 @@
 import { API_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Sparkles, Flame, Trophy, BookOpen, TrendingUp } from 'lucide-react';
+import { ChevronRight, Sparkles, Flame, Trophy, BookOpen, TrendingUp, Target, RefreshCw, GraduationCap } from 'lucide-react';
 import { logActivity } from '../../services/activity';
 
 const HomeView = ({ t, name, selectedExam, practiceTime, selectedClass, painPoint, lang, userId, onStartSuggestion }) => {
@@ -10,6 +10,7 @@ const HomeView = ({ t, name, selectedExam, practiceTime, selectedClass, painPoin
     const [history, setHistory] = useState([]);
     const [streak, setStreak] = useState(0);
     const [xp, setXp] = useState(0);
+    const [weakTopics, setWeakTopics] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     const firstName = name?.split(' ')[0] || 'Student';
@@ -38,6 +39,7 @@ const HomeView = ({ t, name, selectedExam, practiceTime, selectedClass, painPoin
                 setSuggestion(suggestionData);
                 setStreak(profileData.profile?.memory_graph?.streak || 0);
                 setXp(profileData.profile?.xp || 0);
+                setWeakTopics(profileData.profile?.diagnostic?.weak_topics || []);
                 fetchBriefing(history.length === 0);
             } catch (err) {
                 console.error('HomeView data fetch error:', err);
@@ -108,6 +110,74 @@ const HomeView = ({ t, name, selectedExam, practiceTime, selectedClass, painPoin
                     )}
                 </div>
             </div>
+
+            {/* Today's Study Plan */}
+            <section className="space-y-3">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t.todaysPlan || "Today's Study Plan"}</h4>
+
+                {isDataLoading ? (
+                    <div className="space-y-3">
+                        {[1, 2].map(i => <div key={i} className="h-16 bg-slate-50 rounded-[20px] animate-pulse" />)}
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {/* Continue — last quiz if score < 80% */}
+                        {history[0] && Math.round((history[0].score / history[0].total) * 100) < 80 && (
+                            <div className="bg-white border border-slate-100 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 bg-orange-50 rounded-2xl flex items-center justify-center shrink-0">
+                                        <RefreshCw size={16} className="text-orange-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest">{t.planContinue || 'Continue'}</p>
+                                        <p className="text-xs font-black text-slate-900">{history[0].topic}</p>
+                                        <p className="text-[9px] font-bold text-slate-400">{Math.round((history[0].score / history[0].total) * 100)}% {t.planLastTime || 'last time'}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => { logActivity(userId, 'plan_retry', { topic: history[0].topic }); onStartSuggestion({ topic: history[0].topic }); }} className="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-2 rounded-xl uppercase tracking-wide active:scale-95 transition-all">
+                                    {t.planRetry || 'Retry'}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Weak topics from diagnostic — max 2 */}
+                        {weakTopics.slice(0, 2).map(topic => (
+                            <div key={topic} className="bg-white border border-slate-100 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
+                                        <Target size={16} className="text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">{t.planStrengthen || 'Strengthen'}</p>
+                                        <p className="text-xs font-black text-slate-900">{topic}</p>
+                                        <p className="text-[9px] font-bold text-slate-400">{t.planNeedsPractice || 'Needs practice'}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => { logActivity(userId, 'plan_weak_topic', { topic }); onStartSuggestion({ topic }); }} className="bg-amber-50 text-amber-600 text-[10px] font-black px-3 py-2 rounded-xl uppercase tracking-wide active:scale-95 transition-all">
+                                    {t.startQuiz || 'Practice'}
+                                </button>
+                            </div>
+                        ))}
+
+                        {/* Exam prep — always shown */}
+                        <div className="bg-white border border-slate-100 rounded-[24px] p-4 flex items-center justify-between shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="size-10 bg-indigo-50 rounded-2xl flex items-center justify-center shrink-0">
+                                    <GraduationCap size={16} className="text-indigo-500" />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{t.planExamPrep || 'Exam Prep'}</p>
+                                    <p className="text-xs font-black text-slate-900">{selectedExam}</p>
+                                    <p className="text-[9px] font-bold text-slate-400">{t.planStayOnTrack || 'Stay on track'}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => { logActivity(userId, 'plan_exam_prep', { exam: selectedExam }); onStartSuggestion({ topic: selectedExam }); }} className="bg-indigo-50 text-indigo-600 text-[10px] font-black px-3 py-2 rounded-xl uppercase tracking-wide active:scale-95 transition-all">
+                                {t.planPractice || 'Practice'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </section>
 
             {/* Smart Suggestion — most actionable, shown first */}
             {isDataLoading ? (
