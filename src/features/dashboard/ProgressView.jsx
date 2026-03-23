@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Minus, Flame, CheckCircle2, Target, Info } fr
 
 const ProgressView = ({ t, selectedClass, userId, lang }) => {
     const [history, setHistory] = React.useState([]);
+    const [diagnosticWeakTopics, setDiagnosticWeakTopics] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [showMasteryInfo, setShowMasteryInfo] = React.useState(false);
     const [activeKpi, setActiveKpi] = React.useState(null);
@@ -11,26 +12,37 @@ const ProgressView = ({ t, selectedClass, userId, lang }) => {
     const [chartTopic, setChartTopic] = React.useState('all');
 
     React.useEffect(() => {
-        const fetchHistory = async () => {
+        const fetchData = async () => {
             try {
-                const response = await fetch(`${API_URL}/history/${userId || 'test_user_123'}`);
-                const data = await response.json();
-                setHistory(data.history || []);
+                const [histRes, profileRes] = await Promise.all([
+                    fetch(`${API_URL}/history/${userId || 'test_user_123'}`),
+                    fetch(`${API_URL}/profile/${userId || 'test_user_123'}`),
+                ]);
+                const [histData, profileData] = await Promise.all([histRes.json(), profileRes.json()]);
+                setHistory(histData.history || []);
+                setDiagnosticWeakTopics(profileData.profile?.diagnostic?.weak_topics || []);
             } catch (err) {
-                console.error("Failed to fetch history:", err);
+                console.error("Failed to fetch progress data:", err);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchHistory();
+        fetchData();
     }, [userId]);
 
+    const getMastery = (avg) => {
+        if (avg >= 80) return 'strong';
+        if (avg >= 65) return 'confident';
+        if (avg >= 40) return 'improving';
+        return 'needs_help';
+    };
+
     const stats = React.useMemo(() => {
-        if (history.length === 0) return null;
+        if (history.length === 0 && diagnosticWeakTopics.length === 0) return null;
 
         const toScore = h => Math.round((h.score / h.total) * 100);
         const allScores = history.map(toScore);
-        const overallAvg = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
+        const overallAvg = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
 
         const now = new Date();
         const weekAgo = new Date(now - 7 * 864e5);
@@ -47,13 +59,24 @@ const ProgressView = ({ t, selectedClass, userId, lang }) => {
             topicMap[h.topic].scores.push(toScore(h));
             topicMap[h.topic].attempts += 1;
         });
-        const topics = Object.entries(topicMap).map(([name, d]) => {
-            const avg = Math.round(d.scores.reduce((a, b) => a + b, 0) / d.scores.length);
+
+        // Quiz-based topics with recency weighting (last score counts double)
+        const quizTopics = Object.entries(topicMap).map(([name, d]) => {
+            const lastScore = d.scores[d.scores.length - 1];
+            const weightedAvg = Math.round(
+                (d.scores.reduce((a, b) => a + b, 0) + lastScore) / (d.scores.length + 1)
+            );
             const best = Math.max(...d.scores);
-            const last = d.scores[d.scores.length - 1];
-            const mastery = avg >= 80 ? 'mastered' : avg >= 50 ? 'practicing' : 'needs_work';
-            return { name, avg, best, last, attempts: d.attempts, mastery };
-        }).sort((a, b) => b.avg - a.avg);
+            return { name, avg: weightedAvg, best, attempts: d.attempts, mastery: getMastery(weightedAvg), fromDiagnostic: false };
+        });
+
+        // Add diagnostic weak topics that haven't been quizzed yet
+        const quizzedTopics = new Set(quizTopics.map(t => t.name));
+        const diagOnlyTopics = diagnosticWeakTopics
+            .filter(topic => !quizzedTopics.has(topic))
+            .map(topic => ({ name: topic, avg: 0, best: 0, attempts: 0, mastery: 'needs_help', fromDiagnostic: true }));
+
+        const topics = [...quizTopics, ...diagOnlyTopics].sort((a, b) => b.avg - a.avg);
 
         const last7 = Array.from({ length: 7 }, (_, i) => {
             const day = new Date(now - (6 - i) * 864e5);
@@ -64,7 +87,7 @@ const ProgressView = ({ t, selectedClass, userId, lang }) => {
 
         const best = Math.max(...allScores);
         return { overallAvg, trend, thisWeekAvg, topics, last7, best, totalQuizzes: history.length };
-    }, [history]);
+    }, [history, diagnosticWeakTopics]);
 
     if (isLoading) return (
         <div className="space-y-4 animate-pulse">
@@ -85,12 +108,21 @@ const ProgressView = ({ t, selectedClass, userId, lang }) => {
         </div>
     );
 
+    // stats.overallAvg may be 0 if only diagnostic data exists — guard chart renders below
+
     const TrendIcon = stats.trend > 0 ? TrendingUp : stats.trend < 0 ? TrendingDown : Minus;
     const trendColor = stats.trend > 0 ? 'text-emerald-400' : stats.trend < 0 ? 'text-red-400' : 'text-slate-500';
     const trendBg = stats.trend > 0 ? 'bg-emerald-500/20' : stats.trend < 0 ? 'bg-red-500/20' : 'bg-white/10';
 
-    const masteryBar = { mastered: 'bg-emerald-500', practicing: 'bg-indigo-500', needs_work: 'bg-orange-400' };
-    const masteryText = { mastered: 'text-emerald-600', practicing: 'text-indigo-500', needs_work: 'text-orange-500' };
+    const masteryBar  = { strong: 'bg-emerald-500', confident: 'bg-indigo-500', improving: 'bg-amber-400', needs_help: 'bg-orange-400' };
+    const masteryText = { strong: 'text-emerald-600', confident: 'text-indigo-500', improving: 'text-amber-600', needs_help: 'text-orange-500' };
+    const masteryBadgeBg = { strong: 'bg-emerald-50', confident: 'bg-indigo-50', improving: 'bg-amber-50', needs_help: 'bg-orange-50' };
+    const masteryLabel = {
+        strong:     t.masteryStrong    || 'Strong',
+        confident:  t.masteryConfident || 'Confident',
+        improving:  t.masteryImproving || 'Improving',
+        needs_help: t.masteryNeedsHelp || 'Needs Help',
+    };
 
     return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
@@ -122,7 +154,7 @@ const ProgressView = ({ t, selectedClass, userId, lang }) => {
                     {[
                         { key: 'quizzes',  value: stats.totalQuizzes, label: t.kpiQuizzes || 'Quizzes',    desc: t.kpiQuizzesDesc || 'Total quizzes completed, all time.' },
                         { key: 'best',     value: `${stats.best}%`,   label: t.kpiBestScore || 'Best Score', desc: t.kpiBestDesc || 'Highest single quiz score ever.' },
-                        { key: 'mastered', value: stats.topics.filter(tp => tp.mastery === 'mastered').length, label: t.kpiMastered || 'Mastered', desc: t.kpiMasteredDesc || 'Topics with avg score ≥80%.' },
+                        { key: 'mastered', value: stats.topics.filter(tp => tp.mastery === 'strong').length, label: t.kpiMastered || 'Strong', desc: t.kpiMasteredDesc || 'Topics with avg score ≥80%.' },
                     ].map((s) => (
                         <div
                             key={s.key}
@@ -180,18 +212,20 @@ const ProgressView = ({ t, selectedClass, userId, lang }) => {
                             <Info size={13} strokeWidth={2} />
                         </button>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-[9px] font-bold text-slate-400">≥80%</span></span>
-                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-indigo-500 inline-block" /><span className="text-[9px] font-bold text-slate-400">50–79%</span></span>
-                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-orange-400 inline-block" /><span className="text-[9px] font-bold text-slate-400">&lt;50%</span></span>
+                    <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-[9px] font-bold text-slate-400">≥80</span></span>
+                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-indigo-500 inline-block" /><span className="text-[9px] font-bold text-slate-400">65–79</span></span>
+                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-amber-400 inline-block" /><span className="text-[9px] font-bold text-slate-400">40–64</span></span>
+                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-orange-400 inline-block" /><span className="text-[9px] font-bold text-slate-400">&lt;40</span></span>
                     </div>
                 </div>
                 {showMasteryInfo && (
                     <div className="bg-slate-50 rounded-2xl p-3.5 mb-4 space-y-2">
                         {[
-                            { dot: 'bg-emerald-500', label: t.masteredLabel || 'Mastered', desc: t.masteredDesc || 'Avg score ≥80% across all attempts on this topic.' },
-                            { dot: 'bg-indigo-500', label: t.practicingLabel || 'Practicing', desc: t.practicingDesc || 'Avg score between 50–79%. Getting there!' },
-                            { dot: 'bg-orange-400', label: t.needsWorkLabel || 'Needs Work', desc: t.needsWorkDesc || 'Avg score below 50%. Focus here to improve.' },
+                            { dot: 'bg-emerald-500', label: t.masteryStrong    || 'Strong',    desc: t.masteryStrongDesc    || 'Avg ≥80%. You\'ve got this topic down.' },
+                            { dot: 'bg-indigo-500', label: t.masteryConfident  || 'Confident', desc: t.masteryConfidentDesc || 'Avg 65–79%. Almost there, keep going.' },
+                            { dot: 'bg-amber-400',  label: t.masteryImproving  || 'Improving', desc: t.masteryImprovingDesc || 'Avg 40–64%. Getting better with practice.' },
+                            { dot: 'bg-orange-400', label: t.masteryNeedsHelp  || 'Needs Help',desc: t.masteryNeedsHelpDesc || 'Avg below 40% or not yet practiced.' },
                         ].map(({ dot, label, desc }) => (
                             <div key={label} className="flex items-start gap-2.5">
                                 <span className={`size-2 rounded-full mt-1 shrink-0 ${dot}`} />
@@ -204,16 +238,29 @@ const ProgressView = ({ t, selectedClass, userId, lang }) => {
                     {stats.topics.map((topic, i) => (
                         <div key={i}>
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-black text-slate-800 truncate mr-3">{topic.name}</span>
-                                <span className={`text-xs font-black shrink-0 ${masteryText[topic.mastery]}`}>{topic.avg}%</span>
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-xs font-black text-slate-800 truncate">{topic.name}</span>
+                                    {topic.fromDiagnostic && (
+                                        <span className="text-[8px] font-black bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-md uppercase tracking-wide shrink-0">
+                                            {t.fromDiagnostic || 'Diagnostic'}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className={`text-[9px] font-black px-2 py-1 rounded-lg shrink-0 ml-2 ${masteryBadgeBg[topic.mastery]} ${masteryText[topic.mastery]}`}>
+                                    {masteryLabel[topic.mastery]}
+                                </span>
                             </div>
                             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                                 <div
                                     className={`h-full rounded-full transition-all duration-700 ${masteryBar[topic.mastery]}`}
-                                    style={{ width: `${topic.avg}%` }}
+                                    style={{ width: topic.avg > 0 ? `${topic.avg}%` : '4%' }}
                                 />
                             </div>
-                            <p className="text-[9px] font-bold text-slate-400 mt-1.5">{topic.attempts} {topic.attempts !== 1 ? (t.attemptPlural || 'attempts') : (t.attemptSingular || 'attempt')} · {t.best || 'Best'}: {topic.best}%</p>
+                            <p className="text-[9px] font-bold text-slate-400 mt-1.5">
+                                {topic.attempts > 0
+                                    ? `${topic.attempts} ${topic.attempts !== 1 ? (t.attemptPlural || 'attempts') : (t.attemptSingular || 'attempt')} · ${t.best || 'Best'}: ${topic.best}%`
+                                    : (t.notPracticedYet || 'Not practiced yet')}
+                            </p>
                         </div>
                     ))}
                 </div>
