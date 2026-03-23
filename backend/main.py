@@ -89,6 +89,12 @@ class ActivityRequest(BaseModel):
     event_type: str
     data: Optional[dict] = {}
 
+class DiagnosticRequest(BaseModel):
+    user_id: str
+    weak_topics: list
+    score: int
+    total: int
+
 class RealWorldRequest(BaseModel):
     topic: str
     grade: int = 6
@@ -297,6 +303,24 @@ async def real_world_uses(request: RealWorldRequest):
     except Exception as e:
         print(f"Error in /real-world: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/diagnostic")
+async def save_diagnostic(request: DiagnosticRequest):
+    try:
+        db = get_db()
+        if db:
+            db.collection('students').document(request.user_id).set({
+                'diagnostic': {
+                    'completed': True,
+                    'score': request.score,
+                    'total': request.total,
+                    'weak_topics': request.weak_topics,
+                }
+            }, merge=True)
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Error in /diagnostic: {e}")
+        return {"status": "ok"}  # never block the user
 
 @app.post("/activity")
 async def track_activity(request: ActivityRequest):

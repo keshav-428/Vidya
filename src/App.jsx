@@ -9,6 +9,7 @@ import { translations } from './utils/translations';
 import { avatars, classes, exams } from './utils/constants';
 
 import VidyaLogo from './components/VidyaLogo';
+import DiagnosticView from './features/onboarding/DiagnosticView';
 import HomeView from './features/dashboard/HomeView';
 import ReportView from './features/dashboard/ReportView';
 import PracticeView from './features/practice/PracticeView';
@@ -192,6 +193,10 @@ const AppContent = () => {
       })
     }).catch(() => {});
     logActivity(userId, 'signup', { grade: selectedClass, exam: selectedExam, lang });
+    setStep('diagnostic');
+  };
+
+  const handleDiagnosticComplete = (weakTopics) => {
     setIsLoggedIn(true);
     navigate('/home');
   };
@@ -202,6 +207,7 @@ const AppContent = () => {
       else setStep('language');
     }
     else if (step === 'profile') setStep('email');
+    // diagnostic has no back — user must complete it
   };
 
   if (authLoading) {
@@ -291,7 +297,7 @@ const AppContent = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-white relative">
       <header className="pt-14 pb-4 px-6 flex items-center justify-center shrink-0 border-b border-gray-50 relative">
-        {(step !== 'language' && step !== 'interview_curating') && (
+        {(step !== 'language' && step !== 'interview_curating' && step !== 'diagnostic') && (
           <button onClick={handleBack} className="absolute left-6 text-slate-400 hover:text-slate-900 transition-colors z-50"><ArrowLeft size={20} strokeWidth={2.5} /></button>
         )}
         <VidyaLogo />
@@ -409,6 +415,14 @@ const AppContent = () => {
               </button>
             </form>
           </div>
+        ) : step === 'diagnostic' ? (
+          <DiagnosticView
+            selectedClass={selectedClass}
+            userId={userId}
+            lang={lang}
+            t={t}
+            onComplete={handleDiagnosticComplete}
+          />
         ) : null}
       </main>
       <style jsx="true">{` .hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } @keyframes loading { 0% { width: 0; } 100% { width: 100%; } } `}</style>
