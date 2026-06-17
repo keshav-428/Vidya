@@ -229,7 +229,12 @@ export default function WeekPlanScreen({ go, state, set }) {
 
   const commitWeek = (next) => {
     setWeek(next);
-    set && set({ weekPlan: next });
+    // Keep the session topic in sync with today's slot, so the Concept/Quiz
+    // that runs today matches what the plan says for today.
+    const today = next.find((d) => d.isToday && d.topicId);
+    const patch = { weekPlan: next };
+    if (today?.topicId) patch.planTopicId = today.topicId;
+    set && set(patch);
   };
 
   const swapTopic = (idx, topicId) => {
