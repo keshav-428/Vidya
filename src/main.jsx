@@ -70,13 +70,60 @@ function StatusBar() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+// The app itself, wrapped once with auth + routing.
+function AppRoot() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
+
+// Detect a real phone-sized screen so we render full-screen there,
+// and the desktop "phone mockup" only on larger screens.
+function useIsMobile() {
+  const QUERY = '(max-width: 600px)';
+  const [mobile, setMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(QUERY).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(QUERY);
+    const onChange = (e) => setMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return mobile;
+}
+
+function Root() {
+  const isMobile = useIsMobile();
+
+  // ── Real phone: fill the device, no fake bezel/status bar, respect notch ──
+  if (isMobile) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute',
+          top: 'env(safe-area-inset-top, 0px)',
+          bottom: 'env(safe-area-inset-bottom, 0px)',
+          left: 0, right: 0,
+          overflow: 'hidden',
+          transform: 'translateZ(0)',   // containing block for fixed VTopBar/VBottomNav
+        }}>
+          <AppRoot />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Desktop: framed phone mockup with the fake status bar ──
+  return (
     <div style={{
       minHeight: '100vh', background: '#1a1a1a',
       display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 32
     }}>
-      {/* Phone shell — overflow:hidden clips the rounded corners */}
       <div style={{
         width: 390, height: 844, borderRadius: 48,
         overflow: 'hidden',
@@ -86,23 +133,20 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         background: 'var(--bg)',
       }}>
         <StatusBar />
-
-        {/* App area: starts below the 44px status bar.
-            transform: translateZ(0) makes this the containing block for
-            position:fixed children (VTopBar, VBottomNav), so they stay
-            within this 390×800 area without needing any padding changes. */}
         <div style={{
           position: 'absolute', top: 44, left: 0, right: 0, bottom: 0,
           overflow: 'hidden',
           transform: 'translateZ(0)',
         }}>
-          <AuthProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </AuthProvider>
+          <AppRoot />
         </div>
       </div>
     </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <Root />
   </React.StrictMode>
 );
