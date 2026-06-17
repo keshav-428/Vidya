@@ -1,0 +1,39 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Secrets (NEVER commit) ───────────────────────────────────
+.env
+.env.*
+service_account.json
+backend/.env
+backend/*.json          # firebase_key.json, vertex_key.json, service_account.json
+
+# ── Python backend ───────────────────────────────────────────
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/*.bak
+backend/data/           # ~335MB NCERT PDFs — re-ingestion source, not for git

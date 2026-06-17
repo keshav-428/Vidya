@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.json
+!requirements.json
+.DS_Store
+# NCERT source PDFs (~335MB) — only needed to re-ingest the KB, not at runtime
+data/

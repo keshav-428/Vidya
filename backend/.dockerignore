@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.bak
+.DS_Store
+.env
+# Secrets — provided at runtime via host secret store, never baked into the image
+*.json
+# NCERT source PDFs (~335MB) — only needed for re-ingestion, not at runtime
+data/

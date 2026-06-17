@@ -1,0 +1,27 @@
+name: Keep backend awake
+
+# Pings the Render backend every 10 minutes so it never spins down
+# (Render free web services sleep after ~15 min of inactivity).
+#
+# Setup: GitHub repo → Settings → Secrets and variables → Actions → Variables
+#        → New repository variable → name: BACKEND_URL
+#        → value: your Render URL, e.g. https://vidya-api.onrender.com (no trailing slash)
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch: {}        # also allow manual runs from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /ping
+        run: |
+          URL="${{ vars.BACKEND_URL }}"
+          if [ -z "$URL" ]; then
+            echo "BACKEND_URL repo variable not set — skipping. Add it in repo Settings → Variables."
+            exit 0
+          fi
+          echo "Pinging $URL/ping ..."
+          curl -fsS --max-time 90 "$URL/ping" && echo " — awake" || echo "ping failed (backend may be cold-starting)"

@@ -1,0 +1,3 @@
+# The backend is deployed separately (Render); don't ship it to Vercel.
+backend/
+service_account.json
