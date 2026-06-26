@@ -1,0 +1,50 @@
+{
+  "greeting": "Hi {{name}}",
+  "sessionComplete": "Session complete — great work today!",
+  "ready": "Ready for today's session?",
+  "empty": {
+    "title": "Let's set up your learning",
+    "body": "Pick a chapter to start your first session. You decide what to learn and when — Vidya guides you through it.",
+    "cta": "Choose a chapter",
+    "planWeek": "Or plan your whole week →"
+  },
+  "week": { "thisWeek": "This week", "viewPlan": "View plan", "today": "TODAY" },
+  "today": "Today · {{topic}}",
+  "change": "Change",
+  "upNext": "{{label}} · Up next",
+  "complete": "Complete",
+  "startStep": "Start {{label}}",
+  "steps": {
+    "concept": { "label": "Concept", "sub": "Understand the idea" },
+    "quiz": { "label": "Quiz", "sub": "Test your knowledge" },
+    "analysis": { "label": "Analysis", "sub": "Review your performance" }
+  },
+  "doneCard": { "title": "Session complete", "body": "Great work today.", "new": "New session" },
+  "viva": { "title": "Viva practice", "sub": "Explain a concept out loud — select chapters" },
+  "newSession": {
+    "title": "New session",
+    "desc": "Choose a chapter to study. You will go through Concept, Quiz and Analysis.",
+    "start": "Start session"
+  },
+  "vivaPicker": {
+    "title": "Start a Viva",
+    "desc": "Pick the chapters you want to practise. I will ask you questions — explain your answers out loud.",
+    "start_one": "Start viva · {{count}} chapter",
+    "start_other": "Start viva · {{count}} chapters"
+  },
+  "coach": {
+    "skip": "Skip tutorial",
+    "step1": {
+      "eyebrow": "Step 1 of 3",
+      "title": "Set up your week plan",
+      "body": "Pick topics for each day — you're in full control. I'll wait here while you do it.",
+      "cta": "Set up my week →"
+    },
+    "step2": {
+      "eyebrow": "Step 2 of 3",
+      "title": "Plan's ready — let's study!",
+      "body": "Each session has 3 parts: Concept, Quiz, then Analysis. Let's start the first one.",
+      "cta": "Start first session →"
+    }
+  }
+}

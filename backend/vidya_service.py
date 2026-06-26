@@ -9,6 +9,7 @@ load_dotenv()
 
 # Generation model — configurable via .env (GENAI_MODEL)
 from llm_config import gen_client, GEN_MODEL, STYLE_GUIDE
+from languages import lang_instruction
 
 # Initialize Gemini Client (with Vertex AI support)
 client = genai.Client(
@@ -24,7 +25,7 @@ You are Vidya, a friendly and patient study teacher for Class {grade} students.
 When the student is struggling, be gentle and encouraging.
 When they do well, praise them simply and motivate them to keep going.
 Keep everything short. Use examples from everyday Indian life.
-Always communicate strictly in {language}.
+LANGUAGE: {language}
 
 """
     + STYLE_GUIDE
@@ -96,7 +97,7 @@ def generate_daily_greeting(student_id: str, name: str, grade: int, language: st
     """
 
     prompt = f"""
-    {SYSTEM_PROMPT.format(grade=grade, language=language)}
+    {SYSTEM_PROMPT.format(grade=grade, language=lang_instruction(language))}
 
     {memory_context}
 
@@ -120,7 +121,7 @@ def generate_quiz_feedback(student_id: str, topic: str, score: int, total: int, 
     memory = get_student_memory(student_id)
     
     prompt = f"""
-    {SYSTEM_PROMPT.format(grade=memory.get('grade', 6), language=language)}
+    {SYSTEM_PROMPT.format(grade=memory.get('grade', 6), language=lang_instruction(language))}
     
     TOPIC: {topic}
     SCORE: {score}/{total}
@@ -179,7 +180,7 @@ def get_quiz_recommendation(student_id: str):
 def explain_mistake(question: str, user_answer: str, correct_answer: str, grade: int = 6, language: str = "English"):
     """Provides a lightning-fast, concept-focused explanation for a specific mistake."""
     prompt = f"""
-    {SYSTEM_PROMPT.format(grade=grade, language=language)}
+    {SYSTEM_PROMPT.format(grade=grade, language=lang_instruction(language))}
     
     QUESTION: {question}
     STUDENT SELECTED: {user_answer}

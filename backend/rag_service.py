@@ -35,10 +35,32 @@ def cosine_similarity(v1, v2):
         return 0
     return dot_product / (norm_v1 * norm_v2)
 
-def retrieve_context(query: str, grade: int = 6, top_k: int = 5):
+def _candidate_docs(grade, chapter_id=None, section=None):
+    """Pull candidate chunks with the tightest scope available, using only
+    single-field (auto-indexed) equality filters — no composite index needed.
+
+    Scope order: (chapter_id [+ section]) → chapter_id → grade.
+    Falls back outward when a tighter scope yields nothing, so a thin/intro-only
+    section still returns its chapter's context rather than empty.
     """
-    Simulates vector search in Firestore by retrieving documents for the grade
-    and calculating similarity locally (Fallback for simple local dev).
+    col = db.collection('ncert_knowledge_base')
+    if chapter_id:
+        docs = [d.to_dict() for d in col.where('metadata.chapter_id', '==', chapter_id).stream()]
+        if section:
+            scoped = [d for d in docs if (d.get('metadata') or {}).get('section') == section]
+            if scoped:
+                return scoped
+        if docs:
+            return docs
+    return [d.to_dict() for d in col.where('metadata.grade', '==', grade).stream()]
+
+
+def retrieve_context(query: str, grade: int = 6, top_k: int = 5,
+                     chapter_id: str = None, section: str = None):
+    """
+    Semantic search in Firestore, scoped to a chapter/subtopic when given.
+    Retrieves candidate chunks for the tightest available scope and ranks them
+    by cosine similarity locally.
     """
     if not db:
         return []
@@ -47,12 +69,10 @@ def retrieve_context(query: str, grade: int = 6, top_k: int = 5):
         query_vector = get_query_embedding(query)
     except Exception as e:
         print(f"Warning: Embedding failure, falling back to keyword search: {e}")
-        # Fallback to simple keyword search if embeddings are down/quota hit
         try:
-            candidates = db.collection('ncert_knowledge_base').where('metadata.grade', '==', grade).stream()
+            candidates = _candidate_docs(grade, chapter_id, section)
             keyword_results = []
-            for doc in candidates:
-                data = doc.to_dict()
+            for data in candidates:
                 content = data.get('content', '').lower()
                 if query.lower() in content:
                     keyword_results.append({
@@ -67,10 +87,9 @@ def retrieve_context(query: str, grade: int = 6, top_k: int = 5):
 
     # ... Proceed with normal vector search if embedding succeeded ...
     try:
-        candidates = db.collection('ncert_knowledge_base').where('metadata.grade', '==', grade).stream()
+        candidates = _candidate_docs(grade, chapter_id, section)
         results = []
-        for doc in candidates:
-            data = doc.to_dict()
+        for data in candidates:
             doc_vector = data.get('embedding')
             if doc_vector:
                 score = cosine_similarity(query_vector, doc_vector)
@@ -92,10 +111,9 @@ def generate_answer(query: str, context: list, language: str = "English"):
     """
     context_text = "\n\n".join([f"Source: {c['metadata']['source']}\n{c['content']}" for c in context])
     
-    # Define Persona and Language instructions
-    lang_instruction = f"Always answer in {language}."
-    if language.lower() == "hinglish":
-        lang_instruction = "Always answer in Hinglish (a mix of Hindi and English, written in Latin script, e.g., 'Chalo integers seekhte hain!')."
+    # Define Persona and Language instructions (centralized in languages.py)
+    from languages import lang_instruction as _lang
+    lang_instruction = _lang(language)
     
     prompt = f"""
     You are Vidya, a friendly and patient AI Maths teacher for Class 6-8 students.

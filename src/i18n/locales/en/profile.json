@@ -1,0 +1,16 @@
+{
+  "title": "Profile",
+  "stats": { "streak": "day streak", "mastery": "mastery", "concepts": "concepts" },
+  "menu": {
+    "editProfile": "Edit profile",
+    "classSubject": "Class & subject",
+    "language": "Language",
+    "linkedTutor": "Linked tutor",
+    "notifications": "Notifications",
+    "subscription": "Subscription",
+    "help": "Help & support"
+  },
+  "signOut": "Sign out",
+  "languageSheet": { "title": "Choose your language", "subtitle": "Vidya's interface and lessons will use this." },
+  "classSheet": { "title": "Class & subject", "subtitle": "Your chapters, quizzes and exams will match these.", "classLabel": "Class", "subjectLabel": "Subject" }
+}

@@ -1,0 +1,47 @@
+{
+  "homePostDiag": {
+    "topBar": "Home",
+    "greeting": "Hi {{name}}",
+    "subtitle": "Ready to plan your week? Let's set up your study schedule.",
+    "buildCard": {
+      "title": "Build your week plan",
+      "sub": "Pick days, assign topics, set your pace",
+      "cta": "Start planning"
+    },
+    "pillClass": "Class 7 · CBSE Maths",
+    "pillNoPlan": "No plan yet"
+  },
+  "weekPlan": {
+    "eyebrow": "THIS WEEK",
+    "headingTopics_one": "{{count}} topic",
+    "headingTopics_other": "{{count}} topics",
+    "headingAcross": "across the week.",
+    "summary": "{{startDay}} {{startDate}} – {{endDay}} {{endDate}} · {{month}} · about {{mins}} min total",
+    "byDay": "BY DAY",
+    "today": "TODAY",
+    "done": "DONE",
+    "freeDay": "Free day",
+    "addTopic": "Add a topic",
+    "tapToChoose": "Tap to choose a chapter",
+    "minLabel": "{{mins}} min",
+    "save": "Save plan",
+    "sheet": {
+      "dayDate": "{{day}} {{date}}",
+      "chooseTopic": "Choose a topic",
+      "changeTopic": "Change topic",
+      "currently": "Currently:",
+      "alreadyFree": "Already a free day",
+      "markFree": "Mark as free day",
+      "topicMeta": "{{sub}} · {{mins}} min"
+    }
+  },
+  "concept": {
+    "loading": "Vidya is preparing your lesson\non {{topic}}…",
+    "coachHint": "Read through each card carefully. No rush — there's no timer here.",
+    "coachCta": "Got it →",
+    "progress": "{{current}} / {{total}}",
+    "done": "Done",
+    "startQuiz": "Start quiz",
+    "previousCard": "← Previous card"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "config": {
+    "eyebrow": "EXAM PRACTICE",
+    "title": "Configure",
+    "subtitle": "Build a practice paper that fits your study plan.",
+    "boardClass": "Board & Class",
+    "boardClassValue": "CBSE · Class 7",
+    "boardClassSub": "Mathematics · 2024 syllabus",
+    "duration": "Duration",
+    "durationMinutes": "{{value}}m",
+    "totalMarks": "Total marks",
+    "difficultyMix": "Difficulty mix",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "topicsIncluded": "Topics included",
+    "edit": "Edit",
+    "generatePaper": "Generate paper"
+  },
+  "detail": {
+    "topBarTitle": "Detailed feedback",
+    "eyebrow": "QUESTION-BY-QUESTION",
+    "title": "How each answer scored",
+    "noBreakdown": "No detailed breakdown available for this paper.",
+    "sectionPrefix": "SEC {{name}} · ",
+    "questionLabel": "Q{{number}}",
+    "yourAnswer": "Your answer",
+    "correctApproach": "Correct approach",
+    "backToSummary": "Back to summary",
+    "status": {
+      "correct": "Correct",
+      "partial": "Partial",
+      "incorrect": "Incorrect",
+      "blank": "Not attempted"
+    }
+  },
+  "evalLoading": {
+    "eyebrow": "Evaluating",
+    "title": "Reading your work…",
+    "lines": {
+      "reading": "Reading your handwriting",
+      "matching": "Matching working steps",
+      "marking": "Marking against the rubric",
+      "writing": "Writing your feedback"
+    }
+  },
+  "evalResults": {
+    "errorEvaluate": "Couldn't evaluate your sheets. Please try again with clearer photos.",
+    "noEvaluation": "No evaluation found.",
+    "reuploadSheets": "Re-upload sheets",
+    "backToHome": "Back to home",
+    "eyebrow": "EVALUATION COMPLETE",
+    "title": "Your Vidya score",
+    "approxNote": "Approx. {{pct}}% · A teacher review will refine this",
+    "overall": "overall",
+    "questionsCorrect": "questions correct",
+    "bySection": "BY SECTION",
+    "sectionName": "Section {{name}}",
+    "focusNext": "FOCUS NEXT",
+    "seeDetailedFeedback": "See detailed feedback"
+  },
+  "loading": {
+    "step1": {
+      "title": "Drafting your paper",
+      "sub": "Selecting questions across topics"
+    },
+    "step2": {
+      "title": "Aligning to the syllabus",
+      "sub": "Balancing marks and difficulty"
+    }
+  },
+  "paper": {
+    "finalising": "Finalising your paper…",
+    "errorGenerate": "Couldn't generate the paper. Please try again.",
+    "backToSetup": "Back to setup",
+    "paperTitle": "Mathematics Paper",
+    "marksHours": "{{marks}} MARKS · {{hours}} HOURS",
+    "sectionName": "Section {{name}}",
+    "marksEach_one": "{{count}} MARK EACH",
+    "marksEach_other": "{{count}} MARKS EACH",
+    "submitAnswers": "Submit answers",
+    "saveExit": "Save & exit →"
+  },
+  "photo": {
+    "title": "Upload your sheets",
+    "subtitle": "Take a photo of each handwritten page. Vidya will read and evaluate.",
+    "capturePage": "Capture page",
+    "openCamera": "Open camera",
+    "captured": "Captured ({{count}})",
+    "pageAlt": "Page {{number}}",
+    "addAtLeastOne": "Add at least one page to continue."
+  },
+  "submit": {
+    "stepConfirm": "STEP 2 OF 2 · CONFIRM",
+    "title": "Ready to submit?",
+    "paper": "Paper",
+    "paperValue": "CBSE Class 7 · Maths",
+    "totalMarks": "Total marks",
+    "pagesUploaded": "Pages uploaded",
+    "timeTaken": "Time taken",
+    "beforeSubmit": "Before you submit",
+    "guideNote": "Vidya's evaluation is a guide, not a grade. A teacher's review is always best for the final word.",
+    "reviewedConfirm": "I've reviewed all my pages and I'm ready to submit.",
+    "submitForEvaluation": "Submit for evaluation"
+  }
+}

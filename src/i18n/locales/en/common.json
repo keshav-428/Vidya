@@ -1,0 +1,28 @@
+{
+  "continue": "Continue",
+  "back": "Back",
+  "getStarted": "Get Started",
+  "signIn": "Sign in",
+  "haveAccount": "Already have an account?",
+  "comingSoon": "Coming soon",
+  "soon": "Soon",
+  "stepOf": "Step {{value}} of {{total}}",
+  "classBoard": "Class {{n}} · {{board}}",
+  "nav": { "home": "Home", "learn": "Learn", "practice": "Practice", "progress": "Progress" },
+  "ask": {
+    "title": "Ask Vidya",
+    "reading": "Vidya is reading the textbook…",
+    "keyIdea": "Key idea",
+    "commonMistake": "Common mistake",
+    "fromNcert": "From NCERT: {{sources}}",
+    "placeholder": "Type your question…",
+    "error": "Could not reach Vidya. Is the backend running?",
+    "tips": {
+      "home": "I noticed you were learning Fractions. Want to continue?",
+      "learn": "Stuck on a topic? Ask me in your own words.",
+      "practice": "Tell me where you got stuck — I'll explain in plain language.",
+      "progress": "Want a study plan for your weak topics?",
+      "general": "Stuck somewhere? Ask in simple words."
+    }
+  }
+}

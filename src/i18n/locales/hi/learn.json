@@ -1,0 +1,32 @@
+{
+  "screen": {
+    "eyebrow": "सीखें",
+    "title": "एक अवधारणा समझें",
+    "subtitle": "पूछें, खोजें, या नीचे से एक अध्याय चुनें।",
+    "searchPlaceholder": "कोई अवधारणा पूछें · जैसे LCM क्यों काम करता है?",
+    "explain": "समझाएँ: \"{{q}}\"",
+    "conceptPageHint": "→ अवधारणा पृष्ठ · 6-चरण विवरण",
+    "typeHint": "सीखने के लिए कोई अवधारणा लिखें",
+    "egHint": "जैसे LCM क्यों काम करता है?",
+    "matching": "मिलती-जुलती अवधारणाएँ",
+    "popular": "लोकप्रिय अवधारणाएँ",
+    "browseAll": "सभी अवधारणाएँ देखें",
+    "cancel": "रद्द करें",
+    "subject": "विषय",
+    "chapters": "अध्याय",
+    "topicsCount_one": "{{count}} विषय",
+    "topicsCount_other": "{{count}} विषय",
+    "sheetTitle": "आज हम क्या\nसीख रहे हैं?",
+    "close": "बंद करें"
+  },
+  "chapterTopics": {
+    "topbar": "अध्याय {{num}}",
+    "eyebrow": "अध्याय {{num}} · कक्षा {{cls}}",
+    "topicCount_one": "{{count}} विषय · NCERT गणित प्रकाश",
+    "topicCount_other": "{{count}} विषय · NCERT गणित प्रकाश",
+    "wholeChapter": "पूरा अध्याय सीखें",
+    "wholeChapterSub": "विद्या आपको {{title}} समझाएगी",
+    "topicsHeader": "इस अध्याय के विषय",
+    "quiz": "क्विज़"
+  }
+}

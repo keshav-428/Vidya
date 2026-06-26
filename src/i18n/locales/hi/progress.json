@@ -1,0 +1,56 @@
+{
+  "progress": {
+    "eyebrow": "आपकी प्रगति",
+    "title": "मैं कैसा कर रहा हूँ?",
+    "subtitle": "आगे यह करना है।",
+    "weeklyStreak": "साप्ताहिक लय",
+    "thisWeek": "इस हफ़्ते",
+    "daysOf": "में से {{total}} दिन",
+    "days": { "mon": "सो", "tue": "मं", "wed": "बु", "thu": "गु", "fri": "शु", "sat": "श", "sun": "र" },
+    "masteryHeader_one": "महारत · {{count}} विषय",
+    "masteryHeader_other": "महारत · {{count}} विषय",
+    "buckets": {
+      "strong": "मज़बूत",
+      "confident": "आत्मविश्वासी",
+      "improving": "सुधर रहा है",
+      "needshelp": "मदद चाहिए"
+    },
+    "needsHelp": "मदद चाहिए",
+    "seeAll": "सभी देखें",
+    "practice": "अभ्यास →",
+    "strong": "मज़बूत",
+    "recentPractice": "हाल का अभ्यास",
+    "mistakesToRetry": "दोबारा करने वाली गलतियाँ",
+    "retry": "दोबारा करें →"
+  },
+  "analysis": {
+    "topbarTitle": "विश्लेषण",
+    "sessionLabel": "{{topic}} · आज का सत्र",
+    "outOf": "में से {{total}}",
+    "verdict": {
+      "strong": "बढ़िया प्रदर्शन",
+      "good": "अच्छी प्रगति",
+      "needsPractice": "और अभ्यास चाहिए"
+    },
+    "verdictSub": {
+      "strong": "इस विषय पर आपकी पकड़ मज़बूत है।",
+      "good": "कुछ कमियाँ बाकी हैं — नीचे देखें।",
+      "needsPractice": "नीचे दिए सुधार वाले हिस्सों पर ध्यान दें।"
+    },
+    "loading": "विद्या आपके उत्तरों का विश्लेषण कर रही है…",
+    "whatYouUnderstood": "आपने क्या समझा",
+    "whatToImprove": "क्या सुधारना है",
+    "mistakeLine": "आपने {{userAnswer}} चुना, उत्तर {{correctAnswer}} था",
+    "yourNextStep": "आपका अगला कदम",
+    "loadFailed": "विद्या का विश्लेषण लोड नहीं हो सका — आपका स्कोर ऊपर सहेजा गया है।",
+    "done": "हो गया — होम पर वापस"
+  },
+  "mastery": {
+    "title": "अवधारणा-दर-अवधारणा",
+    "mastered": "महारत हासिल",
+    "gap": "पूरी महारत से आप {{percent}}% दूर हैं।",
+    "gapSub": "भिन्नों के भाग पर दो अभ्यास सत्र इस अंतर को काफ़ी हद तक भर सकते हैं।",
+    "concepts": "अवधारणाएँ",
+    "practiceWeak": "कमज़ोर वाले अभ्यास करें"
+  }
+}

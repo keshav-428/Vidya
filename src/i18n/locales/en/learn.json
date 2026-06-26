@@ -1,0 +1,32 @@
+{
+  "screen": {
+    "eyebrow": "LEARN",
+    "title": "Understand a concept",
+    "subtitle": "Ask, search, or pick a chapter below.",
+    "searchPlaceholder": "Ask a concept · e.g. why does LCM work?",
+    "explain": "Explain: \"{{q}}\"",
+    "conceptPageHint": "→ Concept page · 6-step walk-through",
+    "typeHint": "Type a concept to learn",
+    "egHint": "e.g. why does LCM work?",
+    "matching": "Matching concepts",
+    "popular": "Popular concepts",
+    "browseAll": "Browse all concepts",
+    "cancel": "Cancel",
+    "subject": "Subject",
+    "chapters": "Chapters",
+    "topicsCount_one": "{{count}} topic",
+    "topicsCount_other": "{{count}} topics",
+    "sheetTitle": "What are we\nlearning today?",
+    "close": "Close"
+  },
+  "chapterTopics": {
+    "topbar": "Chapter {{num}}",
+    "eyebrow": "Chapter {{num}} · Class {{cls}}",
+    "topicCount_one": "{{count}} topic · NCERT Ganita Prakash",
+    "topicCount_other": "{{count}} topics · NCERT Ganita Prakash",
+    "wholeChapter": "Learn the whole chapter",
+    "wholeChapterSub": "Vidya walks you through {{title}}",
+    "topicsHeader": "Topics in this chapter",
+    "quiz": "Quiz"
+  }
+}

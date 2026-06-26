@@ -37,3 +37,6 @@ backend/**/__pycache__/
 backend/*.pyc
 backend/*.bak
 backend/data/           # ~335MB NCERT PDFs — re-ingestion source, not for git
+
+# TypeScript incremental build info
+*.tsbuildinfo

@@ -1,0 +1,16 @@
+{
+  "title": "प्रोफ़ाइल",
+  "stats": { "streak": "दिन की लय", "mastery": "महारत", "concepts": "अवधारणाएँ" },
+  "menu": {
+    "editProfile": "प्रोफ़ाइल संपादित करें",
+    "classSubject": "कक्षा और विषय",
+    "language": "भाषा",
+    "linkedTutor": "जुड़े हुए ट्यूटर",
+    "notifications": "सूचनाएँ",
+    "subscription": "सदस्यता",
+    "help": "सहायता और समर्थन"
+  },
+  "signOut": "साइन आउट करें",
+  "languageSheet": { "title": "अपनी भाषा चुनें", "subtitle": "विद्या का इंटरफ़ेस और पाठ इसी भाषा में होंगे।" },
+  "classSheet": { "title": "कक्षा और विषय", "subtitle": "आपके अध्याय, क्विज़ और परीक्षाएँ इन्हीं के अनुसार होंगे।", "classLabel": "कक्षा", "subjectLabel": "विषय" }
+}

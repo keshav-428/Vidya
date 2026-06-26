@@ -1,0 +1,53 @@
+// ─────────────────────────────────────────────────────────────
+//  Week-plan data — topic catalog + per-topic study stacks.
+//  Lives here (not in a screen) so both WeekPlanScreen and
+//  HomeScreen can share it without crossing a Fast-Refresh boundary.
+// ─────────────────────────────────────────────────────────────
+
+/** Display info for a topic slot. */
+export interface TopicInfo {
+  title: string;
+  sub: string;
+  mins: number;
+}
+
+export const WEEK_TOPIC_CATALOG: Record<string, TopicInfo> = {
+  'integers':       { title: 'Integers',              sub: 'Positive & negative numbers',     mins: 15 },
+  'fractions':      { title: 'Fractions & Decimals',  sub: 'Parts of a whole',                mins: 15 },
+  'data-handling':  { title: 'Data Handling',         sub: 'Mean, median & mode',             mins: 14 },
+  'equations':      { title: 'Simple Equations',      sub: 'Finding the unknown',             mins: 18 },
+  'lines-angles':   { title: 'Lines & Angles',        sub: 'Types and properties',            mins: 16 },
+  'triangles':      { title: 'Triangles',             sub: 'Properties & congruence',         mins: 18 },
+  'congruence':     { title: 'Congruence',            sub: 'Congruent figures & triangles',   mins: 16 },
+  'comparing':      { title: 'Comparing Quantities',  sub: 'Ratios, percentages & profit',   mins: 16 },
+  'rational':       { title: 'Rational Numbers',      sub: 'Number line & operations',        mins: 18 },
+  'prac-geometry':  { title: 'Practical Geometry',    sub: 'Constructions with compass',      mins: 20 },
+  'perimeter-area': { title: 'Perimeter & Area',      sub: 'Rectangles, triangles, circles', mins: 20 },
+  'algebra-expr':   { title: 'Algebraic Expressions', sub: 'Terms, factors & evaluation',    mins: 18 },
+  'exponents':      { title: 'Exponents & Powers',    sub: 'Laws and standard form',          mins: 15 },
+  'symmetry':       { title: 'Symmetry',              sub: 'Lines of symmetry & rotation',   mins: 14 },
+  'solids':         { title: 'Visualising Solids',    sub: '3D shapes and their nets',        mins: 16 },
+  'review':         { title: 'Mixed Review',          sub: 'Consolidate the week',            mins: 20 },
+};
+
+export const WEEK_STACKS: Record<string, string[]> = {
+  integers:       ['integers', 'rational', 'comparing', 'equations', 'review'],
+  fractions:      ['fractions', 'rational', 'data-handling', 'comparing', 'review'],
+  'data-handling':['data-handling', 'comparing', 'fractions', 'integers', 'review'],
+  equations:      ['equations', 'algebra-expr', 'rational', 'integers', 'review'],
+  'lines-angles': ['lines-angles', 'triangles', 'congruence', 'prac-geometry', 'review'],
+  triangles:      ['triangles', 'lines-angles', 'congruence', 'symmetry', 'review'],
+  congruence:     ['congruence', 'triangles', 'lines-angles', 'prac-geometry', 'review'],
+  comparing:      ['comparing', 'fractions', 'rational', 'data-handling', 'review'],
+  rational:       ['rational', 'integers', 'fractions', 'algebra-expr', 'review'],
+  'prac-geometry':['prac-geometry', 'lines-angles', 'triangles', 'symmetry', 'review'],
+  'perimeter-area':['perimeter-area', 'lines-angles', 'triangles', 'prac-geometry', 'review'],
+  'algebra-expr': ['algebra-expr', 'equations', 'exponents', 'rational', 'review'],
+  exponents:      ['exponents', 'algebra-expr', 'rational', 'integers', 'review'],
+  symmetry:       ['symmetry', 'lines-angles', 'solids', 'prac-geometry', 'review'],
+  solids:         ['solids', 'symmetry', 'perimeter-area', 'prac-geometry', 'review'],
+  // legacy aliases
+  decimals:       ['fractions', 'rational', 'data-handling', 'comparing', 'review'],
+  algebra:        ['algebra-expr', 'equations', 'exponents', 'rational', 'review'],
+  geometry:       ['lines-angles', 'triangles', 'perimeter-area', 'prac-geometry', 'review'],
+};

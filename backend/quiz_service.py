@@ -9,6 +9,7 @@ load_dotenv()
 
 # Generation model — configurable via .env (GENAI_MODEL)
 from llm_config import gen_client, GEN_MODEL, STYLE_GUIDE
+from languages import lang_instruction, lang_name
 
 # Initialize Gemini Client (with Vertex AI support)
 client = genai.Client(
@@ -39,28 +40,32 @@ DIFFICULTY_INSTRUCTIONS = {
     ),
 }
 
-def generate_quiz(topics: list, grade: int, language: str = "English", focus_points: str = None, difficulty: str = "Medium"):
+def generate_quiz(topics: list, grade: int, language: str = "English", focus_points: str = None, difficulty: str = "Medium", chapter_id: str = None, section: str = None):
     """
     Retrieves context for one or more topics and generates a 5-question MCQ quiz.
+    When chapter_id/section are given, retrieval is scoped to that exact subtopic.
     """
     topics_str = ", ".join(topics)
 
     try:
         from rag_service import retrieve_context
 
-        # Retrieve context for each topic separately and merge (cap at 4 topics)
         all_context = []
-        for t in topics[:4]:
-            results = retrieve_context(t, grade=grade, top_k=3)
+        if chapter_id:
+            # Subtopic/chapter-scoped: one filtered retrieval
+            results = retrieve_context(topics_str, grade=grade, top_k=6, chapter_id=chapter_id, section=section)
             all_context.extend([c['content'] for c in results])
+        else:
+            # Retrieve context for each topic separately and merge (cap at 4 topics)
+            for t in topics[:4]:
+                results = retrieve_context(t, grade=grade, top_k=3)
+                all_context.extend([c['content'] for c in results])
 
         context_text = "\n\n".join(all_context)
         if not context_text:
             context_text = f"The student is studying {topics_str} for Class {grade}."
 
-        lang_instruction = f"in {language}"
-        if language.lower() == "hinglish":
-            lang_instruction = "in Hinglish (a mix of Hindi and English, written in Latin script)"
+        lang_directive = f"in {lang_name(language)}. {lang_instruction(language)}"
 
         focus_instruction = ""
         if focus_points:
@@ -76,7 +81,7 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
 
         prompt = f"""
         You are an expert Math teacher for NCERT Class {grade}.
-        Generate a 5-question multiple choice quiz {lang_instruction} STRICTLY about the topic(s): {topics_str}.
+        Generate a 5-question multiple choice quiz {lang_directive} STRICTLY about the topic(s): {topics_str}.
 
         {STYLE_GUIDE}
 
@@ -128,13 +133,26 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
             for i in range(5)
         ]
 
-def generate_paper(topics: list, grade: int, total_marks: int = 40, language: str = "English", difficulty: str = "Medium"):
+def generate_paper(topics: list, grade: int, total_marks: int = 40, language: str = "English", difficulty: str = "Medium", chapter_id: str = None, section: str = None):
     """
     Generates a CBSE-style exam paper with sections A, B, C, D.
     40 marks: A(10×1), B(5×2), C(4×3), D(2×4)
     80 marks: A(20×1), B(10×2), C(8×3), D(4×4)
+    When chapter_id/section are given, the paper is scoped to that exact subtopic.
     """
     topics_str = ", ".join(topics)
+
+    scope_block = ""
+    if chapter_id:
+        try:
+            from rag_service import retrieve_context
+            ctx = retrieve_context(topics_str, grade=grade, top_k=6, chapter_id=chapter_id, section=section)
+            ctx_text = "\n\n".join([c["content"] for c in ctx])
+        except Exception:
+            ctx_text = ""
+        focus = f"ONLY about the subtopic \"{topics_str}\"" if section else f"ONLY about the chapter \"{topics_str}\""
+        scope_block = (f"\nSCOPE: Every question must be {focus}. Do not include other topics.\n"
+                       + (f"\nREFERENCE MATERIAL (from NCERT, use it):\n\"\"\"{ctx_text}\"\"\"\n" if ctx_text else ""))
 
     if total_marks == 80:
         sections_spec = [
@@ -161,7 +179,7 @@ def generate_paper(topics: list, grade: int, total_marks: int = 40, language: st
     prompt = f"""
 You are an expert CBSE Mathematics teacher for Class {grade}.
 Generate a complete school exam paper based on these chapters: {topics_str}.
-
+{scope_block}
 {STYLE_GUIDE}
 
 PAPER STRUCTURE (Total: {total_marks} marks):
@@ -174,7 +192,7 @@ RULES:
 2. Section A: Mix of MCQ (give 4 options with correct_option index 0-3), Fill in the blank, and True/False questions.
 3. Sections B, C, D: Written questions requiring working. No options needed.
 4. Distribute questions across the selected chapters: {topics_str}
-5. Language: {language}
+5. Language: write all question text {lang_name(language)}. {lang_instruction(language)}
 6. Questions should match typical school exam difficulty — not too easy, not JEE level.
 
 Return ONLY a valid JSON object with this exact structure:

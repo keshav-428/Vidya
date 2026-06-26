@@ -1,0 +1,70 @@
+{
+  "splash": {
+    "eyebrow": "A new way to learn",
+    "title": "Learn,\nyour way.",
+    "subtitle": "A patient AI companion. One topic at a time, at your own pace."
+  },
+  "role": {
+    "eyebrow": "Welcome",
+    "title": "Who's joining\nVidya today?",
+    "subtitle": "Choose how you'll use the app. You can change this later.",
+    "student": "I'm a student",
+    "studentSub": "Learning at my own pace",
+    "tutor": "I'm a tutor or teacher",
+    "tutorSub": "Coming soon"
+  },
+  "language": {
+    "title": "Which language are\nyou comfortable in?",
+    "subtitle": "Vidya will explain everything in this language.",
+    "englishSub": "For most CBSE/ICSE schools",
+    "hindiSub": "समझाएंगे आसान भाषा में"
+  },
+  "class": {
+    "title": "Which class are\nyou in?",
+    "subtitle": "We'll match topics to your school syllabus.",
+    "footnote": "Other classes are on the way.",
+    "label": "Class {{n}}"
+  },
+  "name": {
+    "title": "Last thing —\nwhat's your name?",
+    "subtitle": "Just so Vidya knows what to call you.",
+    "fieldLabel": "Your name",
+    "placeholder": "e.g. Aarav",
+    "privacy": "We use this only inside the app. Nothing is shared."
+  },
+  "subject": {
+    "title": "Pick a subject\nto start with",
+    "subtitle": "You can add more subjects later from your profile.",
+    "maths": "Mathematics",
+    "mathsSub": "Numbers, algebra, geometry",
+    "science": "Science",
+    "english": "English",
+    "social": "Social Studies"
+  },
+  "goal": {
+    "title": "What do you need\nhelp with most?",
+    "subtitle": "Pick one or more. You can change this anytime.",
+    "understand": "Understand concepts",
+    "understandSub": "I want the \"why\" behind topics",
+    "practice": "Practice better",
+    "practiceSub": "I want more questions to try",
+    "tests": "Prepare for tests",
+    "testsSub": "I have a test coming up",
+    "unsure": "I'm not sure",
+    "unsureSub": "Let Vidya decide for me"
+  },
+  "diagIntro": {
+    "eyebrow": "Let's find where to begin",
+    "title": "Hi {{name}}.\nTwo ways to start.",
+    "subtitle": "Let Vidya find your level — or build your own plan if you already know what you need.",
+    "recommended": "RECOMMENDED",
+    "diagnosticTitle": "Take the diagnostic",
+    "diagnosticDesc": "10–15 questions spanning every chapter. Vidya pinpoints exactly where you're strong and where to begin.",
+    "coversAll": "Covers all chapters",
+    "duration": "~8 min",
+    "startDiagnostic": "Start diagnostic",
+    "ownTitle": "I'll build my own plan",
+    "ownSub": "Skip the questions — pick your chapters yourself",
+    "footnote": "No marks, no timer. You can change your plan anytime."
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "config": {
+    "eyebrow": "परीक्षा अभ्यास",
+    "title": "सेट करें",
+    "subtitle": "अपनी पढ़ाई की योजना के अनुसार अभ्यास पेपर बनाएँ।",
+    "boardClass": "बोर्ड और कक्षा",
+    "boardClassValue": "CBSE · कक्षा 7",
+    "boardClassSub": "गणित · 2024 पाठ्यक्रम",
+    "duration": "अवधि",
+    "durationMinutes": "{{value}} मि",
+    "totalMarks": "कुल अंक",
+    "difficultyMix": "कठिनाई स्तर",
+    "easy": "आसान",
+    "medium": "मध्यम",
+    "hard": "कठिन",
+    "topicsIncluded": "शामिल विषय",
+    "edit": "बदलें",
+    "generatePaper": "पेपर बनाएँ"
+  },
+  "detail": {
+    "topBarTitle": "विस्तृत प्रतिक्रिया",
+    "eyebrow": "प्रश्न-दर-प्रश्न",
+    "title": "हर उत्तर को कितने अंक मिले",
+    "noBreakdown": "इस पेपर का विस्तृत विवरण उपलब्ध नहीं है।",
+    "sectionPrefix": "खंड {{name}} · ",
+    "questionLabel": "प्र{{number}}",
+    "yourAnswer": "आपका उत्तर",
+    "correctApproach": "सही तरीका",
+    "backToSummary": "सारांश पर वापस",
+    "status": {
+      "correct": "सही",
+      "partial": "आंशिक",
+      "incorrect": "गलत",
+      "blank": "हल नहीं किया"
+    }
+  },
+  "evalLoading": {
+    "eyebrow": "मूल्यांकन हो रहा है",
+    "title": "आपका काम पढ़ा जा रहा है…",
+    "lines": {
+      "reading": "आपकी लिखावट पढ़ी जा रही है",
+      "matching": "हल के चरण मिलाए जा रहे हैं",
+      "marking": "रूब्रिक के अनुसार अंक दिए जा रहे हैं",
+      "writing": "आपकी प्रतिक्रिया लिखी जा रही है"
+    }
+  },
+  "evalResults": {
+    "errorEvaluate": "आपकी शीट का मूल्यांकन नहीं हो सका। कृपया साफ़ फ़ोटो के साथ फिर कोशिश करें।",
+    "noEvaluation": "कोई मूल्यांकन नहीं मिला।",
+    "reuploadSheets": "शीट दोबारा अपलोड करें",
+    "backToHome": "होम पर वापस",
+    "eyebrow": "मूल्यांकन पूरा हुआ",
+    "title": "आपका विद्या स्कोर",
+    "approxNote": "लगभग {{pct}}% · शिक्षक की समीक्षा से यह और सटीक होगा",
+    "overall": "कुल मिलाकर",
+    "questionsCorrect": "प्रश्न सही",
+    "bySection": "खंड अनुसार",
+    "sectionName": "खंड {{name}}",
+    "focusNext": "आगे ध्यान दें",
+    "seeDetailedFeedback": "विस्तृत प्रतिक्रिया देखें"
+  },
+  "loading": {
+    "step1": {
+      "title": "आपका पेपर तैयार हो रहा है",
+      "sub": "विषयों में से प्रश्न चुने जा रहे हैं"
+    },
+    "step2": {
+      "title": "पाठ्यक्रम के अनुसार सेट किया जा रहा है",
+      "sub": "अंक और कठिनाई संतुलित की जा रही है"
+    }
+  },
+  "paper": {
+    "finalising": "आपका पेपर अंतिम रूप ले रहा है…",
+    "errorGenerate": "पेपर नहीं बन सका। कृपया फिर कोशिश करें।",
+    "backToSetup": "सेटअप पर वापस",
+    "paperTitle": "गणित पेपर",
+    "marksHours": "{{marks}} अंक · {{hours}} घंटे",
+    "sectionName": "खंड {{name}}",
+    "marksEach_one": "प्रत्येक {{count}} अंक",
+    "marksEach_other": "प्रत्येक {{count}} अंक",
+    "submitAnswers": "उत्तर जमा करें",
+    "saveExit": "सहेजें और बाहर निकलें →"
+  },
+  "photo": {
+    "title": "अपनी शीट अपलोड करें",
+    "subtitle": "हर हस्तलिखित पन्ने की फ़ोटो लें। विद्या उसे पढ़कर मूल्यांकन करेगी।",
+    "capturePage": "पन्ने की फ़ोटो लें",
+    "openCamera": "कैमरा खोलें",
+    "captured": "लिए गए ({{count}})",
+    "pageAlt": "पन्ना {{number}}",
+    "addAtLeastOne": "आगे बढ़ने के लिए कम से कम एक पन्ना जोड़ें।"
+  },
+  "submit": {
+    "stepConfirm": "चरण 2 / 2 · पुष्टि करें",
+    "title": "जमा करने के लिए तैयार?",
+    "paper": "पेपर",
+    "paperValue": "CBSE कक्षा 7 · गणित",
+    "totalMarks": "कुल अंक",
+    "pagesUploaded": "अपलोड किए गए पन्ने",
+    "timeTaken": "लगा समय",
+    "beforeSubmit": "जमा करने से पहले",
+    "guideNote": "विद्या का मूल्यांकन एक मार्गदर्शन है, अंतिम अंक नहीं। अंतिम फ़ैसले के लिए शिक्षक की समीक्षा हमेशा बेहतर है।",
+    "reviewedConfirm": "मैंने अपने सभी पन्ने जाँच लिए हैं और जमा करने के लिए तैयार हूँ।",
+    "submitForEvaluation": "मूल्यांकन के लिए जमा करें"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "homePostDiag": {
+    "topBar": "होम",
+    "greeting": "नमस्ते {{name}}",
+    "subtitle": "अपना सप्ताह प्लान करने के लिए तैयार हैं? चलिए आपकी पढ़ाई का शेड्यूल सेट करें।",
+    "buildCard": {
+      "title": "अपना सप्ताह प्लान बनाएँ",
+      "sub": "दिन चुनें, विषय जोड़ें, अपनी गति तय करें",
+      "cta": "प्लान बनाना शुरू करें"
+    },
+    "pillClass": "कक्षा 7 · CBSE गणित",
+    "pillNoPlan": "अभी कोई प्लान नहीं"
+  },
+  "weekPlan": {
+    "eyebrow": "इस सप्ताह",
+    "headingTopics_one": "{{count}} विषय",
+    "headingTopics_other": "{{count}} विषय",
+    "headingAcross": "पूरे सप्ताह में।",
+    "summary": "{{startDay}} {{startDate}} – {{endDay}} {{endDate}} · {{month}} · कुल लगभग {{mins}} मिनट",
+    "byDay": "दिन के अनुसार",
+    "today": "आज",
+    "done": "पूरा",
+    "freeDay": "खाली दिन",
+    "addTopic": "विषय जोड़ें",
+    "tapToChoose": "अध्याय चुनने के लिए टैप करें",
+    "minLabel": "{{mins}} मिनट",
+    "save": "प्लान सहेजें",
+    "sheet": {
+      "dayDate": "{{day}} {{date}}",
+      "chooseTopic": "एक विषय चुनें",
+      "changeTopic": "विषय बदलें",
+      "currently": "अभी:",
+      "alreadyFree": "पहले से खाली दिन है",
+      "markFree": "खाली दिन के रूप में चिह्नित करें",
+      "topicMeta": "{{sub}} · {{mins}} मिनट"
+    }
+  },
+  "concept": {
+    "loading": "विद्या आपका पाठ तैयार कर रही है\n{{topic}} पर…",
+    "coachHint": "हर कार्ड को ध्यान से पढ़ें। कोई जल्दी नहीं — यहाँ कोई टाइमर नहीं है।",
+    "coachCta": "समझ गया →",
+    "progress": "{{current}} / {{total}}",
+    "done": "पूरा",
+    "startQuiz": "क्विज़ शुरू करें",
+    "previousCard": "← पिछला कार्ड"
+  }
+}

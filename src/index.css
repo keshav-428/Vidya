@@ -27,24 +27,26 @@
   --accent-rose: #9F7C72;
 }
 * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-html, body { margin: 0; padding: 0; background: #1a1a1a; font-family: 'Inter', system-ui, sans-serif; color: var(--ink); min-height: 100vh; }
+/* Latin glyphs resolve to Inter/Quicksand; Devanagari (Hindi) falls through to
+   Mukta/Baloo 2 per-glyph, so mixed text stays on-brand in both scripts. */
+html, body { margin: 0; padding: 0; background: #1a1a1a; font-family: 'Inter','Mukta', system-ui, sans-serif; color: var(--ink); min-height: 100vh; }
 #root { width: 100%; min-height: 100vh; }
 
-.v-h1 { font-family: 'Quicksand','Nunito',system-ui,sans-serif; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; color: #000; }
-.v-eyebrow { font-family: 'Inter',sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.v-eyebrow-sm { font-family: 'Inter',sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-2); }
-.v-body { font-family: 'Inter',sans-serif; font-size: 14px; line-height: 1.5; color: var(--muted); }
-.v-link { font-family: 'Inter',sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.05em; color: var(--accent-blue); cursor: default; }
+.v-h1 { font-family: 'Quicksand','Baloo 2','Nunito',system-ui,sans-serif; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; color: #000; }
+.v-eyebrow { font-family: 'Inter','Mukta',sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.v-eyebrow-sm { font-family: 'Inter','Mukta',sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-2); }
+.v-body { font-family: 'Inter','Mukta',sans-serif; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.v-link { font-family: 'Inter','Mukta',sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.05em; color: var(--accent-blue); cursor: default; }
 
-.v-btn-primary { display:flex;align-items:center;justify-content:center;gap:10px;background:var(--ink);color:#fff;border:none;border-radius:9999px;padding:18px 28px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;cursor:default;width:100%;transition:transform .15s ease; }
+.v-btn-primary { display:flex;align-items:center;justify-content:center;gap:10px;background:var(--ink);color:#fff;border:none;border-radius:9999px;padding:18px 28px;font-family:'Inter','Mukta',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;cursor:default;width:100%;transition:transform .15s ease; }
 .v-btn-primary:active { transform:scale(.98); }
 .v-btn-primary:disabled { opacity:0.4; }
-.v-btn-secondary { display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:9999px;padding:16px 24px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.06em;cursor:default;width:100%; }
+.v-btn-secondary { display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:9999px;padding:16px 24px;font-family:'Inter','Mukta',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.06em;cursor:default;width:100%; }
 
 .v-card { background:#fff;border-radius:32px;border:1px solid rgba(208,196,190,0.3);box-shadow:0 4px 40px rgba(28,25,23,0.04);padding:24px; }
 .v-card-soft { background:#fff;border-radius:24px;border:1px solid var(--border);padding:20px; }
 
-.v-pill { display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid rgba(208,196,190,0.4);border-radius:9999px;padding:6px 14px;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--muted); }
+.v-pill { display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid rgba(208,196,190,0.4);border-radius:9999px;padding:6px 14px;font-family:'Inter','Mukta',sans-serif;font-size:12px;font-weight:500;color:var(--muted); }
 
 .v-progress { height:4px;background:#E7E5E4;border-radius:9999px;overflow:hidden; }
 .v-progress-fill { height:100%;background:var(--accent-rose);border-radius:9999px;transition:width 600ms cubic-bezier(.4,0,.2,1); }
@@ -60,7 +62,7 @@ html, body { margin: 0; padding: 0; background: #1a1a1a; font-family: 'Inter', s
 .v-navitem.active .v-navdot { background:var(--ink); }
 
 .v-logo { display:inline-flex;align-items:baseline;gap:0;color:var(--indigo-ink); }
-.v-logo-wordmark { font-family:'Quicksand','Nunito',system-ui,sans-serif;font-weight:700;letter-spacing:-0.018em;line-height:1;color:var(--indigo-ink); }
+.v-logo-wordmark { font-family:'Quicksand','Baloo 2','Nunito',system-ui,sans-serif;font-weight:700;letter-spacing:-0.018em;line-height:1;color:var(--indigo-ink); }
 
 .vidya-scroll { scrollbar-width:none;-ms-overflow-style:none; }
 .vidya-scroll::-webkit-scrollbar { display:none; }
@@ -77,6 +79,22 @@ html, body { margin: 0; padding: 0; background: #1a1a1a; font-family: 'Inter', s
 .v-enter { animation:vFadeUp 380ms cubic-bezier(.16,1,.3,1) both; }
 .v-enter-fade { animation:vFade 260ms ease-out both; }
 .v-enter-scale { animation:vScaleIn 320ms cubic-bezier(.16,1,.3,1) both; }
+@keyframes vPop { 0%{opacity:0;transform:scale(.6)} 60%{opacity:1;transform:scale(1.08)} 100%{transform:scale(1)} }
+.v-pop { animation:vPop 620ms cubic-bezier(.34,1.56,.64,1) both; }
 .v-card-enter { animation:vCardSlide 360ms cubic-bezier(.16,1,.3,1) both; }
 @keyframes vSpin { to { transform: rotate(360deg); } }
 .v-spin { animation: vSpin 0.7s linear infinite; }
+
+/* "Thinking" book: pages turn one after another (always forward). A leaf fades
+   in on the right, flips across the spine to the left, fades into the left
+   stack, then the cycle repeats — the reset is hidden while opacity is 0. */
+@keyframes vPageTurn {
+  0%   { transform: scaleX(1);  opacity: 0; }
+  8%   { transform: scaleX(1);  opacity: 1; }
+  55%  { transform: scaleX(-1); opacity: 1; }
+  66%  { transform: scaleX(-1); opacity: 0; }
+  100% { transform: scaleX(1);  opacity: 0; }
+}
+@keyframes vBinduPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.62); } }
+.v-badge-leaf { transform-box: fill-box; transform-origin: left center; animation: vPageTurn 1.5s ease-in-out infinite; }
+.v-badge-bindu { transform-box: fill-box; transform-origin: center; animation: vBinduPulse 1.5s ease-in-out infinite; }

@@ -31,6 +31,8 @@ class QuestionRequest(BaseModel):
     question: str
     grade: int = 6
     language: str = "English"
+    chapter_id: Optional[str] = None   # scope retrieval to a chapter
+    section: Optional[str] = None      # ...and a subtopic (e.g. "7.2")
 
 class QuizRequest(BaseModel):
     topic: Optional[str] = None    # legacy single-topic
@@ -39,6 +41,8 @@ class QuizRequest(BaseModel):
     language: str = "English"
     focus_points: Optional[str] = None
     difficulty: str = "Medium"
+    chapter_id: Optional[str] = None
+    section: Optional[str] = None
 
 class DailyGreetingRequest(BaseModel):
     user_id: str
@@ -79,6 +83,8 @@ class PaperRequest(BaseModel):
     total_marks: int = 40
     language: str = "English"
     difficulty: str = "Medium"
+    chapter_id: Optional[str] = None
+    section: Optional[str] = None
 
 class GradePaperRequest(BaseModel):
     images: list          # base64-encoded JPEG strings
@@ -106,6 +112,8 @@ class ConceptRequest(BaseModel):
     topic: str
     grade: int = 6
     language: str = "English"
+    chapter_id: Optional[str] = None
+    section: Optional[str] = None
 
 @app.get("/")
 def read_root():
@@ -120,8 +128,10 @@ async def ask_question(request: QuestionRequest):
     try:
         # 1. Retrieve Context
         context = rag_service.retrieve_context(
-            query=request.question, 
-            grade=request.grade
+            query=request.question,
+            grade=request.grade,
+            chapter_id=request.chapter_id,
+            section=request.section
         )
         
         # 2. Generate Answer (returns JSON string with 'answer' and 'suggestions')
@@ -171,7 +181,7 @@ async def generate_quiz_endpoint(request: QuizRequest):
         topic_list = request.topics or ([request.topic] if request.topic else [])
         if not topic_list:
             raise HTTPException(status_code=400, detail="No topics provided")
-        quiz = quiz_service.generate_quiz(topic_list, request.grade, request.language, request.focus_points, request.difficulty)
+        quiz = quiz_service.generate_quiz(topic_list, request.grade, request.language, request.focus_points, request.difficulty, chapter_id=request.chapter_id, section=request.section)
         return {"quiz": quiz}
     except HTTPException:
         raise
@@ -297,7 +307,7 @@ async def get_report(user_id: str):
 @app.post("/generate-paper")
 async def generate_paper_endpoint(request: PaperRequest):
     try:
-        paper = quiz_service.generate_paper(request.topics, request.grade, request.total_marks, request.language, request.difficulty)
+        paper = quiz_service.generate_paper(request.topics, request.grade, request.total_marks, request.language, request.difficulty, chapter_id=request.chapter_id, section=request.section)
         return {"paper": paper}
     except Exception as e:
         print(f"Error in /generate-paper: {e}")
@@ -306,7 +316,10 @@ async def generate_paper_endpoint(request: PaperRequest):
 @app.post("/generate-concept")
 async def generate_concept_endpoint(request: ConceptRequest):
     try:
-        data = concept_service.generate_concept(request.topic, request.grade, request.language)
+        data = concept_service.generate_concept(
+            request.topic, request.grade, request.language,
+            chapter_id=request.chapter_id, section=request.section,
+        )
         return data
     except Exception as e:
         print(f"Error in /generate-concept: {e}")

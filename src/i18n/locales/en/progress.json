@@ -1,0 +1,56 @@
+{
+  "progress": {
+    "eyebrow": "YOUR PROGRESS",
+    "title": "How am I doing?",
+    "subtitle": "Here's what to do next.",
+    "weeklyStreak": "Weekly streak",
+    "thisWeek": "This week",
+    "daysOf": "of {{total}} days",
+    "days": { "mon": "M", "tue": "T", "wed": "W", "thu": "T", "fri": "F", "sat": "S", "sun": "S" },
+    "masteryHeader_one": "Mastery · {{count}} topic",
+    "masteryHeader_other": "Mastery · {{count}} topics",
+    "buckets": {
+      "strong": "Strong",
+      "confident": "Confident",
+      "improving": "Improving",
+      "needshelp": "Needs help"
+    },
+    "needsHelp": "NEEDS HELP",
+    "seeAll": "See all",
+    "practice": "Practice →",
+    "strong": "STRONG",
+    "recentPractice": "RECENT PRACTICE",
+    "mistakesToRetry": "MISTAKES TO RETRY",
+    "retry": "Retry →"
+  },
+  "analysis": {
+    "topbarTitle": "Analysis",
+    "sessionLabel": "{{topic}} · Today's session",
+    "outOf": "out of {{total}}",
+    "verdict": {
+      "strong": "Strong performance",
+      "good": "Good progress",
+      "needsPractice": "Needs more practice"
+    },
+    "verdictSub": {
+      "strong": "You have a solid grasp of this topic.",
+      "good": "A few gaps to close — see below.",
+      "needsPractice": "Focus on the improvement areas below."
+    },
+    "loading": "Vidya is analysing your answers…",
+    "whatYouUnderstood": "What you understood",
+    "whatToImprove": "What to improve",
+    "mistakeLine": "you chose {{userAnswer}}, answer was {{correctAnswer}}",
+    "yourNextStep": "Your next step",
+    "loadFailed": "Couldn't load Vidya's analysis — your score is saved above.",
+    "done": "Done — back to home"
+  },
+  "mastery": {
+    "title": "Concept-by-concept",
+    "mastered": "MASTERED",
+    "gap": "You're {{percent}}% from full mastery.",
+    "gapSub": "Two practice sessions on dividing fractions could close most of the gap.",
+    "concepts": "CONCEPTS",
+    "practiceWeak": "Practice the weak ones"
+  }
+}

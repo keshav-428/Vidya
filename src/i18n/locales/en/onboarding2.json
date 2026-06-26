@@ -1,0 +1,104 @@
+{
+  "buildPlan": {
+    "eyebrow": "Build your own plan",
+    "title": "Pick what you want\nto work on.",
+    "subtitle": "Choose one or more chapters. Vidya builds a plan around exactly these — you can change it anytime.",
+    "selectAtLeastOne": "Select at least one chapter",
+    "chaptersChosen_one": "{{count}} chapter chosen",
+    "chaptersChosen_other": "{{count}} chapters chosen",
+    "selectAll": "Select all",
+    "createPlan": "Create my plan"
+  },
+  "firstPlan": {
+    "eyebrow": "Vidya suggests · change anything",
+    "title": "Today, start with\n{{topic}}.",
+    "titleLead": "Today, start with",
+    "subtitle": "One topic. About 15 minutes. We'll go step by step.",
+    "todaysTopic": "Today's topic",
+    "minutes": "15 min",
+    "done": "Done",
+    "change": "Change",
+    "otherStartingPoints": "OTHER STARTING POINTS",
+    "keepTopic": "Keep \"{{topic}}\"",
+    "steps": {
+      "1": { "title": "What does it mean?", "sub": "A simple explanation" },
+      "2": { "title": "A real-life example", "sub": "Where it shows up around you" },
+      "3": { "title": "One solved example", "sub": "Watch how it's done" },
+      "4": { "title": "Try 3 questions", "sub": "Your turn, gently" }
+    },
+    "pauseNote": "You can pause anytime. Vidya will remember where you left off.",
+    "startLearning": "Start Learning",
+    "weekPlanReady": "Your week plan is ready!",
+    "weekPlanBody": "I've mapped out your first week based on your diagnostic. It takes 15 minutes a day.",
+    "seeWeekPlan": "See my week plan",
+    "startTodayFirst": "Start today first"
+  },
+  "diagBuilding": {
+    "lines": {
+      "1": "Reading your answers",
+      "2": "Looking at where you got stuck",
+      "3": "Picking the right starting topic",
+      "4": "Making your first day plan"
+    },
+    "eyebrow": "One moment",
+    "title": "Putting together\na starting plan",
+    "subtitle": "A suggestion you can change anytime."
+  },
+  "diagResult": {
+    "levels": {
+      "confident": { "label": "Confident", "sub": "You have strong basics. We'll stretch you." },
+      "improving": { "label": "Improving", "sub": "You're on the right path. A little focus will go a long way." },
+      "needs": { "label": "Needs Help", "sub": "No problem. We'll start with the basics and build up." },
+      "strong": { "label": "Strong" }
+    },
+    "eyebrow": "Your starting level",
+    "title": "Nice work, {{name}}.",
+    "subtitle": "Here's where you are right now. This isn't a grade — it's just our starting point.",
+    "classSubject": "Class {{classLevel}} · Mathematics",
+    "whatNext": "What happens next",
+    "whatNextBody": "We've picked one topic for today. Small, simple, doable.",
+    "seeFirstPlan": "See my first plan"
+  },
+  "diagQ": {
+    "chapters": {
+      "Numbers": "Numbers",
+      "Fractions": "Fractions",
+      "Decimals": "Decimals",
+      "Integers": "Integers",
+      "Algebra": "Algebra",
+      "Geometry": "Geometry"
+    },
+    "skip": "Skip",
+    "questionOf": "Question {{value}} of {{total}}",
+    "adapting": "Adapting to you",
+    "gotItLast": "Got it. Last one done.",
+    "gotItNext": "Got it. Next one coming up.",
+    "finish": "Finish"
+  },
+  "signUp": {
+    "titleSignup": "Create your account",
+    "titleLogin": "Welcome back",
+    "subtitleSignup": "Start your learning journey",
+    "subtitleLogin": "Sign in to continue your learning",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "haveAccountPrompt": "Already have an account? ",
+    "newHerePrompt": "New here? ",
+    "createAccountLink": "Create account",
+    "terms": "By continuing you agree to our",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "password": {
+    "titleSignup": "Choose a password",
+    "titleLogin": "Enter your password",
+    "forEmail": "For {{email}}",
+    "placeholderSignup": "At least 6 characters",
+    "placeholderLogin": "Password",
+    "authError": "Could not authenticate.",
+    "forgotPassword": "Forgot password?",
+    "pleaseWait": "Please wait…",
+    "createAccount": "Create account"
+  }
+}
