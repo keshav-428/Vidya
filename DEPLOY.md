@@ -8,6 +8,15 @@ The code is already production-ready: the frontend reads the backend URL from
 `VITE_API_BASE`, the backend reads CORS from `ALLOWED_ORIGINS`, and all secrets
 are gitignored.
 
+> **Single source of truth:** the backend lives in this repo at `backend/`. Do **not**
+> create or edit an external standalone copy — an out-of-repo `~/Vidya/backend` once
+> diverged and its changes never deployed. All backend work happens in `backend/` here.
+>
+> **KB pipeline note:** the section-aware ingestion scripts were lost when that external
+> copy was deleted (the 43 source PDFs survive in `backend/data/ncert_pdfs/`, and the
+> ingested Firestore data is intact). Rebuild the pipeline syllabus-driven (read chapter
+> ids from `src/content/syllabus.ts`) if content ever needs re-ingesting.
+
 ---
 
 ## 0. Push the project to GitHub
