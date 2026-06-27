@@ -59,9 +59,6 @@ export default function SplashScreen({ go, set }: ScreenProps) {
           <VidyaAvatar size={96} animated />
         </div>
 
-        <div className="v-eyebrow v-enter" style={{ textAlign: 'center', marginBottom: 14, color: 'var(--muted-2)' }}>
-          {t('splash.eyebrow')}
-        </div>
         <h1 className="v-h1 v-enter" style={{
           fontSize: 38, textAlign: 'center', whiteSpace: 'pre-line',
           margin: '0 0 16px', lineHeight: 1.05, letterSpacing: '-0.025em'

@@ -17,7 +17,6 @@ import SplashScreen        from './screens/onboarding/SplashScreen';
 import RoleScreen          from './screens/onboarding/RoleScreen';
 import LanguageScreen      from './screens/onboarding/LanguageScreen';
 import ClassScreen         from './screens/onboarding/ClassScreen';
-import SubjectScreen       from './screens/onboarding/SubjectScreen';
 import GoalScreen          from './screens/onboarding/GoalScreen';
 import NameScreen          from './screens/onboarding/NameScreen';
 import DiagIntroScreen     from './screens/onboarding/DiagIntroScreen';
@@ -186,7 +185,6 @@ function AppInner() {
           <Route path="/role"                   element={<RoleScreen          go={go} state={state} set={set} />} />
           <Route path="/onb/language"           element={<LanguageScreen      go={go} state={state} set={set} />} />
           <Route path="/onb/class"              element={<ClassScreen         go={go} state={state} set={set} />} />
-          <Route path="/onb/subject"            element={<SubjectScreen       go={go} state={state} set={set} />} />
           <Route path="/onb/goal"               element={<GoalScreen          go={go} state={state} set={set} />} />
           <Route path="/onb/name"               element={<NameScreen          go={go} state={state} set={set} />} />
           <Route path="/onb/diag-intro"         element={<DiagIntroScreen     go={go} state={state} set={set} />} />

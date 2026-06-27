@@ -2,7 +2,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar } from '../../prototype/shared';
-import { scoreDiagnostic, firstPlanTopic, DIAG_RUNGS, type DiagLevelId } from '../../content/diagnostic';
+import { scoreFromSet, classAwarePlanTopic, STATIC_FALLBACK, DIAG_RUNGS, type DiagLevelId, type GenQ } from '../../content/diagnostic';
+import api from '../../api/vidya';
 import type { ScreenProps } from '../../types';
 
 // Fallback copy so every level renders even if a locale key is missing.
@@ -15,7 +16,10 @@ const LEVEL_DEFAULT: Record<DiagLevelId, { label: string; sub: string; tone: str
 
 export default function DiagResultScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation('onboarding2');
-  const outcome = scoreDiagnostic(state);
+  const grade = api.toGrade(state?.classLevel);
+  const diagSet = (Array.isArray(state.diagSet) ? state.diagSet : STATIC_FALLBACK) as GenQ[];
+  const answers = diagSet.map((_, i) => (typeof state[`diag_${i}`] === 'number' ? (state[`diag_${i}`] as number) : null));
+  const outcome = scoreFromSet(diagSet, answers);
   const level = outcome.level;
   const name = state.name || 'there';
   const levelIdx = DIAG_RUNGS.indexOf(level);
@@ -26,7 +30,7 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
   const chapterName = (ch: string) => t(`diagQ.chapters.${ch}`, ch);
 
   const onContinue = () => {
-    const topic = firstPlanTopic(outcome);
+    const topic = classAwarePlanTopic(outcome, grade);
     set && set({ diagLevel: level, diagChapters: outcome.weak, ...(topic ? { planTopicId: topic } : {}) });
     go('first-plan');
   };

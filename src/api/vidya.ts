@@ -82,6 +82,23 @@ export const generateQuiz = ({
     section,
   }).then((d) => d.quiz || []);
 
+// ── Onboarding diagnostic (placement, tuned to class + goal) ──
+export interface DiagnosticQ { area: string; prompt: string; options: string[]; correct_index: number; }
+export interface GenerateDiagnosticArgs {
+  grade?: number;
+  goal?: string;          // understand | practice | tests | mixed
+  language?: Language;
+  num?: number;
+}
+export const generateDiagnostic = ({
+  grade = 6,
+  goal = 'mixed',
+  language = 'English',
+  num = 10,
+}: GenerateDiagnosticArgs): Promise<DiagnosticQ[]> =>
+  post<{ questions?: DiagnosticQ[] }>('/generate-diagnostic', { grade, goal, language, num })
+    .then((d) => d.questions || []);
+
 // ── Explain a wrong answer ───────────────────────────────────
 export interface ExplainMistakeArgs {
   question: string;
@@ -247,6 +264,7 @@ export const updateProfile = ({
 export default {
   ask,
   generateQuiz,
+  generateDiagnostic,
   explainMistake,
   quizFeedback,
   searchVideos,

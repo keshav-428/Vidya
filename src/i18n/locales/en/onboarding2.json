@@ -71,6 +71,7 @@
     "skip": "Skip",
     "questionOf": "Question {{value}} of {{total}}",
     "adapting": "Adapting to you",
+    "building": "Vidya is preparing your diagnostic…",
     "gotItLast": "Got it. Last one done.",
     "gotItNext": "Got it. Next one coming up.",
     "finish": "Finish"

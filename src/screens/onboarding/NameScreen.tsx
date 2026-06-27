@@ -55,7 +55,7 @@ export default function NameScreen({ go, state, set }: ScreenProps) {
   };
   return (
     <OnbShell variant="warm" back={() => go('onb-goal')}
-      progress={{ value: 5, total: 5 }}
+      progress={{ value: 4, total: 4 }}
       onPrimary={onContinue}
       primaryDisabled={!name.trim()}>
       <h1 className="v-h1 v-enter" style={{ fontSize: 30, marginBottom: 8, whiteSpace: 'pre-line' }}>

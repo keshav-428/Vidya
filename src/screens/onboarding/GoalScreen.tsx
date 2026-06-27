@@ -55,8 +55,8 @@ export default function GoalScreen({ go, state, set }: ScreenProps) {
     set({ goal: next as unknown as string });
   };
   return (
-    <OnbShell variant="cool" back={() => go('onb-subject')}
-      progress={{ value: 4, total: 5 }}
+    <OnbShell variant="cool" back={() => go('onb-class')}
+      progress={{ value: 3, total: 4 }}
       onPrimary={() => go('onb-name')}
       primaryDisabled={goals.length === 0}>
       <h1 className="v-h1 v-enter" style={{ fontSize: 30, marginBottom: 8, whiteSpace: 'pre-line' }}>

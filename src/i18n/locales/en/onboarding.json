@@ -2,7 +2,7 @@
   "splash": {
     "eyebrow": "A new way to learn",
     "title": "Learn,\nyour way.",
-    "subtitle": "A patient AI companion. One topic at a time, at your own pace."
+    "subtitle": "Your personal AI tutor — one topic at a time, at your own pace."
   },
   "role": {
     "eyebrow": "Welcome",
@@ -55,13 +55,13 @@
   },
   "diagIntro": {
     "eyebrow": "Let's find where to begin",
-    "title": "Hi {{name}}.\nTwo ways to start.",
-    "subtitle": "Let Vidya find your level — or build your own plan if you already know what you need.",
+    "title": "Hi {{name}}.\nLet's find your level.",
+    "subtitle": "A quick check so Vidya knows exactly where to begin.",
     "recommended": "RECOMMENDED",
     "diagnosticTitle": "Take the diagnostic",
-    "diagnosticDesc": "10–15 questions spanning every chapter. Vidya pinpoints exactly where you're strong and where to begin.",
-    "coversAll": "Covers all chapters",
-    "duration": "~8 min",
+    "diagnosticDesc": "About 10 quick questions across key topics. Vidya pinpoints where you're strong and where to begin.",
+    "coversAll": "Key topics",
+    "duration": "~5 min",
     "startDiagnostic": "Start diagnostic",
     "ownTitle": "I'll build my own plan",
     "ownSub": "Skip the questions — pick your chapters yourself",

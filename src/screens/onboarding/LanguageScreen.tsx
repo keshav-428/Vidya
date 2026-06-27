@@ -100,7 +100,7 @@ export default function LanguageScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation('onboarding');
   return (
     <OnbShell variant="warm" back={() => go('splash')}
-      progress={{ value: 1, total: 5 }}
+      progress={{ value: 1, total: 4 }}
       onPrimary={() => go('onb-class')}
       primaryDisabled={!state.language}>
       <h1 className="v-h1 v-enter" style={{ fontSize: 30, marginBottom: 8, whiteSpace: 'pre-line' }}>

@@ -101,8 +101,8 @@ export default function ClassScreen({ go, state, set }: ScreenProps) {
 
   return (
     <OnbShell variant="cool" back={() => go('onb-language')}
-      progress={{ value: 2, total: 5 }}
-      onPrimary={() => go('onb-subject')}
+      progress={{ value: 2, total: 4 }}
+      onPrimary={() => { set({ subject: 'maths' }); go('onb-goal'); }}
       primaryDisabled={!state.classLevel}>
       <h1 className="v-h1 v-enter" style={{ fontSize: 30, marginBottom: 8, whiteSpace: 'pre-line' }}>
         {t('class.title')}

@@ -4,7 +4,7 @@ import VIcon from '../../prototype/icons';
 import { VTopBar, VSoftBackdrop, VidyaAvatar, VidyaIcon } from '../../prototype/shared';
 import type { ScreenProps } from '../../types';
 
-export default function DiagIntroScreen({ go, state, set }: ScreenProps) {
+export default function DiagIntroScreen({ go, state }: ScreenProps) {
   const { t } = useTranslation('onboarding');
   const name = state.name || 'there';
   return (
@@ -34,7 +34,6 @@ export default function DiagIntroScreen({ go, state, set }: ScreenProps) {
                 <VidyaIcon size={40} />
                 <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 20, fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t('diagIntro.diagnosticTitle')}</div>
               </div>
-              <div className="v-pill" style={{ background: 'var(--indigo)', color: '#fff', fontWeight: 700, fontSize: 9.5, letterSpacing: '0.07em', flexShrink: 0 }}>{t('diagIntro.recommended')}</div>
             </div>
             <p style={{ fontFamily: 'Inter', fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.5, margin: '0 0 14px' }}>
               {t('diagIntro.diagnosticDesc')}
@@ -48,18 +47,6 @@ export default function DiagIntroScreen({ go, state, set }: ScreenProps) {
             <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, letterSpacing: '0.02em', color: 'var(--indigo)' }}>{t('diagIntro.startDiagnostic')}</span>
             <VIcon name="arrow-right" size={16} color="var(--indigo)" />
           </div>
-        </div>
-
-        {/* Journey B — build own plan */}
-        <div onClick={() => { set({ ownPlan: true, coachStep: 0 }); if (state?.userId) { go('home'); } else { set({ afterAuth: 'home' }); go('save-progress'); } }} className="v-card v-enter v-tap" style={{ padding: '17px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 13, background: 'var(--bg-warm)', border: '1px solid var(--border-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <VIcon name="edit" size={16} color="var(--ink)" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, color: 'var(--ink)' }}>{t('diagIntro.ownTitle')}</div>
-            <div style={{ fontSize: 12.5, color: 'var(--muted-2)', marginTop: 2, lineHeight: 1.4 }}>{t('diagIntro.ownSub')}</div>
-          </div>
-          <VIcon name="chevron-right" size={16} color="var(--muted-2)" />
         </div>
 
         <div style={{ flex: 1, minHeight: 18 }} />

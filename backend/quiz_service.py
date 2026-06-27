@@ -40,6 +40,63 @@ DIFFICULTY_INSTRUCTIONS = {
     ),
 }
 
+# Onboarding diagnostic — placement quiz tuned to the student's goal. There is NO
+# performance history at onboarding, so it adapts only to class + goal.
+GOAL_FLAVOR = {
+    "understand": "The student wants to UNDERSTAND CONCEPTS. Favor conceptual questions "
+                  "('which statement is true?', 'why does this work?', spotting misconceptions) "
+                  "over heavy computation.",
+    "practice":   "The student wants more PRACTICE. Favor direct computation and application "
+                  "questions they can solve step by step.",
+    "tests":      "The student is PREPARING FOR TESTS. Use exam-style questions, slightly harder, "
+                  "with plausible distractors and broader coverage.",
+    "mixed":      "Keep a balanced mix of conceptual and computational questions for a fair placement.",
+}
+
+def generate_diagnostic(grade: int, goal: str = "mixed", language: str = "English", num: int = 10):
+    """
+    One-shot onboarding placement diagnostic: ~`num` MCQs spanning the key strands of
+    CBSE Class {grade} maths, flavored by the student's goal. Each question is tagged
+    with an `area` so the result can map weak areas → chapters. No KB retrieval (broad
+    sweep). Returns {"questions": [{area, prompt, options[4], correct_index}]}.
+    """
+    flavor = GOAL_FLAVOR.get((goal or "mixed").lower(), GOAL_FLAVOR["mixed"])
+    prompt = f"""You are an expert CBSE Mathematics teacher building a SHORT placement
+diagnostic for a Class {grade} student (start of the year, no prior data).
+
+{flavor}
+
+{STYLE_GUIDE}
+
+Write EXACTLY {num} multiple-choice questions that SAMPLE the main strands of the CBSE
+Class {grade} Maths syllabus (e.g. Numbers, Fractions, Decimals, Integers, Algebra,
+Geometry, Mensuration, Data Handling — choose the ones appropriate for Class {grade}).
+Spread them across DIFFERENT strands (about 1-2 per strand); do not over-test one strand.
+Each question must have exactly 4 options with exactly one correct answer.
+Language: write all question text and options {lang_name(language)}. {lang_instruction(language)}
+
+Return ONLY a valid JSON object:
+{{
+  "questions": [
+    {{ "area": "one of the strand names above", "prompt": "the question",
+       "options": ["A","B","C","D"], "correct_index": 0 }}
+  ]
+}}"""
+    try:
+        response = gen_client.models.generate_content(
+            model=GEN_MODEL, contents=prompt,
+            config={"response_mime_type": "application/json"},
+        )
+        data = json.loads(response.text)
+        qs = data.get("questions", data if isinstance(data, list) else [])
+        # keep only well-formed questions
+        clean = [q for q in qs if q.get("prompt") and isinstance(q.get("options"), list)
+                 and len(q["options"]) == 4 and isinstance(q.get("correct_index"), int)]
+        return {"questions": clean[:num]}
+    except Exception as e:
+        print(f"Error in generate_diagnostic: {e}")
+        return {"questions": []}
+
 def generate_quiz(topics: list, grade: int, language: str = "English", focus_points: str = None, difficulty: str = "Medium", chapter_id: str = None, section: str = None):
     """
     Retrieves context for one or more topics and generates a 5-question MCQ quiz.

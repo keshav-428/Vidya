@@ -8,7 +8,6 @@ export const SCREEN_ROUTES = {
   'role': '/role',
   'onb-language': '/onb/language',
   'onb-class': '/onb/class',
-  'onb-subject': '/onb/subject',
   'onb-goal': '/onb/goal',
   'onb-name': '/onb/name',
   'diag-intro': '/onb/diag-intro',

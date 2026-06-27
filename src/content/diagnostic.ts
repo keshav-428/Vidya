@@ -5,6 +5,7 @@
 //  across DiagQ1Screen and DiagResultScreen and drifted apart.)
 // ─────────────────────────────────────────────────────────────
 import type { AppState } from '../types';
+import { classChapters } from './syllabus';
 
 export interface DiagOption { id: string; label: string; }
 export interface DiagQuestion {
@@ -96,4 +97,66 @@ export function firstPlanTopic(outcome: DiagOutcome): string | null {
     if (DIAG_CHAPTER_TOPIC[ch]) return DIAG_CHAPTER_TOPIC[ch];
   }
   return null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  LLM-generated diagnostic (class- + goal-aware). The questions are
+//  generated at runtime (see api.generateDiagnostic); these helpers score
+//  that set and seed the first plan with a class-correct chapter id.
+// ─────────────────────────────────────────────────────────────
+export interface GenQ { area: string; prompt: string; options: string[]; correct_index: number; }
+
+/** Static fallback set (normalized to the generated shape) if generation fails. */
+export const STATIC_FALLBACK: GenQ[] = DIAG_QUESTIONS.map((q) => ({
+  area: q.chapter,
+  prompt: q.prompt,
+  options: q.options.map((o) => o.label),
+  correct_index: Math.max(0, q.options.findIndex((o) => o.id === q.correctId)),
+}));
+
+/** Score a generated set against the picked option indices (null = unanswered). */
+export function scoreFromSet(questions: GenQ[], answers: (number | null | undefined)[]): DiagOutcome {
+  let correct = 0, attempted = 0;
+  const tally = new Map<string, { correct: number; total: number }>();
+  questions.forEach((q, i) => {
+    const c = tally.get(q.area) || { correct: 0, total: 0 };
+    c.total += 1;
+    const a = answers[i];
+    if (a != null) {
+      attempted += 1;
+      if (a === q.correct_index) { correct += 1; c.correct += 1; }
+    }
+    tally.set(q.area, c);
+  });
+  const perChapter: ChapterScore[] = [...tally.entries()].map(([chapter, c]) => ({
+    chapter, correct: c.correct, total: c.total, ratio: c.total ? c.correct / c.total : 0,
+  }));
+  const ratio = attempted ? correct / attempted : 0;
+  const strong = perChapter.filter((c) => c.ratio >= 0.7).map((c) => c.chapter);
+  const weak = perChapter.filter((c) => c.ratio < 0.5).sort((a, b) => a.ratio - b.ratio).map((c) => c.chapter);
+  return { correct, attempted, total: questions.length, ratio, level: levelFor(ratio), perChapter, strong, weak };
+}
+
+// Keywords that map a diagnostic "area" to a chapter title in any class.
+const AREA_KEYWORDS: Record<string, string[]> = {
+  Numbers: ['number', 'large number', 'prime', 'playing with'],
+  Fractions: ['fraction'],
+  Decimals: ['decimal', 'point'],
+  Integers: ['integer', 'zero', 'negative'],
+  Algebra: ['algebra', 'expression', 'letter', 'equation', 'unknown'],
+  Geometry: ['line', 'angle', 'triangle', 'geometr', 'shape', 'symmetry', 'quadrilateral', 'construction'],
+  Mensuration: ['perimeter', 'area', 'mensuration'],
+  Data: ['data', 'graph', 'handling'],
+};
+
+/** Class-correct chapter id (g{grade}-…) to seed the plan: weakest matched area, else chapter 1. */
+export function classAwarePlanTopic(outcome: DiagOutcome, grade: number): string | null {
+  const chs = classChapters(grade);
+  if (!chs.length) return null;
+  for (const area of outcome.weak) {
+    const kws = AREA_KEYWORDS[area] || [area.toLowerCase()];
+    const match = chs.find((c) => kws.some((k) => c.title.toLowerCase().includes(k)));
+    if (match) return match.id;
+  }
+  return chs[0].id;
 }
