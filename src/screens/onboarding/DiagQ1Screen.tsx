@@ -126,37 +126,37 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
   return (
     <VSoftBackdrop variant={idx % 2 ? 'warm' : 'cool'}>
       <VTopBar showBack onBack={goPrev} transparent />
-      <div style={{ padding: '72px 22px 32px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+      <div style={{ padding: '48px 18px 20px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         {/* current area/subtopic pills */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           {!isDrill && (q as GenQ).area && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--indigo)', color: '#fff' }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 9999, background: 'var(--indigo)', color: '#fff' }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.03em' }}>
                 {t(`diagQ.chapters.${(q as GenQ).area}`, (q as GenQ).area)}
               </span>
             </div>
           )}
           {('subtopic' in q && (q as DiagnosticDrillQ).subtopic) && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff' }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff' }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.03em' }}>
                 Subtopic: {(q as DiagnosticDrillQ).subtopic}
               </span>
             </div>
           )}
         </div>
-        <div className="v-progress" style={{ marginBottom: 12 }}>
+        <div className="v-progress" style={{ marginBottom: 9 }}>
           <div className="v-progress-fill" style={{ width: `${(idx + 1) / total * 100}%` }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28, fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', letterSpacing: '0.05em' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', letterSpacing: '0.05em' }}>
           <span>{t('diagQ.questionOf', { value: idx + 1, total })}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--indigo)', fontWeight: 600 }}>
             <VIcon name="sparkles" size={11} color="var(--indigo)" /> {isDrill ? 'Pinpointing...' : t('diagQ.adapting')}
           </span>
         </div>
 
-        <h1 className="v-h1 v-enter" style={{ fontSize: 26, marginBottom: 24, lineHeight: 1.25 }}>{q.prompt}</h1>
+        <h1 className="v-h1 v-enter" style={{ fontSize: 22, marginBottom: 18, lineHeight: 1.2 }}>{q.prompt}</h1>
 
-        <div className="v-enter" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="v-enter" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {q.options.map((opt: string, oi: number) => {
             const isCorrect = oi === q.correct_index;
             return (
@@ -168,7 +168,7 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
             );
           })}
         </div>
-        <div style={{ flex: 1, minHeight: 24 }} />
+        <div style={{ flex: 1, minHeight: 12 }} />
       </div>
     </VSoftBackdrop>
   );
