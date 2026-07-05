@@ -447,7 +447,7 @@ function VContent({ children, padTop = 80, padBottom = 32, style }: VContentProp
 }
 
 export {
-  VTopBar, VBottomNav, VAskVidyaFAB, VProfileChip, VContextChip,
+  VTopBar, VBottomNav, VProfileChip, VContextChip,
   VidyaVMark, VidyaLockup, VidyaIcon, VidyaMark, VidyaAvatar, VProgressDots,
   VEditorialFooter, VSoftBackdrop, VOptionButton, VSectionHeader, VContent
 };

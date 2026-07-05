@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
-import { VTopBar, VBottomNav, VAskVidyaFAB, VProfileChip, VContextChip, VSectionHeader } from '../../prototype/shared';
+import { VTopBar, VBottomNav, VProfileChip, VContextChip, VSectionHeader } from '../../prototype/shared';
 import { classChapters } from '../../content/syllabus';
 import api from '../../api/vidya';
 import type { ScreenProps } from '../../types';
@@ -161,7 +161,6 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
           </div>
         </div>
       </div>
-      <VAskVidyaFAB context="learn" />
       <VBottomNav active="learn" go={go} />
     </div>
   );

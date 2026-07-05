@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
-import { VTopBar, VBottomNav, VAskVidyaFAB, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
+import { VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
 import { CHAPTERS } from '../../content/chapters';
 import { classChapters } from '../../content/syllabus';
 import type { Subtopic, SyllabusChapter } from '../../content/syllabus';
@@ -352,7 +352,6 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
           </div>
         </div>
       </div>
-      <VAskVidyaFAB context="practice" />
       <VBottomNav active="practice" go={go} />
     </div>
   );

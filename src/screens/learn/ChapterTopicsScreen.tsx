@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
-import { VTopBar, VBottomNav, VAskVidyaFAB, VProfileChip, VSectionHeader } from '../../prototype/shared';
+import { VTopBar, VBottomNav, VProfileChip, VSectionHeader } from '../../prototype/shared';
 import { classChapters, chapterByIdC } from '../../content/syllabus';
 import api from '../../api/vidya';
 import type { ScreenProps, AppState } from '../../types';
@@ -64,7 +64,6 @@ export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
           ))}
         </div>
       </div>
-      <VAskVidyaFAB context="learn" grade={cls} language={state?.language || 'English'} chapterId={chapter.id} />
       <VBottomNav active="learn" go={go} />
     </div>
   );

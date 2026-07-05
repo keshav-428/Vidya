@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { VTopBar, VBottomNav, VAskVidyaFAB, VProfileChip, VContextChip, VSectionHeader } from '../../prototype/shared';
+import { VTopBar, VBottomNav, VProfileChip, VContextChip, VSectionHeader } from '../../prototype/shared';
 import {
   getLog, weeklyStreak, topicStats, masteryBuckets, needsHelpTopics, strongTopics,
   recentPractice, mistakesToRetry, type Bucket,
@@ -172,7 +172,6 @@ export default function ProgressScreen({ go, state, set }: ScreenProps) {
           </>
         )}
       </div>
-      <VAskVidyaFAB context="progress" />
       <VBottomNav active="progress" go={go} />
     </div>
   );
