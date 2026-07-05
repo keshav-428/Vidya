@@ -44,7 +44,7 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
   };
   // Option B — student builds their own; Home's coach guides them through it.
   const buildOwn = () => {
-    set && set({ diagLevel: level, diagChapters: outcome.weak, ownPlan: true, coachStep: 0 });
+    set && set({ diagLevel: level, diagChapters: outcome.weak, ownPlan: true, coachStep: 0, weekPlan: undefined, planTopicId: undefined });
     go('home');
   };
 
