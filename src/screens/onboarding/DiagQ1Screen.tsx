@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar, VOptionButton, VidyaAvatar } from '../../prototype/shared';
-import { STATIC_FALLBACK, type GenQ } from '../../content/diagnostic';
-import api from '../../api/vidya';
+import { STATIC_FALLBACK, scoreFromSet, weakestChapterForDrill, scoreDrillSet, type GenQ } from '../../content/diagnostic';
+import api, { type DiagnosticDrillQ } from '../../api/vidya';
 import type { ScreenProps } from '../../types';
 
 // Pick a single goal flavor from the (multi-select) goal answer.
@@ -18,21 +18,21 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation(['onboarding2', 'common']);
   const grade = api.toGrade(state?.classLevel);
 
-  const [questions, setQuestions] = useState<GenQ[] | null>(null);  // null = generating
+  const [phase, setPhase] = useState<'initial' | 'drill'>('initial');
+  const [initialQuestions, setInitialQuestions] = useState<GenQ[] | null>(null);  // null = generating
+  const [drillQuestions, setDrillQuestions] = useState<DiagnosticDrillQ[] | null>(null);
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const startedRef = useRef(false);
-  const lockRef = useRef(false);   // prevents a double-tap from skipping a question
+  const lockRef = useRef(false);
 
-  // Generate the placement set once, tuned to class + goal (no prior data exists).
-  // startedRef dedupes the StrictMode double-invoke; on any failure we fall back to
-  // the static set so onboarding never hangs.
+  // Generate initial diagnostic (chapter-level, ~10 questions).
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     const apply = (qs: GenQ[]) => {
       const set_ = qs && qs.length >= 4 ? qs : STATIC_FALLBACK;
-      setQuestions(set_);
+      setInitialQuestions(set_);
       set && set({ diagSet: set_ });
     };
     api.generateDiagnostic({ grade, goal: goalFlavor(state?.goal), language: state?.language || 'English' })
@@ -41,45 +41,102 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Generating: show the animated book loader ──
-  if (!questions) {
+  // When initial diagnostic completes, auto-generate drill for the weakest chapter.
+  const onInitialComplete = () => {
+    if (!initialQuestions) return;
+    const answers = initialQuestions.map((_, i) => {
+      const ans = state?.[`diag_${i}`];
+      return typeof ans === 'number' ? ans : null;
+    });
+    const outcome = scoreFromSet(initialQuestions, answers);
+    const weakChapter = weakestChapterForDrill(outcome, grade);
+
+    if (!weakChapter) {
+      go('diag-building');
+      return;
+    }
+
+    setPhase('drill');
+    setIdx(0);
+    setPicked(null);
+    lockRef.current = false;
+
+    api.generateDiagnosticDrill({ chapterId: weakChapter, language: state?.language || 'English', num: 4 })
+      .then((qs: DiagnosticDrillQ[]) => {
+        const drill = (qs && qs.length >= 1 ? qs : []) as DiagnosticDrillQ[];
+        if (drill.length === 0) { go('diag-building'); return; }
+        setDrillQuestions(drill);
+      })
+      .catch(() => go('diag-building'));
+  };
+
+  // ── Loading: show animated book loader ──
+  const isGenerating = (phase === 'initial' && !initialQuestions) || (phase === 'drill' && !drillQuestions);
+  if (isGenerating) {
     return (
       <VSoftBackdrop variant="cool">
-        <VTopBar showBack onBack={() => go('diag-intro')} transparent />
+        <VTopBar showBack onBack={() => (phase === 'drill' ? setPhase('initial') : go('diag-intro'))} transparent />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 32, minHeight: '70vh' }}>
           <VidyaAvatar size={72} animated />
           <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-            {t('diagQ.building')}
+            {phase === 'drill' ? t('diagQ.drilling') || 'Analyzing your answers...' : t('diagQ.building')}
           </div>
         </div>
       </VSoftBackdrop>
     );
   }
 
+  const questions = phase === 'initial' ? initialQuestions : drillQuestions;
+  if (!questions) {
+    go('diag-intro');
+    return null;
+  }
+
   const total = questions.length;
   const q = questions[idx];
   const isLast = idx === total - 1;
+  const isDrill = phase === 'drill';
 
   const answered = picked !== null;
   const restoreFor = (i: number) => {
-    const prev = state[`diag_${i}`];
+    const stateKey = isDrill ? `drill_${i}` : `diag_${i}`;
+    const prev = state?.[stateKey];
     setPicked(typeof prev === 'number' ? prev : null);
     lockRef.current = false;
   };
   const goNext = () => {
-    if (isLast) { go('diag-building'); return; }
-    const n = idx + 1; setIdx(n); restoreFor(n);
+    if (isLast) {
+      if (isDrill) {
+        go('diag-building');
+      } else {
+        onInitialComplete();
+      }
+      return;
+    }
+    const n = idx + 1;
+    setIdx(n);
+    restoreFor(n);
   };
   const goPrev = () => {
-    if (idx === 0) { go('diag-intro'); return; }
-    const p = idx - 1; setIdx(p); restoreFor(p);
+    if (idx === 0) {
+      if (isDrill) {
+        setPhase('initial');
+        setIdx(initialQuestions!.length - 1);
+      } else {
+        go('diag-intro');
+      }
+      return;
+    }
+    const p = idx - 1;
+    setIdx(p);
+    restoreFor(p);
   };
-  // Tap = answer: show green/red feedback, then auto-advance (no Continue button).
   const onPick = (optIdx: number) => {
     if (lockRef.current || answered) return;
     lockRef.current = true;
     setPicked(optIdx);
-    set({ [`diag_${idx}`]: optIdx });
+    const stateKey = isDrill ? `drill_${idx}` : `diag_${idx}`;
+    set && set({ [stateKey]: optIdx });
     setTimeout(goNext, 850);
   };
 
@@ -87,10 +144,12 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
     <VSoftBackdrop variant={idx % 2 ? 'warm' : 'cool'}>
       <VTopBar showBack onBack={goPrev} transparent />
       <div style={{ padding: '72px 22px 32px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-        {/* current area pill */}
+        {/* current area/subtopic pill */}
         <div style={{ display: 'flex', marginBottom: 14 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--indigo)', color: '#fff' }}>
-            <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em' }}>{t(`diagQ.chapters.${q.area}`, q.area)}</span>
+            <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em' }}>
+              {isDrill && 'subtopic' in q ? `Subtopic: ${q.subtopic}` : t(`diagQ.chapters.${(q as GenQ).area}`, (q as GenQ).area)}
+            </span>
           </div>
         </div>
         <div className="v-progress" style={{ marginBottom: 12 }}>
@@ -99,14 +158,14 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28, fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', letterSpacing: '0.05em' }}>
           <span>{t('diagQ.questionOf', { value: idx + 1, total })}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--indigo)', fontWeight: 600 }}>
-            <VIcon name="sparkles" size={11} color="var(--indigo)" /> {t('diagQ.adapting')}
+            <VIcon name="sparkles" size={11} color="var(--indigo)" /> {isDrill ? 'Pinpointing...' : t('diagQ.adapting')}
           </span>
         </div>
 
         <h1 className="v-h1 v-enter" style={{ fontSize: 26, marginBottom: 24, lineHeight: 1.25 }}>{q.prompt}</h1>
 
         <div className="v-enter" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {q.options.map((opt, oi) => {
+          {q.options.map((opt: string, oi: number) => {
             const isCorrect = oi === q.correct_index;
             return (
               <VOptionButton key={oi} label={opt}

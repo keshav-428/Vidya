@@ -278,6 +278,7 @@ export default {
   ask,
   generateQuiz,
   generateDiagnostic,
+  generateDiagnosticDrill,
   explainMistake,
   quizFeedback,
   searchVideos,
