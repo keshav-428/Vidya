@@ -297,3 +297,22 @@ export const classChapters = (cls?: string | number): SyllabusChapter[] =>
 
 export const chapterByIdC = (cls: string | number | undefined, id: string): SyllabusChapter | null =>
   classChapters(cls).find((c) => c.id === id) || null;
+
+// ── Global (grade-agnostic) chapter resolver ──────────────────
+// Chapter ids are class-prefixed (g6-…/g7-…/g8-…) so a single flat lookup
+// works across all classes. This is the ONE source of truth for resolving a
+// plan/session topic id → its title, number, grade and subtopics.
+export interface ChapterRef extends SyllabusChapter { grade: number; }
+
+const ALL_CHAPTERS: ChapterRef[] = Object.entries(SYLLABUS).flatMap(
+  ([g, chs]) => chs.map((c) => ({ ...c, grade: Number(g) })),
+);
+
+export const chapterInfo = (id?: string | null): ChapterRef | null =>
+  (id && ALL_CHAPTERS.find((c) => c.id === id)) || null;
+
+export const chapterTitleById = (id?: string | null): string =>
+  chapterInfo(id)?.title || '';
+
+export const subtopicCount = (id?: string | null): number =>
+  chapterInfo(id)?.subtopics.length || 0;

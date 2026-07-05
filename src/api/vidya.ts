@@ -9,6 +9,7 @@
 //  fallback state. Keep payload shapes in sync with backend/main.py models.
 // ─────────────────────────────────────────────────────────────
 import { chapterTitle } from '../content/chapters';
+import { chapterTitleById } from '../content/syllabus';
 import type {
   AskResponse,
   ConceptResponse,
@@ -39,7 +40,9 @@ export const toGrade = (classLevel?: string | number | null): number => Number(c
 
 // Chapter id (planTopicId) → human topic title used in LLM prompts.
 // Sourced from the canonical NCERT chapter list.
-export const topicTitle = (id?: string | null): string => chapterTitle(id);
+// Resolve a plan/session topic id → title. New ids are class-aware syllabus ids
+// (g6-…); fall back to the legacy catalog for any older saved ids.
+export const topicTitle = (id?: string | null): string => chapterTitleById(id) || chapterTitle(id);
 
 type Language = string;
 
@@ -97,6 +100,16 @@ export const generateDiagnostic = ({
   num = 10,
 }: GenerateDiagnosticArgs): Promise<DiagnosticQ[]> =>
   post<{ questions?: DiagnosticQ[] }>('/generate-diagnostic', { grade, goal, language, num })
+    .then((d) => d.questions || []);
+
+// Subtopic-level drill on the weakest chapter.
+export interface DiagnosticDrillQ extends DiagnosticQ { subtopic?: string; }
+export const generateDiagnosticDrill = ({
+  chapterId,
+  language = 'English',
+  num = 4,
+}: { chapterId: string; language?: string; num?: number }): Promise<DiagnosticDrillQ[]> =>
+  post<{ questions?: DiagnosticDrillQ[] }>('/generate-diagnostic-drill', { chapter_id: chapterId, language, num })
     .then((d) => d.questions || []);
 
 // ── Explain a wrong answer ───────────────────────────────────

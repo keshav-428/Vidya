@@ -53,11 +53,16 @@
     },
     "eyebrow": "Your starting level",
     "title": "Nice work, {{name}}.",
-    "subtitle": "Here's where you are right now. This isn't a grade — it's just our starting point.",
+    "subtitle": "Not a grade — just where we'll begin.",
+    "strongIn": "Strong in",
+    "startWith": "Let's start with",
     "classSubject": "Class {{classLevel}} · Mathematics",
     "whatNext": "What happens next",
     "whatNextBody": "We've picked one topic for today. Small, simple, doable.",
-    "seeFirstPlan": "See my first plan"
+    "seeFirstPlan": "See my first plan",
+    "nextEyebrow": "How do you want to start?",
+    "buildForMe": "Build my week plan for me",
+    "buildOwn": "I'll build my own plan"
   },
   "diagQ": {
     "chapters": {

@@ -8,6 +8,8 @@
   "soon": "जल्द",
   "stepOf": "चरण {{value}} / {{total}}",
   "classBoard": "कक्षा {{n}} · {{board}}",
+  "topicsCount_one": "{{count}} विषय",
+  "topicsCount_other": "{{count}} विषय",
   "nav": { "home": "होम", "learn": "सीखें", "practice": "अभ्यास", "progress": "प्रगति" },
   "ask": {
     "title": "विद्या से पूछें",

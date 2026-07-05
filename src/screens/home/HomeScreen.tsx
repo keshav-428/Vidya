@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
 import api from '../../api/vidya';
-import { CHAPTERS, chapterById } from '../../content/chapters';
+import { classChapters, chapterInfo, chapterTitleById, type SyllabusChapter } from '../../content/syllabus';
 import type { ScreenProps, GoFn, ScreenId } from '../../types';
 
 import { WEEK_TOPIC_CATALOG } from '../../content/weekPlan';
@@ -41,15 +41,13 @@ function getWeekDays(): WeekDay[] {
   return days;
 }
 
-// Resolve a week-slot topicId → title. Prefers the canonical NCERT chapters,
-// falls back to the legacy week catalog for any custom-saved plans.
+// Resolve a week-slot topicId → title via the class-aware syllabus,
+// falling back to the legacy week catalog for any older saved plans.
 function weekTopicTitle(id: string): string {
-  const c = CHAPTERS.find((x) => x.id === id);
-  if (c) return c.title;
-  return WEEK_TOPIC_CATALOG[id]?.title || '';
+  return chapterTitleById(id) || WEEK_TOPIC_CATALOG[id]?.title || '';
 }
 
-function buildWeekBannerData(startTopicId: string, savedWeekPlan: unknown): WeekSlot[] {
+function buildWeekBannerData(startTopicId: string, savedWeekPlan: unknown, chapters: SyllabusChapter[]): WeekSlot[] {
   const days = getWeekDays();
   if (Array.isArray(savedWeekPlan) && savedWeekPlan.length === 7) {
     // Today's slot always reflects the current session chapter, so the strip
@@ -62,12 +60,12 @@ function buildWeekBannerData(startTopicId: string, savedWeekPlan: unknown): Week
   }
   // Default week: TODAY = the chosen chapter; other days step through the
   // chapter list relative to today (yesterday = prev chapter, tomorrow = next).
-  const len = CHAPTERS.length;
-  const startIdx = Math.max(0, CHAPTERS.findIndex((c) => c.id === startTopicId));
+  const len = chapters.length;
+  const startIdx = Math.max(0, chapters.findIndex((c) => c.id === startTopicId));
   const todayIdx = days.findIndex((d) => d.isToday);
   return days.map((d, i) => {
     if (!d.isWeekday && !d.isToday) return { ...d, topicId: null, status: 'rest' };
-    const chapter = CHAPTERS[(((startIdx + (i - todayIdx)) % len) + len) % len];
+    const chapter = chapters[(((startIdx + (i - todayIdx)) % len) + len) % len];
     return { ...d, topicId: chapter.id, status: d.isToday ? 'today' : 'upcoming' };
   });
 }
@@ -200,10 +198,11 @@ function WeekBanner({ weekData, go, highlight }: WeekBannerProps) {
 interface NewSessionPickerProps {
   onClose: () => void;
   onStart: (topicId: string) => void;
+  chapters: SyllabusChapter[];
 }
 
-function NewSessionPicker({ onClose, onStart }: NewSessionPickerProps) {
-  const { t } = useTranslation('home');
+function NewSessionPicker({ onClose, onStart, chapters }: NewSessionPickerProps) {
+  const { t } = useTranslation(['home', 'common']);
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
@@ -216,13 +215,13 @@ function NewSessionPicker({ onClose, onStart }: NewSessionPickerProps) {
         </div>
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 22px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 16 }}>
-            {CHAPTERS.map(ch => {
+            {chapters.map(ch => {
               const on = selected === ch.id;
               return (
                 <div key={ch.id} className="v-tap" onClick={() => setSelected(ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, background: on ? 'var(--ink)' : '#fff', border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', transition: 'all 150ms ease' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: on ? '#fff' : 'var(--ink)' }}>{ch.title}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: on ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 1 }}>{ch.sub}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: on ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 1 }}>{t('common:topicsCount', { count: ch.subtopics.length })}</div>
                   </div>
                   <div style={{ width: 20, height: 20, borderRadius: '50%', background: on ? 'rgba(255,255,255,0.2)' : 'var(--bg-warm)', border: on ? 'none' : '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
@@ -245,11 +244,12 @@ function NewSessionPicker({ onClose, onStart }: NewSessionPickerProps) {
 interface VivaPickerProps {
   onClose: () => void;
   onStart: (chapters: string[]) => void;
+  chapters: SyllabusChapter[];
 }
 
-function VivaPicker({ onClose, onStart }: VivaPickerProps) {
-  const { t } = useTranslation('home');
-  const [selected, setSelected] = useState<string[]>(['fractions']);
+function VivaPicker({ onClose, onStart, chapters }: VivaPickerProps) {
+  const { t } = useTranslation(['home', 'common']);
+  const [selected, setSelected] = useState<string[]>(chapters[0] ? [chapters[0].id] : []);
   const toggle = (id: string) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
@@ -262,13 +262,13 @@ function VivaPicker({ onClose, onStart }: VivaPickerProps) {
         </div>
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 22px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 16 }}>
-            {CHAPTERS.map(ch => {
+            {chapters.map(ch => {
               const on = selected.includes(ch.id);
               return (
                 <div key={ch.id} className="v-tap" onClick={() => toggle(ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, background: on ? 'var(--ink)' : '#fff', border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', transition: 'all 150ms ease' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: on ? '#fff' : 'var(--ink)' }}>{ch.title}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: on ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 1 }}>{ch.sub}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: on ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 1 }}>{t('common:topicsCount', { count: ch.subtopics.length })}</div>
                   </div>
                   <div style={{ width: 20, height: 20, borderRadius: '50%', background: on ? 'rgba(255,255,255,0.2)' : 'var(--bg-warm)', border: on ? 'none' : '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
@@ -292,14 +292,16 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation(['home', 'common']);
   // A user "has a plan" once they've picked a chapter / built a week plan.
   // Until then the home is a clean empty state — no defaulted session.
+  const grade = api.toGrade(state?.classLevel);
+  const chapters = classChapters(grade);
   const hasPlan = Boolean(state?.planTopicId || state?.weekPlan);
-  const topicId = state?.planTopicId || 'fractions';
-  const topic = chapterById(topicId);
+  const topicId = state?.planTopicId || chapters[0]?.id || '';
+  const topicTitleStr = chapterInfo(topicId)?.title || api.topicTitle(topicId);
 
   const todayStr = new Date().toDateString();
   const sessionStep = state.sessionDate === todayStr ? (state.sessionStep || 0) : 0;
 
-  const weekData = buildWeekBannerData(topicId, state?.weekPlan);
+  const weekData = buildWeekBannerData(topicId, state?.weekPlan, chapters);
 
   const coachStep = state?.ownPlan && (state?.coachStep ?? 0) < 2 ? (state?.coachStep ?? 0) : undefined;
   const handleCoachAction = (step: number) => {
@@ -318,22 +320,6 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [vivaOpen, setVivaOpen] = useState(false);
 
-  // Personalised daily greeting from the LLM (falls back to static line).
-  const [greeting, setGreeting] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    api.dailyGreeting({
-      userId: state?.userId || 'local-student',
-      name: state?.name || 'there',
-      grade: api.toGrade(state?.classLevel),
-      language: state?.language || 'English',
-    })
-      .then((b) => { if (alive && b) setGreeting(typeof b === 'string' ? b : ((b as { text?: string }).text || '')); })
-      .catch(() => {});
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const STEPS: { id: string; label: string; sub: string; screen: ScreenId }[] = [
     { id: 'concept', label: t('steps.concept.label'), sub: t('steps.concept.sub'), screen: 'learn-concept' },
     { id: 'quiz', label: t('steps.quiz.label'), sub: t('steps.quiz.sub'), screen: 'navigable-quiz' },
@@ -351,7 +337,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
             {t('greeting', { name: state.name || 'there' })}
           </div>
           <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'var(--muted)', marginTop: 3, lineHeight: 1.5 }}>
-            {allDone ? t('sessionComplete') : (greeting || t('ready'))}
+            {allDone ? t('sessionComplete') : t('ready')}
           </div>
         </div>
 
@@ -380,7 +366,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
 
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div className="v-tap" onClick={() => setNewSessionOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'Inter', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted-2)', cursor: 'default' }}>
-            {t('today', { topic: topic.title })}
+            {t('today', { topic: topicTitleStr })}
             <VIcon name="chevron-right" size={12} color="var(--indigo)" />
           </div>
           <div className="v-tap" onClick={() => setNewSessionOpen(true)} style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'var(--indigo)', cursor: 'default' }}>
@@ -438,7 +424,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
                           {t('upNext', { label: step.label })}
                         </div>
                         <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', marginBottom: 3 }}>
-                          {topic.title}
+                          {topicTitleStr}
                         </div>
                         <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{step.sub}</div>
                       </div>
@@ -489,6 +475,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
 
       {newSessionOpen && (
         <NewSessionPicker
+          chapters={chapters}
           onClose={() => setNewSessionOpen(false)}
           onStart={(topicId) => {
             setNewSessionOpen(false);
@@ -499,6 +486,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
       )}
       {vivaOpen && (
         <VivaPicker
+          chapters={chapters}
           onClose={() => setVivaOpen(false)}
           onStart={(chapters) => {
             setVivaOpen(false);

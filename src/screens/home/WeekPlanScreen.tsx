@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
-import { CHAPTERS } from '../../content/chapters';
+import { classChapters, chapterTitleById, subtopicCount, type SyllabusChapter } from '../../content/syllabus';
 import { WEEK_TOPIC_CATALOG, type TopicInfo } from '../../content/weekPlan';
+import api from '../../api/vidya';
 import type { ScreenProps, AppState } from '../../types';
 
 const DEFAULT_MINS = 15;
@@ -21,11 +22,11 @@ interface PlanDay {
   status: string;
 }
 
-// Resolve a day's topicId → display info. Canonical NCERT chapters first,
-// legacy week catalog as a fallback for any old saved plans.
+// Resolve a day's topicId → display info via the class-aware syllabus,
+// falling back to the legacy week catalog for any old saved plans.
 function topicInfo(id: string): TopicInfo {
-  const c = CHAPTERS.find((x) => x.id === id);
-  if (c) return { title: c.title, sub: c.sub, mins: DEFAULT_MINS };
+  const title = chapterTitleById(id);
+  if (title) return { title, sub: '', mins: DEFAULT_MINS };
   const w = WEEK_TOPIC_CATALOG[id];
   if (w) return { title: w.title, sub: w.sub, mins: w.mins };
   return { title: '', sub: '', mins: DEFAULT_MINS };
@@ -119,10 +120,11 @@ interface TopicPickerSheetProps {
   onSelect: (idx: number, id: string) => void;
   onToggleRest: (idx: number) => void;
   onClose: () => void;
+  chapters: SyllabusChapter[];
 }
 
-function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose }: TopicPickerSheetProps) {
-  const { t } = useTranslation('extra');
+function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapters }: TopicPickerSheetProps) {
+  const { t } = useTranslation(['extra', 'common']);
   const isRest = day.status === 'rest';
   const usedTopicId = day.topicId;
 
@@ -176,7 +178,7 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose }: Topi
         {/* scrollable topic list */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '4px 20px 8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {CHAPTERS.map((info) => {
+            {chapters.map((info) => {
               const id = info.id;
               const isCurrent = id === usedTopicId;
               return (
@@ -190,7 +192,7 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose }: Topi
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 15, fontWeight: 700, color: isCurrent ? '#fff' : 'var(--ink)', lineHeight: 1.2 }}>{info.title}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: isCurrent ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 2 }}>{t('weekPlan.sheet.topicMeta', { sub: info.sub, mins: DEFAULT_MINS })}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: isCurrent ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 2 }}>{t('common:topicsCount', { count: info.subtopics.length })}</div>
                   </div>
                   {isCurrent
                     ? <VIcon name="check" size={14} color="#fff" strokeWidth={2.5} />
@@ -210,7 +212,8 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose }: Topi
 }
 
 export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
-  const { t } = useTranslation('extra');
+  const { t } = useTranslation(['extra', 'common']);
+  const chapters = classChapters(api.toGrade(state?.classLevel));
   const initialWeek = ensureWeekPlan(state);
   const [week, setWeek] = useState<PlanDay[]>(initialWeek);
   const [sheetIdx, setSheetIdx] = useState<number | null>(null);
@@ -306,7 +309,7 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
                   ) : (
                     <>
                       <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, letterSpacing: '-0.005em', color: darkToday ? '#fff' : 'var(--ink)' }}>{info?.title}</div>
-                      <div style={{ fontSize: 11.5, marginTop: 2, color: darkToday ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)' }}>{t('weekPlan.sheet.topicMeta', { sub: info?.sub, mins: d.mins })}</div>
+                      <div style={{ fontSize: 11.5, marginTop: 2, color: darkToday ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)' }}>{t('common:topicsCount', { count: subtopicCount(d.topicId) })}</div>
                     </>
                   )}
                 </div>
@@ -337,6 +340,7 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
           onSelect={swapTopic}
           onToggleRest={toggleRest}
           onClose={() => setSheetIdx(null)}
+          chapters={chapters}
         />
       )}
     </div>

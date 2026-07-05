@@ -8,6 +8,8 @@
   "soon": "Soon",
   "stepOf": "Step {{value}} of {{total}}",
   "classBoard": "Class {{n}} · {{board}}",
+  "topicsCount_one": "{{count}} topic",
+  "topicsCount_other": "{{count}} topics",
   "nav": { "home": "Home", "learn": "Learn", "practice": "Practice", "progress": "Progress" },
   "ask": {
     "title": "Ask Vidya",

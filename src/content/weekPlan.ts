@@ -51,3 +51,34 @@ export const WEEK_STACKS: Record<string, string[]> = {
   algebra:        ['algebra-expr', 'equations', 'exponents', 'rational', 'review'],
   geometry:       ['lines-angles', 'triangles', 'perimeter-area', 'prac-geometry', 'review'],
 };
+
+// ─────────────────────────────────────────────────────────────
+//  Auto week-plan builder — turns an ordered list of chapter ids
+//  (e.g. from the diagnostic's weak areas) into a 7-day plan.
+//  Weekdays get topics (cycling through the ids); weekends are free.
+//  Shape matches what WeekPlanScreen + HomeScreen read.
+// ─────────────────────────────────────────────────────────────
+export interface AutoPlanDay {
+  day: string; date: number; month: string; fullDate: Date;
+  weekday: boolean; isToday: boolean;
+  topicId: string | null; mins: number; status: string;
+}
+
+const _DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const _MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+export function buildWeekPlan(topicIds: string[]): AutoPlanDay[] {
+  const today = new Date();
+  const dow = today.getDay();
+  let k = 0;
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - dow + i);
+    const weekday = i > 0 && i < 6;
+    const isToday = i === dow;
+    const base = { day: _DAY[i], date: d.getDate(), month: _MON[d.getMonth()], fullDate: d, weekday, isToday };
+    if (!weekday && !isToday) return { ...base, topicId: null, mins: 0, status: 'rest' };
+    const topicId = topicIds.length ? topicIds[k++ % topicIds.length] : null;
+    return { ...base, topicId, mins: topicId ? 15 : 0, status: isToday ? 'today' : 'upcoming' };
+  });
+}

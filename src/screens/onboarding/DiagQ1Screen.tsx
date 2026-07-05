@@ -21,8 +21,8 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
   const [questions, setQuestions] = useState<GenQ[] | null>(null);  // null = generating
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
-  const [acked, setAcked] = useState(false);
   const startedRef = useRef(false);
+  const lockRef = useRef(false);   // prevents a double-tap from skipping a question
 
   // Generate the placement set once, tuned to class + goal (no prior data exists).
   // startedRef dedupes the StrictMode double-invoke; on any failure we fall back to
@@ -60,10 +60,11 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
   const q = questions[idx];
   const isLast = idx === total - 1;
 
+  const answered = picked !== null;
   const restoreFor = (i: number) => {
     const prev = state[`diag_${i}`];
     setPicked(typeof prev === 'number' ? prev : null);
-    setAcked(false);
+    lockRef.current = false;
   };
   const goNext = () => {
     if (isLast) { go('diag-building'); return; }
@@ -73,11 +74,13 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
     if (idx === 0) { go('diag-intro'); return; }
     const p = idx - 1; setIdx(p); restoreFor(p);
   };
+  // Tap = answer: show green/red feedback, then auto-advance (no Continue button).
   const onPick = (optIdx: number) => {
-    if (acked) return;
+    if (lockRef.current || answered) return;
+    lockRef.current = true;
     setPicked(optIdx);
     set({ [`diag_${idx}`]: optIdx });
-    setTimeout(() => setAcked(true), 140);
+    setTimeout(goNext, 850);
   };
 
   return (
@@ -103,28 +106,18 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
         <h1 className="v-h1 v-enter" style={{ fontSize: 26, marginBottom: 24, lineHeight: 1.25 }}>{q.prompt}</h1>
 
         <div className="v-enter" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {q.options.map((opt, oi) =>
-            <VOptionButton key={oi} label={opt}
-              selected={picked === oi}
-              onClick={() => onPick(oi)} />
-          )}
+          {q.options.map((opt, oi) => {
+            const isCorrect = oi === q.correct_index;
+            return (
+              <VOptionButton key={oi} label={opt}
+                selected={!answered && picked === oi}
+                correct={answered && isCorrect}
+                wrong={answered && picked === oi && !isCorrect}
+                onClick={() => onPick(oi)} />
+            );
+          })}
         </div>
-
-        {acked && (
-          <div className="v-enter-fade" style={{ marginTop: 18, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border-soft)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 9999, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="check" size={12} color="#fff" strokeWidth={2.5} />
-            </div>
-            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, color: 'var(--ink)' }}>
-              {isLast ? t('diagQ.gotItLast') : t('diagQ.gotItNext')}
-            </div>
-          </div>
-        )}
-
         <div style={{ flex: 1, minHeight: 24 }} />
-        <button className="v-btn-primary v-tap" onClick={goNext} disabled={!acked} style={{ opacity: acked ? 1 : 0.4 }}>
-          {isLast ? t('diagQ.finish') : t('common:continue')} <VIcon name="arrow-right" size={14} color="#fff" />
-        </button>
       </div>
     </VSoftBackdrop>
   );
