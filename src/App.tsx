@@ -22,6 +22,8 @@ import NameScreen          from './screens/onboarding/NameScreen';
 import DiagIntroScreen     from './screens/onboarding/DiagIntroScreen';
 import BuildPlanScreen     from './screens/onboarding/BuildPlanScreen';
 import DiagQ1Screen        from './screens/onboarding/DiagQ1Screen';
+import DiagSummaryScreen   from './screens/onboarding/DiagSummaryScreen';
+import DiagDrillScreen     from './screens/onboarding/DiagDrillScreen';
 import DiagBuildingScreen  from './screens/onboarding/DiagBuildingScreen';
 import DiagResultScreen    from './screens/onboarding/DiagResultScreen';
 import FirstPlanScreen     from './screens/onboarding/FirstPlanScreen';
@@ -190,6 +192,8 @@ function AppInner() {
           <Route path="/onb/diag-intro"         element={<DiagIntroScreen     go={go} state={state} set={set} />} />
           <Route path="/onb/build-plan"         element={<BuildPlanScreen     go={go} state={state} set={set} />} />
           <Route path="/onb/diag-q1"            element={<DiagQ1Screen        go={go} state={state} set={set} />} />
+          <Route path="/onb/diag-summary"       element={<DiagSummaryScreen   go={go} state={state} set={set} />} />
+          <Route path="/onb/diag-drill"         element={<DiagDrillScreen     go={go} state={state} set={set} />} />
           <Route path="/onb/diag-building"      element={<DiagBuildingScreen  go={go} state={state} set={set} />} />
           <Route path="/onb/diag-result"        element={<DiagResultScreen    go={go} state={state} set={set} />} />
           <Route path="/onb/first-plan"         element={<FirstPlanScreen     go={go} state={state} set={set} />} />

@@ -102,8 +102,9 @@ def generate_diagnostic(grade: int, goal: str = "mixed", language: str = "Englis
     """
     One-shot onboarding placement diagnostic: ~`num` MCQs spanning the key strands of
     CBSE Class {grade} maths, flavored by the student's goal. Each question is tagged
-    with an `area` so the result can map weak areas → chapters. No KB retrieval (broad
-    sweep). Returns {"questions": [{area, prompt, options[4], correct_index}]}.
+    with both an `area` (strand) and a `subtopic` (specific skill) so the result can
+    map weak areas → chapters and weak subtopics → drills. Returns
+    {"questions": [{area, subtopic, prompt, options[4], correct_index}]}.
     """
     flavor = GOAL_FLAVOR.get((goal or "mixed").lower(), GOAL_FLAVOR["mixed"])
     prompt = f"""You are an expert CBSE Mathematics teacher building a SHORT placement
@@ -118,13 +119,19 @@ Class {grade} Maths syllabus (e.g. Numbers, Fractions, Decimals, Integers, Algeb
 Geometry, Mensuration, Data Handling — choose the ones appropriate for Class {grade}).
 Spread them across DIFFERENT strands (about 1-2 per strand); do not over-test one strand.
 Each question must have exactly 4 options with exactly one correct answer.
+
+IMPORTANT: For EACH question, also identify the specific SUBTOPIC it tests. For example:
+- Area = "Integers", Subtopic = "Addition of Negative Numbers"
+- Area = "Fractions", Subtopic = "Simplifying Fractions"
+- Area = "Geometry", Subtopic = "Types of Angles"
+
 Language: write all question text and options {lang_name(language)}. {lang_instruction(language)}
 
 Return ONLY a valid JSON object:
 {{
   "questions": [
-    {{ "area": "one of the strand names above", "prompt": "the question",
-       "options": ["A","B","C","D"], "correct_index": 0 }}
+    {{ "area": "one of the strand names above", "subtopic": "specific skill tested",
+       "prompt": "the question", "options": ["A","B","C","D"], "correct_index": 0 }}
   ]
 }}"""
     try:

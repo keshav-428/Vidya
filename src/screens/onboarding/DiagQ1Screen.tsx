@@ -41,7 +41,7 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When initial diagnostic completes, auto-generate drill for the weakest chapter.
+  // When initial diagnostic completes, go to summary screen to show findings.
   const onInitialComplete = () => {
     if (!initialQuestions) return;
     const answers = initialQuestions.map((_, i) => {
@@ -49,25 +49,8 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
       return typeof ans === 'number' ? ans : null;
     });
     const outcome = scoreFromSet(initialQuestions, answers);
-    const weakChapter = weakestChapterForDrill(outcome, grade);
-
-    if (!weakChapter) {
-      go('diag-building');
-      return;
-    }
-
-    setPhase('drill');
-    setIdx(0);
-    setPicked(null);
-    lockRef.current = false;
-
-    api.generateDiagnosticDrill({ chapterId: weakChapter, language: state?.language || 'English', num: 4 })
-      .then((qs: DiagnosticDrillQ[]) => {
-        const drill = (qs && qs.length >= 1 ? qs : []) as DiagnosticDrillQ[];
-        if (drill.length === 0) { go('diag-building'); return; }
-        setDrillQuestions(drill);
-      })
-      .catch(() => go('diag-building'));
+    set && set({ diagOutcome: outcome });
+    go('diag-summary');
   };
 
   // ── Loading: show animated book loader ──
@@ -144,13 +127,22 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
     <VSoftBackdrop variant={idx % 2 ? 'warm' : 'cool'}>
       <VTopBar showBack onBack={goPrev} transparent />
       <div style={{ padding: '72px 22px 32px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-        {/* current area/subtopic pill */}
-        <div style={{ display: 'flex', marginBottom: 14 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--indigo)', color: '#fff' }}>
-            <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em' }}>
-              {isDrill && 'subtopic' in q ? `Subtopic: ${q.subtopic}` : t(`diagQ.chapters.${(q as GenQ).area}`, (q as GenQ).area)}
-            </span>
-          </div>
+        {/* current area/subtopic pills */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+          {!isDrill && (q as GenQ).area && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--indigo)', color: '#fff' }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em' }}>
+                {t(`diagQ.chapters.${(q as GenQ).area}`, (q as GenQ).area)}
+              </span>
+            </div>
+          )}
+          {('subtopic' in q && (q as DiagnosticDrillQ).subtopic) && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff' }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em' }}>
+                Subtopic: {(q as DiagnosticDrillQ).subtopic}
+              </span>
+            </div>
+          )}
         </div>
         <div className="v-progress" style={{ marginBottom: 12 }}>
           <div className="v-progress-fill" style={{ width: `${(idx + 1) / total * 100}%` }} />
