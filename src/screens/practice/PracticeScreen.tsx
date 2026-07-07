@@ -248,13 +248,6 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
         onChange={onPhotos} style={{ display: 'none' }} />
       <div style={{ padding: '72px 22px 140px' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <VidyaAvatar size={36} status={false} />
-          <div className="v-eyebrow" style={{ color: 'var(--muted-2)' }}>
-            {t('practice.forYou', { name: ((state?.name) || t('practice.you')).toUpperCase() })}
-          </div>
-        </div>
-
         <h1 className="v-h1" style={{ fontSize: 26, marginBottom: 14, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
           {t('practice.heading')}
         </h1>

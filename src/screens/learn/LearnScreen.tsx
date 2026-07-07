@@ -162,56 +162,74 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
       <div style={{ padding: '72px 24px 140px' }}>
         <h1 className="v-h1" style={{ fontSize: 36, marginBottom: 18 }}>{t('screen.title')}</h1>
 
-        <div
-          className="v-tap"
-          onClick={() => { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); }}
-          style={{ background: '#fff', borderRadius: 18, border: '1.5px solid var(--ink)', padding: '12px 14px 12px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 18px rgba(28,25,23,0.06)' }}>
-          <VIcon name="search" size={16} color="var(--muted-2)" />
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => { setQ(e.target.value); if (!focused) setFocused(true); }}
-            onFocus={() => setFocused(true)}
-            onKeyDown={(e) => { if (e.key === 'Enter') submitConcept(); }}
-            placeholder={t('screen.searchPlaceholder')}
-            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontStyle: q ? 'normal' : 'italic', fontSize: 14, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
-          <button
-            onClick={(e) => { e.stopPropagation(); if (q.trim()) submitConcept(); else { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); } }}
-            style={{ background: 'var(--ink)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 32, height: 32, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
-            aria-label="Send">
-            <VIcon name="send" size={13} color="#fff" />
-          </button>
-        </div>
-
-        {/* Photo-upload highlight — compact, tappable, hard to miss. */}
+        {/* Two clear, friendly ways in — a kid immediately gets both. */}
         {!focused && (
-          <div
-            className="v-tap"
-            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14, padding: '6px 12px 6px 8px', borderRadius: 9999, background: '#FFF3EA', border: '1px solid var(--saffron)' }}>
-            <div style={{ width: 20, height: 20, borderRadius: 9999, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="camera" size={11} color="#fff" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
+            {/* Ask a question → opens the typing input */}
+            <div
+              className="v-tap"
+              onClick={() => { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); }}
+              style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <VIcon name="pencil" size={21} color="var(--indigo)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Ask a question</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Type anything you're stuck on</div>
+              </div>
+              <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
             </div>
-            <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#C2410C', letterSpacing: '0.01em' }}>
-              Or take a photo of your classwork
-            </span>
+
+            {/* Take a photo → camera / upload */}
+            <div
+              className="v-tap"
+              onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
+              style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <VIcon name="camera" size={21} color="#fff" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Take a photo</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Snap your classwork and I'll teach it</div>
+              </div>
+              <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
+            </div>
           </div>
         )}
 
         {uploadErr && !focused && (
-          <div style={{ marginBottom: 12, borderRadius: 14, padding: '11px 14px', background: '#FFF7ED', border: '1px solid var(--accent-warn)', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-            <VIcon name="camera" size={14} color="#B45309" />
-            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12, color: '#B45309', lineHeight: 1.45 }}>{uploadErr}</div>
-            <div className="v-tap" onClick={() => setUploadErr(null)} style={{ color: '#B45309', flexShrink: 0 }}><VIcon name="x" size={13} color="#B45309" /></div>
+          <div style={{ marginBottom: 14, borderRadius: 14, padding: '12px 14px', background: 'var(--bg-warm)', border: '1px solid var(--saffron)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <VIcon name="camera" size={15} color="var(--saffron)" />
+            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.45 }}>{uploadErr}</div>
+            <div className="v-tap" onClick={() => setUploadErr(null)} style={{ flexShrink: 0 }}><VIcon name="x" size={14} color="var(--muted-2)" /></div>
           </div>
         )}
 
+        {/* Typing mode — clean input + live results */}
         {focused && (
-          <LearnLiveResults
-            q={q}
-            onPick={(s) => submitConcept(s)}
-            onClose={() => { setFocused(false); setQ(''); }}
-            onBrowse={() => go('concept-library')} />
+          <>
+            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid var(--indigo)', padding: '14px 14px 14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 18px rgba(56,72,168,0.10)' }}>
+              <VIcon name="pencil" size={17} color="var(--indigo)" />
+              <input
+                ref={inputRef}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') submitConcept(); }}
+                placeholder="Type your question…"
+                style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
+              <button
+                onClick={() => { if (q.trim()) submitConcept(); }}
+                style={{ background: 'var(--indigo)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 36, height: 36, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s', flexShrink: 0 }}
+                aria-label="Send">
+                <VIcon name="send" size={14} color="#fff" />
+              </button>
+            </div>
+            <LearnLiveResults
+              q={q}
+              onPick={(s) => submitConcept(s)}
+              onClose={() => { setFocused(false); setQ(''); }}
+              onBrowse={() => go('concept-library')} />
+          </>
         )}
 
         <div style={{ opacity: focused ? 0.35 : 1, transition: 'opacity .2s', marginTop: 12 }}>
