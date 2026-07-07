@@ -2,121 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
-import { CHAPTERS } from '../../content/chapters';
 import { classChapters } from '../../content/syllabus';
 import type { Subtopic, SyllabusChapter } from '../../content/syllabus';
 import api from '../../api/vidya';
 import type { ScreenProps } from '../../types';
-
-interface ConceptSuggestion {
-  t: string;
-  topic: string;
-  keys: string[];
-}
-
-// Search suggestions are the real NCERT chapters.
-const CONCEPTS: ConceptSuggestion[] = CHAPTERS.map((c) => ({
-  t: c.title, topic: c.sub,
-  keys: [c.title.toLowerCase(), ...c.sub.toLowerCase().split(/[ &]+/)],
-}));
-
-interface AskLiveResultsProps {
-  q: string;
-  intent: 'exam' | 'learn' | null;
-  onPick: (q: string) => void;
-  onClose: () => void;
-  onBrowse: () => void;
-}
-
-function AskLiveResults({ q, intent, onPick, onClose, onBrowse }: AskLiveResultsProps) {
-  const { t } = useTranslation(['practice', 'common']);
-  const needle = (q || '').toLowerCase().trim();
-  const matches = needle
-    ? CONCEPTS.filter(c =>
-      c.t.toLowerCase().includes(needle) ||
-      c.topic.toLowerCase().includes(needle) ||
-      c.keys.some(k => needle.includes(k) || k.includes(needle))
-    ).slice(0, 4)
-    : [];
-
-  const hasQuery = needle.length > 0;
-  const examLike = intent === 'exam';
-
-  return (
-    <div className="v-enter-fade" style={{
-      background: '#fff', border: '1px solid var(--border)', borderRadius: 18,
-      marginBottom: 14, marginTop: -2,
-      boxShadow: '0 8px 24px rgba(28,25,23,0.06)',
-      overflow: 'hidden',
-    }}>
-      <div className="v-tap" onClick={() => onPick(q)} style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '14px 16px',
-        background: hasQuery ? (examLike ? 'var(--bg-warm)' : '#FAFAF7') : '#fff',
-        borderBottom: '1px solid var(--border)',
-        opacity: hasQuery ? 1 : 0.5,
-      }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 9999,
-          background: examLike ? 'var(--saffron)' : 'var(--ink)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <VIcon name={examLike ? 'edit' : 'sparkles'} size={14} color="#fff" />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 15, lineHeight: 1.25,
-            letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {hasQuery
-              ? (examLike ? t('practice.askMakeSet', { query: q.trim() }) : t('practice.askVidya', { query: q.trim() }))
-              : t('practice.typeToStart')}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--muted-2)', marginTop: 2 }}>
-            {hasQuery
-              ? (examLike ? t('practice.examConfigHint') : t('practice.studioHint'))
-              : t('practice.exampleHint')}
-          </div>
-        </div>
-        {hasQuery && <VIcon name="arrow-right" size={14} color="var(--muted-2)" />}
-      </div>
-
-      {matches.length > 0 && (
-        <div>
-          <div className="v-eyebrow" style={{ padding: '12px 16px 6px', color: 'var(--muted-2)', fontSize: 9 }}>{t('practice.matchingConcepts')}</div>
-          {matches.map((m, i) => (
-            <div key={m.t} className="v-tap" onClick={() => onPick(m.t)} style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
-              borderTop: i ? '1px solid var(--border-soft)' : 'none',
-            }}>
-              <VIcon name="book" size={15} color="var(--muted-2)" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.2 }}>{m.t}</div>
-                <div style={{ fontSize: 10.5, color: 'var(--muted-2)', marginTop: 1 }}>{m.topic}</div>
-              </div>
-              <VIcon name="chevron-right" size={14} color="var(--muted-2)" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {hasQuery && matches.length === 0 && (
-        <div style={{ padding: '12px 16px', fontSize: 12, color: 'var(--muted-2)', fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif" }}>
-          {t('practice.noSavedConcepts')}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
-        <button onClick={onBrowse} className="v-tap" style={{ background: 'transparent', border: 'none', padding: '4px 6px', fontFamily: 'Inter', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <VIcon name="search" size={12} color="var(--muted)" /> {t('practice.browseAll')}
-        </button>
-        <button onClick={onClose} className="v-tap" style={{ background: 'transparent', border: 'none', padding: '4px 6px', fontFamily: 'Inter', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--muted-2)' }}>
-          {t('practice.cancel')}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 interface SelectedSubtopic {
   chapterId: string;
@@ -136,14 +25,11 @@ function readImageB64(file: File): Promise<string> {
 
 export default function PracticeScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation('practice');
-  const [focused, setFocused] = useState(false);
-  const [q, setQ] = useState('');
   const [practiceTab, setPracticeTab] = useState('quiz');
   const [sel, setSel] = useState<SelectedSubtopic[]>([]);   // selected subtopics: [{ chapterId, section, title }]
   const [expanded, setExpanded] = useState<string[]>([]);   // chapter ids expanded
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
   const cls = api.toGrade(state?.classLevel);
@@ -154,24 +40,8 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- clear-once on mount; `set` is a stable parent closure
   }, []);
 
-  const intentOf = (txt: string): 'exam' | 'learn' | null => {
-    const s = (txt || '').toLowerCase().trim();
-    if (!s) return null;
-    if (/^(test|quiz|practice|give me|question|questions)\b/.test(s)) return 'exam';
-    if (/(test me|quiz me|practice .* problems|practice questions)/.test(s)) return 'exam';
-    return 'learn';
-  };
-
-  const submit = (raw?: string) => {
-    const text = (raw ?? q).trim();
-    if (!text) return;
-    set && set({ askedTopic: text });
-    const dest = intentOf(text) === 'exam' ? 'exam-config' : 'learning-studio';
-    setFocused(false);
-    go(dest);
-  };
-
-  // Photo → identify the concept via vision → practice on that topic.
+  // Photo → identify the concept via vision → start practice on that topic,
+  // respecting the current Quiz/Exam tab.
   const onPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     e.target.value = '';   // allow re-selecting the same file
@@ -186,14 +56,19 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
         setUploadErr(res.summary || "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.");
         return;
       }
-      submit(res.topic.trim());
+      const topic = res.topic.trim();
+      if (practiceTab === 'exam') {
+        set && set({ examTopics: [topic], examScope: null });
+        go('exam-config');
+      } else {
+        set && set({ practiceTopics: [topic], skillId: null });
+        go('navigable-quiz');
+      }
     } catch {
       setUploading(false);
       setUploadErr('Something went wrong reading that photo. Please try again.');
     }
   };
-
-  const suggestions = CHAPTERS.slice(0, 5).map((c) => c.title);
 
   // Subtopic-level multi-select for both quiz and exam.
   const keyOf = (chId: string, section: string) => `${chId}::${section}`;
@@ -252,52 +127,22 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
           {t('practice.heading')}
         </h1>
 
-        {/* Ask a question — always-visible search/chat field (unified with Learn) */}
-        <div style={{ background: '#fff', borderRadius: 18, border: `1.5px solid ${focused ? 'var(--indigo)' : 'var(--border)'}`, padding: '14px 14px 14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, boxShadow: focused ? '0 4px 18px rgba(56,72,168,0.10)' : '0 4px 18px rgba(28,25,23,0.05)', transition: 'border-color .15s, box-shadow .15s' }}>
-          <VIcon name="search" size={18} color={focused ? 'var(--indigo)' : 'var(--muted-2)'} />
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
-            placeholder={t('practice.askPlaceholder')}
-            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
-          <button
-            onClick={() => { if (q.trim()) submit(); else inputRef.current?.focus(); }}
-            style={{ background: 'var(--indigo)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 36, height: 36, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s', flexShrink: 0 }}
-            aria-label="Send">
-            <VIcon name="send" size={14} color="#fff" />
-          </button>
+        {/* Take a photo of classwork → instant practice on that topic */}
+        <div
+          className="v-tap"
+          onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
+          style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
+          <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <VIcon name="camera" size={21} color="#fff" />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Take a photo</div>
+            <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Snap your classwork and I'll make practice for it</div>
+          </div>
+          <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
         </div>
 
-        {focused && (
-          <AskLiveResults
-            q={q}
-            intent={intentOf(q)}
-            onPick={(s) => submit(s)}
-            onClose={() => { setFocused(false); setQ(''); }}
-            onBrowse={() => go('concept-library')} />
-        )}
-
-        {/* Take a photo — the second way in, hidden while typing (unified with Learn) */}
-        {!focused && (
-          <div
-            className="v-tap"
-            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
-            style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
-            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="camera" size={21} color="#fff" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Take a photo</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Snap your classwork and I'll make practice for it</div>
-            </div>
-            <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
-          </div>
-        )}
-
-        {uploadErr && !focused && (
+        {uploadErr && (
           <div style={{ marginBottom: 14, borderRadius: 14, padding: '12px 14px', background: 'var(--bg-warm)', border: '1px solid var(--saffron)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <VIcon name="camera" size={15} color="var(--saffron)" />
             <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.45 }}>{uploadErr}</div>
@@ -305,23 +150,7 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
           </div>
         )}
 
-        <div style={{
-          display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 22,
-          marginLeft: -22, marginRight: -22, padding: '2px 22px 6px',
-          opacity: focused ? 0.35 : 1, transition: 'opacity .2s',
-        }}>
-          {suggestions.map(s => (
-            <div key={s} className="v-tap" onClick={() => submit(s)} style={{
-              flexShrink: 0, background: '#fff', border: '1px solid var(--border)', borderRadius: 9999,
-              padding: '6px 12px', fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 12,
-              color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 5,
-            }}>
-              <VIcon name="sparkles" size={10} color="var(--indigo)" /> {s}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ opacity: focused ? 0.35 : 1, transition: 'opacity .2s' }}>
+        <div>
           <div style={{
             display: 'flex', gap: 6, padding: 4, marginBottom: 18,
             background: '#fff', borderRadius: 9999, border: '1px solid var(--border)',

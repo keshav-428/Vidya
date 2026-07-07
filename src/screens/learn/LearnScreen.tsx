@@ -171,7 +171,7 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
             onChange={(e) => setQ(e.target.value)}
             onFocus={() => setFocused(true)}
             onKeyDown={(e) => { if (e.key === 'Enter') submitConcept(); }}
-            placeholder="Ask a question…"
+            placeholder="Ask a doubt…"
             style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
           <button
             onClick={() => { if (q.trim()) submitConcept(); else inputRef.current?.focus(); }}
