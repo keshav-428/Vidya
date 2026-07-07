@@ -252,65 +252,24 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
           {t('practice.heading')}
         </h1>
 
-        <div
-          className="v-tap"
-          onClick={() => { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); }}
-          style={{
-            background: '#fff', borderRadius: 18, border: '1.5px solid var(--ink)',
-            padding: '12px 14px 12px 16px', marginBottom: 12,
-            display: 'flex', alignItems: 'center', gap: 10,
-            boxShadow: '0 4px 18px rgba(28,25,23,0.06)',
-          }}>
+        {/* Ask a question — always-visible search/chat field (unified with Learn) */}
+        <div style={{ background: '#fff', borderRadius: 18, border: `1.5px solid ${focused ? 'var(--indigo)' : 'var(--border)'}`, padding: '14px 14px 14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, boxShadow: focused ? '0 4px 18px rgba(56,72,168,0.10)' : '0 4px 18px rgba(28,25,23,0.05)', transition: 'border-color .15s, box-shadow .15s' }}>
+          <VIcon name="search" size={18} color={focused ? 'var(--indigo)' : 'var(--muted-2)'} />
           <input
             ref={inputRef}
             value={q}
-            onChange={(e) => { setQ(e.target.value); if (!focused) setFocused(true); }}
+            onChange={(e) => setQ(e.target.value)}
             onFocus={() => setFocused(true)}
             onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
             placeholder={t('practice.askPlaceholder')}
-            style={{
-              flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent',
-              fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontStyle: q ? 'normal' : 'italic',
-              fontSize: 14, color: 'var(--ink)', lineHeight: 1.3, padding: 0,
-            }} />
+            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (q.trim()) submit();
-              else { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); }
-            }}
-            style={{
-              background: 'var(--ink)', opacity: !q.trim() ? 0.35 : 1,
-              border: 'none', width: 32, height: 32, borderRadius: 9999,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'opacity .15s',
-            }}>
-            <VIcon name="send" size={13} color="#fff" />
+            onClick={() => { if (q.trim()) submit(); else inputRef.current?.focus(); }}
+            style={{ background: 'var(--indigo)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 36, height: 36, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s', flexShrink: 0 }}
+            aria-label="Send">
+            <VIcon name="send" size={14} color="#fff" />
           </button>
         </div>
-
-        {/* Photo-upload highlight — compact, tappable, hard to miss. */}
-        {!focused && (
-          <div
-            className="v-tap"
-            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14, padding: '6px 12px 6px 8px', borderRadius: 9999, background: '#FFF3EA', border: '1px solid var(--saffron)' }}>
-            <div style={{ width: 20, height: 20, borderRadius: 9999, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="camera" size={11} color="#fff" />
-            </div>
-            <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#C2410C', letterSpacing: '0.01em' }}>
-              Or take a photo of your classwork
-            </span>
-          </div>
-        )}
-
-        {uploadErr && !focused && (
-          <div style={{ marginBottom: 12, borderRadius: 14, padding: '11px 14px', background: '#FFF7ED', border: '1px solid var(--accent-warn)', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-            <VIcon name="camera" size={14} color="#B45309" />
-            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12, color: '#B45309', lineHeight: 1.45 }}>{uploadErr}</div>
-            <div className="v-tap" onClick={() => setUploadErr(null)} style={{ color: '#B45309', flexShrink: 0 }}><VIcon name="x" size={13} color="#B45309" /></div>
-          </div>
-        )}
 
         {focused && (
           <AskLiveResults
@@ -319,6 +278,31 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
             onPick={(s) => submit(s)}
             onClose={() => { setFocused(false); setQ(''); }}
             onBrowse={() => go('concept-library')} />
+        )}
+
+        {/* Take a photo — the second way in, hidden while typing (unified with Learn) */}
+        {!focused && (
+          <div
+            className="v-tap"
+            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
+            style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="camera" size={21} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Take a photo</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Snap your classwork and I'll make practice for it</div>
+            </div>
+            <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
+          </div>
+        )}
+
+        {uploadErr && !focused && (
+          <div style={{ marginBottom: 14, borderRadius: 14, padding: '12px 14px', background: 'var(--bg-warm)', border: '1px solid var(--saffron)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <VIcon name="camera" size={15} color="var(--saffron)" />
+            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.45 }}>{uploadErr}</div>
+            <div className="v-tap" onClick={() => setUploadErr(null)} style={{ flexShrink: 0 }}><VIcon name="x" size={14} color="var(--muted-2)" /></div>
+          </div>
         )}
 
         <div style={{
