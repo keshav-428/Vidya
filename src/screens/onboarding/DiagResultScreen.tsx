@@ -30,7 +30,7 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
   const tone = LEVEL_DEFAULT[level].tone;
   const chapterName = (ch: string) => t(`diagQ.chapters.${ch}`, ch);
 
-  // Option A — Vidya builds the whole week from the weak areas, lands on Home.
+  // Option A — Vidya builds the whole week from the weak areas, shows plan review screen.
   const buildForMe = () => {
     const ids = classAwareWeakChapters(outcome, grade);
     const plan = buildWeekPlan(ids);
@@ -40,7 +40,7 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       weekPlan: plan, ...(todayTopic ? { planTopicId: todayTopic } : {}),
       ownPlan: false,
     });
-    go('home');
+    go('week-plan');
   };
   // Option B — student builds their own; Home's coach guides them through it.
   const buildOwn = () => {
