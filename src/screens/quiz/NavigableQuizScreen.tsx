@@ -50,14 +50,22 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Resolve topics: subtopic scope → practice picks → fractions sub-skill → session chapter.
+  // Resolve topics: subtopic scope → practice picks → fractions sub-skill → session subtopic → session chapter.
   const staticSkill = (!fromPractice && !quizScope && state?.skillId)
     ? getChapterSkills().find((s) => s.id === state.skillId)
     : null;
+  // Subtopic-wise session: quiz the exact skill today's concept taught.
+  const [sessionSub] = useState<QuizScope | null>(() =>
+    (!fromPractice && !quizScope && !state?.skillId && state?.planSection && state?.planSubtopicTitle)
+      ? { chapterId: state?.planTopicId ? String(state.planTopicId) : null, section: String(state.planSection), topic: String(state.planSubtopicTitle) }
+      : null,
+  );
   const quizTopics: string[] = quizScope
     ? [quizScope.topic]
     : fromPractice && practiceTopics
     ? practiceTopics
+    : sessionSub
+    ? [sessionSub.topic]
     : [staticSkill ? staticSkill.title : api.topicTitle(state?.planTopicId)];
   const topicTitle = quizTopics.length > 1 ? t('navigable.chaptersCount', { count: quizTopics.length }) : quizTopics[0];
   const fallbackQuiz = (staticSkill || getSkill(state?.skillId ?? undefined)).quiz as QuizItem[];
@@ -72,7 +80,7 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
 
   useEffect(() => {
     let alive = true;
-    api.generateQuiz({ topics: quizTopics, grade, language: state?.language || 'English', difficulty: 'Medium', chapterId: quizScope?.chapterId || null, section: quizScope?.section || null })
+    api.generateQuiz({ topics: quizTopics, grade, language: state?.language || 'English', difficulty: 'Medium', chapterId: quizScope?.chapterId || sessionSub?.chapterId || null, section: quizScope?.section || sessionSub?.section || null })
       .then((items) => {
         const mapped = (items || [])
           .filter((it) => it && it.question && Array.isArray(it.options) && it.options.length)

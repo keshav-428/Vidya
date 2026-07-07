@@ -41,6 +41,8 @@ export interface AppState {
   sessionDate?: string;
   sessionDuration?: number | string;
   planTopicId?: string;
+  planSection?: string;         // today's subtopic section (e.g. "1.2"); absent ⇒ chapter-wise
+  planSubtopicTitle?: string;   // today's subtopic title
   weekPlan?: unknown;
   ownPlan?: unknown;
   planMascotSeen?: boolean;

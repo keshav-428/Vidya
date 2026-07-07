@@ -20,6 +20,8 @@ interface WeekDay {
 interface WeekSlot extends Partial<WeekDay> {
   isToday?: boolean;
   topicId?: string | null;
+  section?: string | null;
+  subtopicTitle?: string | null;
   status?: string;
   [key: string]: unknown;
 }
@@ -160,7 +162,7 @@ function WeekBanner({ weekData, go, highlight }: WeekBannerProps) {
           const isToday = d.isToday;
           const isDone = d.status === 'done';
           const isRest = d.status === 'rest';
-          const topicLabel = d.topicId ? weekTopicTitle(d.topicId) : null;
+          const topicLabel = d.subtopicTitle || (d.topicId ? weekTopicTitle(d.topicId) : null);
           return (
             <div key={i} style={{
               flex: isToday ? 2.2 : 1,
@@ -296,7 +298,10 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   const chapters = classChapters(grade);
   const hasPlan = Boolean(state?.planTopicId || state?.weekPlan);
   const topicId = state?.planTopicId || chapters[0]?.id || '';
-  const topicTitleStr = chapterInfo(topicId)?.title || api.topicTitle(topicId);
+  const chapterTitleStr = chapterInfo(topicId)?.title || api.topicTitle(topicId);
+  // Subtopic-wise session: today targets one skill; the chapter is context.
+  const sessionSubtopic = (state?.planSubtopicTitle as string) || null;
+  const topicTitleStr = sessionSubtopic || chapterTitleStr;
 
   const todayStr = new Date().toDateString();
   const sessionStep = state.sessionDate === todayStr ? (state.sessionStep || 0) : 0;
@@ -421,7 +426,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
                     >
                       <div style={{ padding: '16px 18px 13px', background: 'var(--ink)' }}>
                         <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
-                          {t('upNext', { label: step.label })}
+                          {sessionSubtopic ? `${chapterTitleStr} · ${step.label}` : t('upNext', { label: step.label })}
                         </div>
                         <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', marginBottom: 3 }}>
                           {topicTitleStr}
@@ -480,7 +485,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           onStart={(topicId) => {
             setNewSessionOpen(false);
             // Clear any Learn-tab skillId so the session uses the chosen chapter.
-            set({ planTopicId: topicId, skillId: undefined, sessionStep: 0, sessionDate: new Date().toDateString() });
+            set({ planTopicId: topicId, planSection: undefined, planSubtopicTitle: undefined, skillId: undefined, sessionStep: 0, sessionDate: new Date().toDateString() });
           }}
         />
       )}

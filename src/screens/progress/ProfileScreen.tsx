@@ -36,16 +36,13 @@ export default function ProfileScreen({ go, state, set }: ScreenProps) {
     { id: 'social', glyph: '◯', soon: true },
   ];
 
+  // Only wired-up items are shown; inert entries (edit profile, linked tutor,
+  // notifications, subscription, help) are hidden until they do something.
   const items: ProfileMenuItem[] = [
-    { key: 'editProfile', icon: 'user' },
     { key: 'classSubject', icon: 'book', onClick: () => setClassSheet(true),
       value: t('common:classBoard', { n: currentClass, board: 'CBSE' }) },
     { key: 'language', icon: 'globe', onClick: () => setLangSheet(true),
       value: (LANGUAGES.find((l) => l.code === current) || LANGUAGES[0]).native },
-    { key: 'linkedTutor', icon: 'users' },
-    { key: 'notifications', icon: 'bell' },
-    { key: 'subscription', icon: 'sparkles' },
-    { key: 'help', icon: 'lightbulb' },
   ];
 
   const pickLang = (code: string) => { set && set({ language: code }); setLangSheet(false); };

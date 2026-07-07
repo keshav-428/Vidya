@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar } from '../../prototype/shared';
 import { scoreFromSet, classAwareWeakChapters, STATIC_FALLBACK, DIAG_RUNGS, type DiagLevelId, type GenQ } from '../../content/diagnostic';
-import { buildWeekPlan } from '../../content/weekPlan';
+import { buildWeekPlan, type PlanSlot } from '../../content/weekPlan';
+import { classChapters } from '../../content/syllabus';
 import api from '../../api/vidya';
 import type { ScreenProps } from '../../types';
 
@@ -31,13 +32,27 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
   const chapterName = (ch: string) => t(`diagQ.chapters.${ch}`, ch);
 
   // Option A — Vidya builds the whole week from the weak areas, shows plan review screen.
+  // Each weak chapter is expanded into its subtopics so days are subtopic-wise.
   const buildForMe = () => {
     const ids = classAwareWeakChapters(outcome, grade);
-    const plan = buildWeekPlan(ids);
-    const todayTopic = plan.find((d) => d.isToday && d.topicId)?.topicId || ids[0] || null;
+    const chs = classChapters(grade);
+    const slots: PlanSlot[] = [];
+    ids.forEach((id) => {
+      const ch = chs.find((c) => c.id === id);
+      if (ch && ch.subtopics.length) {
+        ch.subtopics.forEach((sub) => slots.push({ chapterId: id, section: sub.num, title: sub.title }));
+      } else {
+        slots.push({ chapterId: id, section: null, title: null });   // coarse fallback
+      }
+    });
+    const plan = buildWeekPlan(slots.length ? slots : ids);
+    const today = plan.find((d) => d.isToday && d.topicId);
     set && set({
       diagLevel: level, diagChapters: outcome.weak,
-      weekPlan: plan, ...(todayTopic ? { planTopicId: todayTopic } : {}),
+      weekPlan: plan,
+      ...(today?.topicId ? { planTopicId: today.topicId } : {}),
+      planSection: today?.section ?? undefined,
+      planSubtopicTitle: today?.subtopicTitle ?? undefined,
       ownPlan: false,
     });
     go('week-plan');

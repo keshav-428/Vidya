@@ -74,11 +74,22 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Priority: asked concept → a fractions sub-skill (rich authored) → session chapter.
+  // Priority: asked concept → a fractions sub-skill (rich authored) → session subtopic → session chapter.
   const staticSkill = (!askedConcept && state?.skillId)
     ? getChapterSkills().find((s) => s.id === state.skillId)
     : null;
-  const topicTitle = askedConcept || (staticSkill ? staticSkill.title : api.topicTitle(state?.planTopicId));
+  // Subtopic-wise session: scope the lesson to today's specific skill.
+  const [sessionSub] = useState(() =>
+    (!askedConcept && !state?.skillId && state?.planSection && state?.planSubtopicTitle)
+      ? {
+          title: String(state.planSubtopicTitle),
+          chapterId: state?.planTopicId ? String(state.planTopicId) : null,
+          section: String(state.planSection),
+        }
+      : null,
+  );
+  const topicTitle = askedConcept
+    || (staticSkill ? staticSkill.title : (sessionSub ? sessionSub.title : api.topicTitle(state?.planTopicId)));
   const grade = api.toGrade(state?.classLevel);
 
   // cards: null = loading; otherwise the array to render.
@@ -93,7 +104,7 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
     // only appears once every card is ready (no blank-then-fill flicker).
     const lang = state?.language || 'English';
     Promise.all([
-      api.generateConcept({ topic: topicTitle, grade, language: lang, chapterId: askedChapterId, section: askedSection })
+      api.generateConcept({ topic: topicTitle, grade, language: lang, chapterId: askedChapterId || sessionSub?.chapterId || null, section: askedSection || sessionSub?.section || null })
         .catch(() => ({} as ConceptResponse)),
       api.realWorld(topicTitle, grade).catch(() => [] as RealWorldUse[]),
       api.searchVideos(topicTitle, grade).catch(() => [] as VideoItem[]),

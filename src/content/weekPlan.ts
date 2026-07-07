@@ -62,12 +62,28 @@ export interface AutoPlanDay {
   day: string; date: number; month: string; fullDate: Date;
   weekday: boolean; isToday: boolean;
   topicId: string | null; mins: number; status: string;
+  // Subtopic-wise scoping: which specific skill this day covers.
+  // section/subtopicTitle are null for legacy chapter-wide days.
+  section?: string | null;
+  subtopicTitle?: string | null;
+}
+
+/** One unit of study for a day — a subtopic within a chapter.
+ *  section/title null ⇒ the whole chapter (coarse fallback). */
+export interface PlanSlot {
+  chapterId: string;
+  section: string | null;
+  title: string | null;
 }
 
 const _DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const _MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-export function buildWeekPlan(topicIds: string[]): AutoPlanDay[] {
+// Accepts subtopic slots (preferred) or bare chapter ids (coarse fallback).
+export function buildWeekPlan(input: PlanSlot[] | string[]): AutoPlanDay[] {
+  const slots: PlanSlot[] = (input as unknown[]).map((it) =>
+    typeof it === 'string' ? { chapterId: it, section: null, title: null } : (it as PlanSlot),
+  );
   const today = new Date();
   const dow = today.getDay();
   let k = 0;
@@ -77,8 +93,15 @@ export function buildWeekPlan(topicIds: string[]): AutoPlanDay[] {
     const weekday = i > 0 && i < 6;
     const isToday = i === dow;
     const base = { day: _DAY[i], date: d.getDate(), month: _MON[d.getMonth()], fullDate: d, weekday, isToday };
-    if (!weekday && !isToday) return { ...base, topicId: null, mins: 0, status: 'rest' };
-    const topicId = topicIds.length ? topicIds[k++ % topicIds.length] : null;
-    return { ...base, topicId, mins: topicId ? 15 : 0, status: isToday ? 'today' : 'upcoming' };
+    if (!weekday && !isToday) return { ...base, topicId: null, section: null, subtopicTitle: null, mins: 0, status: 'rest' };
+    const slot = slots.length ? slots[k++ % slots.length] : null;
+    return {
+      ...base,
+      topicId: slot?.chapterId ?? null,
+      section: slot?.section ?? null,
+      subtopicTitle: slot?.title ?? null,
+      mins: slot ? 15 : 0,
+      status: isToday ? 'today' : 'upcoming',
+    };
   });
 }

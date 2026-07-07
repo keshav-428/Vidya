@@ -18,6 +18,8 @@ interface PlanDay {
   weekday: boolean;
   isToday: boolean;
   topicId: string | null;
+  section?: string | null;
+  subtopicTitle?: string | null;
   mins: number;
   status: string;
 }
@@ -224,14 +226,20 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
     // that runs today matches what the plan says for today.
     const today = next.find((d) => d.isToday && d.topicId);
     const patch: Partial<AppState> = { weekPlan: next };
-    if (today?.topicId) patch.planTopicId = today.topicId;
+    if (today?.topicId) {
+      patch.planTopicId = today.topicId;
+      // Keep today's session scope in sync (subtopic-wise if the slot has one).
+      patch.planSection = today.section ?? undefined;
+      patch.planSubtopicTitle = today.subtopicTitle ?? undefined;
+    }
     set && set(patch);
   };
 
   const swapTopic = (idx: number, topicId: string) => {
     const next = week.map((d, i) => {
       if (i !== idx) return d;
-      return { ...d, topicId, mins: topicInfo(topicId).mins, status: d.isToday ? 'today' : 'upcoming' };
+      // Manually picking a chapter here scopes the day to the whole chapter.
+      return { ...d, topicId, section: null, subtopicTitle: null, mins: topicInfo(topicId).mins, status: d.isToday ? 'today' : 'upcoming' };
     });
     commitWeek(next);
     setSheetIdx(null);
@@ -308,8 +316,8 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
                     </>
                   ) : (
                     <>
-                      <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, letterSpacing: '-0.005em', color: darkToday ? '#fff' : 'var(--ink)' }}>{info?.title}</div>
-                      <div style={{ fontSize: 11.5, marginTop: 2, color: darkToday ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)' }}>{t('common:topicsCount', { count: subtopicCount(d.topicId) })}</div>
+                      <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, letterSpacing: '-0.005em', color: darkToday ? '#fff' : 'var(--ink)' }}>{d.subtopicTitle || info?.title}</div>
+                      <div style={{ fontSize: 11.5, marginTop: 2, color: darkToday ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)' }}>{d.subtopicTitle ? info?.title : t('common:topicsCount', { count: subtopicCount(d.topicId) })}</div>
                     </>
                   )}
                 </div>
