@@ -177,9 +177,9 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
             style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontStyle: q ? 'normal' : 'italic', fontSize: 14, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
           <button
             onClick={(e) => { e.stopPropagation(); setUploadErr(null); photoRef.current?.click(); }}
-            style={{ background: 'transparent', border: 'none', padding: 4, display: 'flex' }}
+            style={{ background: 'var(--saffron)', border: 'none', width: 32, height: 32, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px rgba(248,128,18,0.35)' }}
             aria-label="Snap your notes">
-            <VIcon name="camera" size={16} color="var(--muted)" />
+            <VIcon name="camera" size={15} color="#fff" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); if (q.trim()) submitConcept(); else { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); } }}
@@ -189,11 +189,18 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
           </button>
         </div>
 
-        {/* Photo-upload hint + error (mirrors the camera in the search bar). */}
+        {/* Photo-upload highlight — compact, tappable, hard to miss. */}
         {!focused && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '0 2px', fontFamily: 'Inter', fontSize: 11.5, color: 'var(--muted-2)', lineHeight: 1.4 }}>
-            <VIcon name="camera" size={12} color="var(--muted-2)" />
-            <span>Learned something in class? Tap the camera to snap your notes — I'll build a lesson on it.</span>
+          <div
+            className="v-tap"
+            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14, padding: '6px 12px 6px 8px', borderRadius: 9999, background: '#FFF3EA', border: '1px solid var(--saffron)' }}>
+            <div style={{ width: 20, height: 20, borderRadius: 9999, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="camera" size={11} color="#fff" />
+            </div>
+            <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#C2410C', letterSpacing: '0.01em' }}>
+              Snap class notes → instant lesson
+            </span>
           </div>
         )}
 

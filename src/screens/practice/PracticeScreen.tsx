@@ -280,8 +280,8 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
               fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontStyle: q ? 'normal' : 'italic',
               fontSize: 14, color: 'var(--ink)', lineHeight: 1.3, padding: 0,
             }} />
-          <button onClick={(e) => { e.stopPropagation(); setUploadErr(null); photoRef.current?.click(); }} style={{ background: 'transparent', border: 'none', padding: 4, display: 'flex' }} aria-label="Snap your notes">
-            <VIcon name="camera" size={16} color="var(--muted)" />
+          <button onClick={(e) => { e.stopPropagation(); setUploadErr(null); photoRef.current?.click(); }} style={{ background: 'var(--saffron)', border: 'none', width: 32, height: 32, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px rgba(248,128,18,0.35)' }} aria-label="Snap your notes">
+            <VIcon name="camera" size={15} color="#fff" />
           </button>
           <button
             onClick={(e) => {
@@ -298,6 +298,21 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
             <VIcon name="send" size={13} color="#fff" />
           </button>
         </div>
+
+        {/* Photo-upload highlight — compact, tappable, hard to miss. */}
+        {!focused && (
+          <div
+            className="v-tap"
+            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14, padding: '6px 12px 6px 8px', borderRadius: 9999, background: '#FFF3EA', border: '1px solid var(--saffron)' }}>
+            <div style={{ width: 20, height: 20, borderRadius: 9999, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="camera" size={11} color="#fff" />
+            </div>
+            <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#C2410C', letterSpacing: '0.01em' }}>
+              Snap class notes → practice it
+            </span>
+          </div>
+        )}
 
         {uploadErr && !focused && (
           <div style={{ marginBottom: 12, borderRadius: 14, padding: '11px 14px', background: '#FFF7ED', border: '1px solid var(--accent-warn)', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
