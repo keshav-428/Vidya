@@ -199,7 +199,7 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
               <VIcon name="camera" size={11} color="#fff" />
             </div>
             <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#C2410C', letterSpacing: '0.01em' }}>
-              Snap class notes → instant lesson
+              Take a photo of your classwork to learn it
             </span>
           </div>
         )}
