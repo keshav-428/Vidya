@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
 import api from '../../api/vidya';
-import type { ScreenProps, QuizFeedback } from '../../types';
+import { LEVEL_LABEL, type MasteryLevel } from '../../lib/mastery';
+import type { ScreenProps, QuizFeedback, MasteryDelta } from '../../types';
+
+// Level → accent color for the mastery bar.
+const LEVEL_COLOR: Record<MasteryLevel, string> = {
+  new: 'var(--muted-2)', needshelp: '#B84030', improving: '#B45309', confident: 'var(--indigo)', strong: '#1A7A4A',
+};
+const LEVEL_STEP: MasteryLevel[] = ['needshelp', 'improving', 'confident', 'strong'];
 
 interface QuizMistake {
   question: string;
@@ -72,6 +79,45 @@ export default function SessionAnalysisScreen({ go, state }: ScreenProps) {
             </div>
           </div>
         </div>
+
+        {/* Mastery delta — "you leveled up" on this skill */}
+        {(() => {
+          const d = state?.lastMasteryDelta as MasteryDelta | undefined;
+          if (!d) return null;
+          const to = d.toLevel as MasteryLevel;
+          const color = LEVEL_COLOR[to] || 'var(--indigo)';
+          const activeIdx = LEVEL_STEP.indexOf(to);
+          return (
+            <div className="v-enter v-card" style={{ padding: '16px 18px', background: '#fff', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--muted-2)', marginBottom: 3 }}>
+                    {d.leveledUp ? '↑ Level up' : 'Your level'}
+                  </div>
+                  <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.title}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  {d.leveledUp && d.fromLevel !== d.toLevel && (
+                    <>
+                      <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted-2)' }}>{LEVEL_LABEL[d.fromLevel as MasteryLevel]}</span>
+                      <VIcon name="arrow-right" size={12} color="var(--muted-2)" />
+                    </>
+                  )}
+                  <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color }}>{LEVEL_LABEL[to]}</span>
+                </div>
+              </div>
+              {/* 4-step level bar */}
+              <div style={{ display: 'flex', gap: 4 }}>
+                {LEVEL_STEP.map((lvl, i) => (
+                  <div key={lvl} style={{ flex: 1, height: 6, borderRadius: 9999, background: activeIdx >= 0 && i <= activeIdx ? color : 'var(--border)' }} />
+                ))}
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11.5, color: 'var(--muted-2)', marginTop: 8 }}>
+                {to === 'new' ? 'Keep practising to unlock your level.' : `Mastery ${d.percent}% · based on your recent answers`}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* LLM feedback — loading */}
         {!feedback && (

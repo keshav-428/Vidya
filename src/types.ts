@@ -59,6 +59,7 @@ export interface AppState {
   activityLog?: ActivityEntry[];
   mastery?: MasteryMap;
   masteryMigrated?: boolean;   // one-time seed from legacy activityLog done
+  lastMasteryDelta?: MasteryDelta;
   askedConcept?: string | null;
   askedChapterId?: string | null;
   askedSection?: string | null;
@@ -139,6 +140,16 @@ export interface SkillMastery {
 
 /** skillKey (chapterId or chapterId::section) → mastery. */
 export type MasteryMap = Record<string, SkillMastery>;
+
+/** Before→after mastery change for one skill, shown after a quiz/exam. */
+export interface MasteryDelta {
+  key: string;
+  title: string;
+  fromLevel: string;   // MasteryLevel
+  toLevel: string;     // MasteryLevel
+  percent: number;     // round(ewma*100)
+  leveledUp: boolean;
+}
 
 // ═══ 2. Backend API shapes ═══════════════════════════════════
 

@@ -5,7 +5,7 @@ import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { getSkill, getChapterSkills } from '../../content/fractionsChapter';
 import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
-import { applyResult } from '../../lib/mastery';
+import { applyResult, deltaFor } from '../../lib/mastery';
 import type { ScreenProps, ActivityEntry, MasteryMap } from '../../types';
 
 interface QuizItem { q: string; opts: string[]; correct: number; explanation: string; }
@@ -136,13 +136,17 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
         chapterId: scope?.chapterId || undefined, section: scope?.section ?? null,
         score: finalScore, total: QUIZ.length, mistakes: allMistakes,
       };
+      const oldMap = (state?.mastery as MasteryMap) || {};
+      const newMap = applyResult(oldMap, entry);
+      const delta = deltaFor(oldMap, newMap, entry.chapterId, entry.section, finalTopic);
       set({
         lastQuizScore: finalScore,
         lastQuizTotal: QUIZ.length,
         lastQuizTopic: finalTopic,
         lastQuizMistakes: allMistakes,
         activityLog: appendActivity(state?.activityLog, entry),
-        mastery: applyResult((state?.mastery as MasteryMap) || {}, entry),
+        mastery: newMap,
+        lastMasteryDelta: delta || undefined,
         // Guests get a limited number of free sessions before signing up.
         ...(state?.userId ? {} : { guestSessions: (Number(state?.guestSessions) || 0) + 1 }),
       });

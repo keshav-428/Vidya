@@ -6,7 +6,7 @@
 //  persists + syncs. See docs/mastery-tracking-plan.md.
 // ─────────────────────────────────────────────────────────────
 import { bucketFor, type Bucket } from './progress';
-import type { ActivityEntry, MasteryMap, SkillMastery } from '../types';
+import type { ActivityEntry, MasteryMap, MasteryDelta, SkillMastery } from '../types';
 import type { SyllabusChapter } from '../content/syllabus';
 
 // Tunables (see plan §10).
@@ -15,6 +15,11 @@ export const MIN_EVIDENCE = 5;    // scored questions before a real level shows
 
 /** A mastery level, plus a "just started" state below the evidence gate. */
 export type MasteryLevel = Bucket | 'new';
+
+export const LEVEL_RANK: Record<MasteryLevel, number> = { new: 0, needshelp: 1, improving: 2, confident: 3, strong: 4 };
+export const LEVEL_LABEL: Record<MasteryLevel, string> = {
+  new: 'Just started', needshelp: 'Needs help', improving: 'Improving', confident: 'Confident', strong: 'Strong',
+};
 
 /** Stable aggregation key for a skill. */
 export const skillKey = (chapterId: string, section?: string | null): string =>
@@ -62,6 +67,25 @@ export function applyResult(map: MasteryMap, entry: ActivityEntry): MasteryMap {
       lastSeen: maxIso(prev?.lastSeen, entry.date),
       source,
     },
+  };
+}
+
+/** Before→after change for a skill, to show a "you leveled up" card. Null if
+ *  there's no stable key or no post-result mastery. */
+export function deltaFor(
+  oldMap: MasteryMap, newMap: MasteryMap,
+  chapterId: string | undefined, section: string | null | undefined, title: string,
+): MasteryDelta | null {
+  if (!chapterId) return null;
+  const key = skillKey(chapterId, section);
+  const after = newMap[key];
+  if (!after) return null;
+  const fromLevel = levelFor(oldMap[key]);
+  const toLevel = levelFor(after);
+  return {
+    key, title, fromLevel, toLevel,
+    percent: Math.round(after.ewma * 100),
+    leveledUp: LEVEL_RANK[toLevel] > LEVEL_RANK[fromLevel],
   };
 }
 
