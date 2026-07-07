@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
@@ -71,6 +71,16 @@ function ensureWeekPlan(state: AppState): PlanDay[] {
   return emptyWeekPlan();
 }
 
+// Sessions are subtopic-wise. Any legacy day that only has a chapter is
+// upgraded to that chapter's first subtopic, so every day shows a real skill.
+function upgradeToSubtopics(plan: PlanDay[], chapters: SyllabusChapter[]): PlanDay[] {
+  return plan.map((d) => {
+    if (!d.topicId || d.subtopicTitle) return d;
+    const first = chapters.find((c) => c.id === d.topicId)?.subtopics?.[0];
+    return first ? { ...d, section: first.num, subtopicTitle: first.title } : d;
+  });
+}
+
 function WeekStrip({ week }: { week: PlanDay[] }) {
   const { t } = useTranslation('extra');
   return (
@@ -104,7 +114,7 @@ function WeekStrip({ week }: { week: PlanDay[] }) {
             </div>
             {isToday && info ? (
               <div style={{ fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 11, fontWeight: 600, lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--saffron)', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
-                {info.title}
+                {d.subtopicTitle || info.title}
               </div>
             ) : (
               <div style={{ width: 5, height: 5, borderRadius: 9999, background: isDone ? 'var(--accent-success)' : isRest ? 'transparent' : 'var(--border)', border: isRest ? '1px solid var(--border)' : 'none', boxSizing: 'border-box' }} />
@@ -119,7 +129,7 @@ function WeekStrip({ week }: { week: PlanDay[] }) {
 interface TopicPickerSheetProps {
   day: PlanDay;
   dayIdx: number;
-  onSelect: (idx: number, id: string) => void;
+  onSelect: (idx: number, chapterId: string, section: string, title: string) => void;
   onToggleRest: (idx: number) => void;
   onClose: () => void;
   chapters: SyllabusChapter[];
@@ -129,6 +139,9 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapte
   const { t } = useTranslation(['extra', 'common']);
   const isRest = day.status === 'rest';
   const usedTopicId = day.topicId;
+  const usedSection = day.section;
+  // Open the chapter that owns the current subtopic by default.
+  const [open, setOpen] = useState<string | null>(usedTopicId || null);
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
@@ -161,7 +174,7 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapte
             <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--bg-warm)', borderRadius: 10, border: '1px solid var(--border-soft)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <VIcon name="check-circle" size={13} color="var(--accent-success)" />
               <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted)' }}>
-                {t('weekPlan.sheet.currently')} <strong style={{ color: 'var(--ink)' }}>{topicInfo(usedTopicId).title}</strong>
+                {t('weekPlan.sheet.currently')} <strong style={{ color: 'var(--ink)' }}>{day.subtopicTitle || topicInfo(usedTopicId).title}</strong>
               </span>
             </div>
           )}
@@ -177,29 +190,40 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapte
           </button>
         </div>
 
-        {/* scrollable topic list */}
+        {/* scrollable subtopic list — pick one specific skill for this day */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '4px 20px 8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {chapters.map((info) => {
-              const id = info.id;
-              const isCurrent = id === usedTopicId;
+              const isOpen = open === info.id;
+              const hasCurrent = info.id === usedTopicId;
               return (
-                <div key={id} className="v-tap" onClick={() => !isCurrent && onSelect(dayIdx, id)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                  borderRadius: 14,
-                  background: isCurrent ? 'var(--ink)' : '#fff',
-                  border: isCurrent ? '1.5px solid var(--ink)' : '1px solid var(--border)',
-                  opacity: isCurrent ? 1 : 1,
-                  transition: 'all 120ms ease',
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 15, fontWeight: 700, color: isCurrent ? '#fff' : 'var(--ink)', lineHeight: 1.2 }}>{info.title}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: isCurrent ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 2 }}>{t('common:topicsCount', { count: info.subtopics.length })}</div>
+                <div key={info.id} style={{ borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', background: '#fff' }}>
+                  <div className="v-tap" onClick={() => setOpen(isOpen ? null : info.id)} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                    background: hasCurrent && !isOpen ? 'var(--indigo-air)' : '#fff',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>{info.title}</div>
+                      <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', marginTop: 2 }}>{t('common:topicsCount', { count: info.subtopics.length })}</div>
+                    </div>
+                    <VIcon name={isOpen ? 'chevron-down' : 'chevron-right'} size={14} color="var(--muted-2)" />
                   </div>
-                  {isCurrent
-                    ? <VIcon name="check" size={14} color="#fff" strokeWidth={2.5} />
-                    : <VIcon name="chevron-right" size={13} color="var(--muted-2)" />
-                  }
+                  {isOpen && info.subtopics.map((sub) => {
+                    const isCurrent = hasCurrent && sub.num === usedSection;
+                    return (
+                      <div key={sub.id} className="v-tap" onClick={() => onSelect(dayIdx, info.id, sub.num, sub.title)} style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px 11px 16px',
+                        borderTop: '1px solid var(--border-soft)',
+                        background: isCurrent ? 'var(--ink)' : '#fff',
+                      }}>
+                        <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: isCurrent ? 'rgba(255,255,255,0.6)' : 'var(--muted-2)', minWidth: 28, fontVariantNumeric: 'tabular-nums' }}>{sub.num}</span>
+                        <div style={{ flex: 1, minWidth: 0, fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.25, color: isCurrent ? '#fff' : 'var(--ink)' }}>{sub.title}</div>
+                        {isCurrent
+                          ? <VIcon name="check" size={13} color="#fff" strokeWidth={2.5} />
+                          : <VIcon name="chevron-right" size={12} color="var(--muted-2)" />}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -216,7 +240,8 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapte
 export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation(['extra', 'common']);
   const chapters = classChapters(api.toGrade(state?.classLevel));
-  const initialWeek = ensureWeekPlan(state);
+  const rawWeek = ensureWeekPlan(state);
+  const initialWeek = upgradeToSubtopics(rawWeek, chapters);
   const [week, setWeek] = useState<PlanDay[]>(initialWeek);
   const [sheetIdx, setSheetIdx] = useState<number | null>(null);
 
@@ -235,11 +260,21 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
     set && set(patch);
   };
 
-  const swapTopic = (idx: number, topicId: string) => {
+  // Persist a legacy → subtopic upgrade once, so Home reflects it immediately.
+  const upgradedRef = useRef(false);
+  useEffect(() => {
+    if (!upgradedRef.current && JSON.stringify(initialWeek) !== JSON.stringify(rawWeek)) {
+      upgradedRef.current = true;
+      commitWeek(initialWeek);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pick a specific subtopic for a day (subtopic-wise sessions).
+  const swapTopic = (idx: number, chapterId: string, section: string, title: string) => {
     const next = week.map((d, i) => {
       if (i !== idx) return d;
-      // Manually picking a chapter here scopes the day to the whole chapter.
-      return { ...d, topicId, section: null, subtopicTitle: null, mins: topicInfo(topicId).mins, status: d.isToday ? 'today' : 'upcoming' };
+      return { ...d, topicId: chapterId, section, subtopicTitle: title, mins: DEFAULT_MINS, status: d.isToday ? 'today' : 'upcoming' };
     });
     commitWeek(next);
     setSheetIdx(null);
