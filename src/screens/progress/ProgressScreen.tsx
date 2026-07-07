@@ -1,11 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import VIcon from '../../prototype/icons';
 import { VTopBar, VBottomNav, VProfileChip, VContextChip, VSectionHeader } from '../../prototype/shared';
 import {
   getLog, weeklyStreak, topicStats, masteryBuckets, needsHelpTopics, strongTopics,
   recentPractice, mistakesToRetry, type Bucket,
 } from '../../lib/progress';
-import type { ScreenProps } from '../../types';
+import { subjectMastery } from '../../lib/mastery';
+import { classChapters } from '../../content/syllabus';
+import api from '../../api/vidya';
+import type { ScreenProps, MasteryMap } from '../../types';
 
 const BUCKET_COLOR: Record<Bucket, string> = {
   strong: 'var(--accent-success)',
@@ -32,6 +36,12 @@ export default function ProgressScreen({ go, state, set }: ScreenProps) {
   // Open a topic as a fresh concept lesson.
   const openTopic = (topic: string) => { set({ askedConcept: topic }); go('learn-concept'); };
 
+  // Catalog-keyed subject mastery (drives the topic-map entry card).
+  const chapters = classChapters(api.toGrade(state?.classLevel));
+  const subject = subjectMastery((state?.mastery as MasteryMap) || {}, chapters);
+  const masteryPct = Math.round(subject.avg * 100);
+  const coveragePct = Math.round(subject.coverage * 100);
+
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', position: 'relative' }}>
       <VTopBar transparent left={<VContextChip go={go} classLevel={state?.classLevel || 6} />} right={<VProfileChip go={go} name={state?.name} />} />
@@ -39,6 +49,23 @@ export default function ProgressScreen({ go, state, set }: ScreenProps) {
         <div className="v-eyebrow" style={{ marginBottom: 8 }}>{t('progress.eyebrow')}</div>
         <h1 className="v-h1" style={{ fontSize: 32, marginBottom: 8 }}>{t('progress.title')}</h1>
         <p className="v-body" style={{ marginBottom: 28 }}>{t('progress.subtitle')}</p>
+
+        {/* Topic mastery map — entry to the per-subtopic level view */}
+        <div className="v-card v-tap" onClick={() => go('topic-mastery')} style={{ marginBottom: 14, padding: 20, display: 'flex', alignItems: 'center', gap: 18 }}>
+          <div style={{ position: 'relative', width: 62, height: 62, flexShrink: 0 }}>
+            <svg width="62" height="62" viewBox="0 0 62 62">
+              <circle cx="31" cy="31" r="26" fill="none" stroke="var(--border)" strokeWidth="6" />
+              <circle cx="31" cy="31" r="26" fill="none" stroke="var(--ink)" strokeWidth="6"
+                strokeDasharray={`${(masteryPct / 100) * 163} 163`} strokeLinecap="round" transform="rotate(-90 31 31)" />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 600 }}>{masteryPct}<span style={{ fontSize: 10 }}>%</span></div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>Topic mastery</div>
+            <div style={{ fontSize: 12, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.4 }}>Your level in every chapter &amp; subtopic · {coveragePct}% explored</div>
+          </div>
+          <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
+        </div>
 
         {/* Weekly streak — always shown (reads real active days this week) */}
         <div className="v-card" style={{ marginBottom: 14, padding: 22 }}>
