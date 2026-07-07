@@ -130,15 +130,15 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
         {/* current area/subtopic pills */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           {!isDrill && (q as GenQ).area && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 9999, background: 'var(--indigo)', color: '#fff' }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, letterSpacing: '0.03em' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--indigo)', color: '#fff', minWidth: 0 }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {t(`diagQ.chapters.${(q as GenQ).area}`, (q as GenQ).area)}
               </span>
             </div>
           )}
           {('subtopic' in q && (q as DiagnosticDrillQ).subtopic) && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff' }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, letterSpacing: '0.03em' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff', minWidth: 0, maxWidth: '70%' }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 Subtopic: {(q as DiagnosticDrillQ).subtopic}
               </span>
             </div>

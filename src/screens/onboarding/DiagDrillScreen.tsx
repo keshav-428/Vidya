@@ -71,8 +71,8 @@ export default function DiagDrillScreen({ go, state, set }: ScreenProps) {
       <div style={{ padding: '48px 18px 20px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         {/* Subtopic badge */}
         <div style={{ display: 'flex', marginBottom: 14 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff' }}>
-            <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, letterSpacing: '0.03em' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff', minWidth: 0, maxWidth: '70%' }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               Subtopic: {q.subtopic}
             </span>
           </div>
