@@ -176,12 +176,6 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
             placeholder={t('screen.searchPlaceholder')}
             style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontStyle: q ? 'normal' : 'italic', fontSize: 14, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
           <button
-            onClick={(e) => { e.stopPropagation(); setUploadErr(null); photoRef.current?.click(); }}
-            style={{ background: 'var(--saffron)', border: 'none', width: 32, height: 32, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px rgba(248,128,18,0.35)' }}
-            aria-label="Snap your notes">
-            <VIcon name="camera" size={15} color="#fff" />
-          </button>
-          <button
             onClick={(e) => { e.stopPropagation(); if (q.trim()) submitConcept(); else { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); } }}
             style={{ background: 'var(--ink)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 32, height: 32, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
             aria-label="Send">
