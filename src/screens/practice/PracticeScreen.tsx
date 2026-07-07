@@ -124,6 +124,16 @@ interface SelectedSubtopic {
   title: string;
 }
 
+// Reads a File → raw base64 (no data: prefix), for the vision endpoint.
+function readImageB64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function PracticeScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation('practice');
   const [focused, setFocused] = useState(false);
@@ -131,7 +141,10 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
   const [practiceTab, setPracticeTab] = useState('quiz');
   const [sel, setSel] = useState<SelectedSubtopic[]>([]);   // selected subtopics: [{ chapterId, section, title }]
   const [expanded, setExpanded] = useState<string[]>([]);   // chapter ids expanded
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
 
   const cls = api.toGrade(state?.classLevel);
   const chapters = classChapters(cls);
@@ -156,6 +169,28 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
     const dest = intentOf(text) === 'exam' ? 'exam-config' : 'learning-studio';
     setFocused(false);
     go(dest);
+  };
+
+  // Photo → identify the concept via vision → practice on that topic.
+  const onPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';   // allow re-selecting the same file
+    if (files.length === 0) return;
+    setUploadErr(null);
+    setUploading(true);
+    try {
+      const images = await Promise.all(files.map(readImageB64));
+      const res = await api.identifyConcept({ images, grade: cls, language: state?.language || 'English' });
+      if (!res.detected || !res.topic.trim()) {
+        setUploading(false);
+        setUploadErr(res.summary || "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.");
+        return;
+      }
+      submit(res.topic.trim());
+    } catch {
+      setUploading(false);
+      setUploadErr('Something went wrong reading that photo. Please try again.');
+    }
   };
 
   const suggestions = CHAPTERS.slice(0, 5).map((c) => c.title);
@@ -192,9 +227,25 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
     go('exam-config');
   };
 
+  if (uploading) {
+    return (
+      <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <VTopBar transparent />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 32, minHeight: '70vh' }}>
+          <VidyaAvatar size={64} animated />
+          <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
+            Reading your notes and finding the topic…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', position: 'relative' }}>
       <VTopBar transparent left={<VContextChip go={go} classLevel={state?.classLevel || 6} />} right={<VProfileChip go={go} name={state?.name} />} />
+      <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple
+        onChange={onPhotos} style={{ display: 'none' }} />
       <div style={{ padding: '72px 22px 140px' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -229,7 +280,7 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
               fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontStyle: q ? 'normal' : 'italic',
               fontSize: 14, color: 'var(--ink)', lineHeight: 1.3, padding: 0,
             }} />
-          <button onClick={(e) => { e.stopPropagation(); }} style={{ background: 'transparent', border: 'none', padding: 4, display: 'flex' }}>
+          <button onClick={(e) => { e.stopPropagation(); setUploadErr(null); photoRef.current?.click(); }} style={{ background: 'transparent', border: 'none', padding: 4, display: 'flex' }} aria-label="Snap your notes">
             <VIcon name="camera" size={16} color="var(--muted)" />
           </button>
           <button
@@ -247,6 +298,14 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
             <VIcon name="send" size={13} color="#fff" />
           </button>
         </div>
+
+        {uploadErr && !focused && (
+          <div style={{ marginBottom: 12, borderRadius: 14, padding: '11px 14px', background: '#FFF7ED', border: '1px solid var(--accent-warn)', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+            <VIcon name="camera" size={14} color="#B45309" />
+            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12, color: '#B45309', lineHeight: 1.45 }}>{uploadErr}</div>
+            <div className="v-tap" onClick={() => setUploadErr(null)} style={{ color: '#B45309', flexShrink: 0 }}><VIcon name="x" size={13} color="#B45309" /></div>
+          </div>
+        )}
 
         {focused && (
           <AskLiveResults

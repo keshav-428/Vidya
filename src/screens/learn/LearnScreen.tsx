@@ -178,6 +178,12 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
             placeholder={t('screen.searchPlaceholder')}
             style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontStyle: q ? 'normal' : 'italic', fontSize: 14, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
           <button
+            onClick={(e) => { e.stopPropagation(); setUploadErr(null); photoRef.current?.click(); }}
+            style={{ background: 'transparent', border: 'none', padding: 4, display: 'flex' }}
+            aria-label="Snap your notes">
+            <VIcon name="camera" size={16} color="var(--muted)" />
+          </button>
+          <button
             onClick={(e) => { e.stopPropagation(); if (q.trim()) submitConcept(); else { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); } }}
             style={{ background: 'var(--ink)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 32, height: 32, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
             aria-label="Send">
@@ -185,36 +191,11 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
           </button>
         </div>
 
-        {focused && (
-          <LearnLiveResults
-            q={q}
-            onPick={(s) => submitConcept(s)}
-            onClose={() => { setFocused(false); setQ(''); }}
-            onBrowse={() => go('concept-library')} />
-        )}
-
-        {/* Learned something in class? Snap it → AI builds a full lesson. */}
+        {/* Photo-upload hint + error (mirrors the camera in the search bar). */}
         {!focused && (
-          <div
-            className="v-tap"
-            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
-            style={{
-              marginBottom: 12, borderRadius: 18, padding: '14px 16px',
-              background: 'linear-gradient(135deg, var(--indigo-air), #FFF3EA)',
-              border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 13,
-            }}>
-            <div style={{ width: 42, height: 42, borderRadius: 13, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="camera" size={19} color="#fff" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15.5, fontWeight: 700, lineHeight: 1.2, color: 'var(--ink)' }}>
-                Learned something in class?
-              </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 11.5, color: 'var(--muted)', marginTop: 2, lineHeight: 1.35 }}>
-                Snap your notes — I'll build a lesson on it
-              </div>
-            </div>
-            <VIcon name="arrow-right" size={16} color="var(--muted-2)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '0 2px', fontFamily: 'Inter', fontSize: 11.5, color: 'var(--muted-2)', lineHeight: 1.4 }}>
+            <VIcon name="camera" size={12} color="var(--muted-2)" />
+            <span>Learned something in class? Tap the camera to snap your notes — I'll build a lesson on it.</span>
           </div>
         )}
 
@@ -224,6 +205,14 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
             <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12, color: '#B45309', lineHeight: 1.45 }}>{uploadErr}</div>
             <div className="v-tap" onClick={() => setUploadErr(null)} style={{ color: '#B45309', flexShrink: 0 }}><VIcon name="x" size={13} color="#B45309" /></div>
           </div>
+        )}
+
+        {focused && (
+          <LearnLiveResults
+            q={q}
+            onPick={(s) => submitConcept(s)}
+            onClose={() => { setFocused(false); setQ(''); }}
+            onBrowse={() => go('concept-library')} />
         )}
 
         <div style={{ opacity: focused ? 0.35 : 1, transition: 'opacity .2s', marginTop: 12 }}>
