@@ -160,9 +160,7 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
       <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple
         onChange={onPhotos} style={{ display: 'none' }} />
       <div style={{ padding: '72px 24px 140px' }}>
-        <div className="v-eyebrow" style={{ marginBottom: 8 }}>{t('screen.eyebrow')}</div>
-        <h1 className="v-h1" style={{ fontSize: 36, marginBottom: 8 }}>{t('screen.title')}</h1>
-        <p className="v-body" style={{ marginBottom: 18 }}>{t('screen.subtitle')}</p>
+        <h1 className="v-h1" style={{ fontSize: 36, marginBottom: 18 }}>{t('screen.title')}</h1>
 
         <div
           className="v-tap"
@@ -216,7 +214,7 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
         )}
 
         <div style={{ opacity: focused ? 0.35 : 1, transition: 'opacity .2s', marginTop: 12 }}>
-          <VSectionHeader title={t('screen.chapters')} action="Full syllabus" onAction={() => go('syllabus')} />
+          <VSectionHeader title={t('screen.chapters')} />
           <div className="v-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             {chapters.map((c, i) => (
               <div key={c.id} className="v-tap"
