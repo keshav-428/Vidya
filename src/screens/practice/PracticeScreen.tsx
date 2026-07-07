@@ -73,7 +73,8 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
   // Subtopic-level multi-select for both quiz and exam.
   const keyOf = (chId: string, section: string) => `${chId}::${section}`;
   const isSel = (chId: string, section: string) => sel.some((s) => keyOf(s.chapterId, s.section) === keyOf(chId, section));
-  const toggleExpand = (id: string) => setExpanded((e) => e.includes(id) ? e.filter((x) => x !== id) : [...e, id]);
+  // Accordion: only one chapter open at a time keeps the list short to scroll.
+  const toggleExpand = (id: string) => setExpanded((e) => e.includes(id) ? [] : [id]);
   const toggleSub = (ch: SyllabusChapter, sub: Subtopic) => setSel((s) => {
     const k = keyOf(ch.id, sub.num);
     return s.some((x) => keyOf(x.chapterId, x.section) === k)
@@ -121,7 +122,7 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
       <VTopBar transparent left={<VContextChip go={go} classLevel={state?.classLevel || 6} />} right={<VProfileChip go={go} name={state?.name} />} />
       <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple
         onChange={onPhotos} style={{ display: 'none' }} />
-      <div style={{ padding: '72px 22px 140px' }}>
+      <div style={{ padding: `72px 22px ${sel.length ? 210 : 140}px` }}>
 
         <h1 className="v-h1" style={{ fontSize: 26, marginBottom: 14, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
           {t('practice.heading')}
@@ -218,17 +219,28 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
                 );
               })}
             </div>
-
-            <button className="v-btn-primary v-tap" onClick={practiceTab === 'quiz' ? startQuiz : startExam}
-              disabled={!sel.length} style={{ opacity: sel.length ? 1 : 0.4 }}>
-              {practiceTab === 'quiz'
-                ? (sel.length ? t('practice.startQuizChapters', { count: sel.length }) : t('practice.startQuiz'))
-                : (sel.length ? t('practice.createExamChapters', { count: sel.length }) : t('practice.createExam'))}
-              <VIcon name="arrow-right" size={14} color="#fff" />
-            </button>
           </div>
         </div>
       </div>
+
+      {/* Sticky action bar — start without scrolling to the bottom. */}
+      {sel.length > 0 && (
+        <div style={{
+          position: 'fixed', left: 0, right: 0, bottom: 84, zIndex: 39,
+          padding: '12px 22px', background: 'rgba(250,249,246,0.94)',
+          backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          borderTop: '1px solid var(--border-soft)',
+          animation: 'vSheetUp 0.3s cubic-bezier(.16,1,.3,1) both',
+        }}>
+          <button className="v-btn-primary v-tap" onClick={practiceTab === 'quiz' ? startQuiz : startExam} style={{ width: '100%' }}>
+            {practiceTab === 'quiz'
+              ? t('practice.startQuizChapters', { count: sel.length })
+              : t('practice.createExamChapters', { count: sel.length })}
+            <VIcon name="arrow-right" size={14} color="#fff" />
+          </button>
+        </div>
+      )}
+
       <VBottomNav active="practice" go={go} />
     </div>
   );
