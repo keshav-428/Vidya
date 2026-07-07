@@ -7,6 +7,7 @@ import { SCREEN_ROUTES, type ScreenId } from './routes';
 import { AppContext, type AppContextValue } from './app-context';
 import { storageKeyFor } from './lib/storage';
 import { guestLimitReached } from './lib/guest';
+import { migrateFromActivityLog, mergeMastery } from './lib/mastery';
 import type { AppState, SetFn, GoFn } from './types';
 
 // Screens that begin a "learning session" — gated once a guest is out of free runs.
@@ -82,7 +83,7 @@ const PERSIST_KEYS: (keyof AppState)[] = [
   'sessionDuration', 'planMascotSeen', 'buildPlanCoachSeen', 'ownPlan',
   'name', 'class', 'subject', 'goal', 'language', 'role',
   'diagLevel', 'diagChapters', 'conceptLayout', 'skillId',
-  'activityLog', 'guestSessions',
+  'activityLog', 'mastery', 'masteryMigrated', 'guestSessions',
 ];
 
 const DEFAULT_STATE: AppState = { name: 'Arjun', conceptLayout: 'cards' };
@@ -131,6 +132,16 @@ function AppInner() {
     } catch { /* ignore quota / serialization errors */ }
   }, [state, storageKey, authLoading]);
 
+  // One-time: seed the mastery map from the existing activity log, so past
+  // (catalog-keyed) results aren't lost when mastery tracking turns on.
+  const migratedRef = useRef(false);
+  useEffect(() => {
+    if (authLoading || migratedRef.current || state.masteryMigrated) return;
+    migratedRef.current = true;
+    const derived = migrateFromActivityLog(state.activityLog);
+    setState((s) => ({ ...s, mastery: mergeMastery(s.mastery, derived), masteryMigrated: true }));
+  }, [authLoading, state.masteryMigrated, state.activityLog]);
+
   // Sync the profile to Firestore (user_profiles/{uid}) once a signed-in user
   // has onboarding data. Re-runs only when the synced fields actually change.
   const syncedProfile = useRef<string | null>(null);
@@ -144,6 +155,34 @@ function AppInner() {
     api.updateProfile({ userId: uid, name: state.name, grade, language, email: user?.email })
       .catch(() => {});
   }, [uid, state.name, state.classLevel, state.language, user?.email]);
+
+  // On sign-in, pull remote mastery and merge it into local (last-write-wins
+  // per skill), so progress follows the student across devices.
+  const masteryPulled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!uid || masteryPulled.current === uid) return;
+    masteryPulled.current = uid;
+    api.getMastery(uid)
+      .then((remote) => {
+        if (remote && Object.keys(remote).length) {
+          setState((s) => ({ ...s, mastery: mergeMastery(s.mastery, remote) }));
+        }
+      })
+      .catch(() => {});
+  }, [uid]);
+
+  // Write-through: debounce-save the mastery map to Firestore on change.
+  const masterySig = useRef<string | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!uid || !state.mastery) return;
+    const sig = JSON.stringify(state.mastery);
+    if (masterySig.current === sig) return;
+    masterySig.current = sig;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => { api.saveMastery(uid, state.mastery!).catch(() => {}); }, 1500);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [uid, state.mastery]);
 
   const set: SetFn = (patch) => setState((s) => ({ ...s, ...patch }));
 

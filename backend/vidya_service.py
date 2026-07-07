@@ -61,6 +61,17 @@ def update_student_profile(student_id: str, profile_data: dict):
     doc_ref = db.collection('user_profiles').document(student_id)
     doc_ref.set(profile_data, merge=True)
 
+def get_student_mastery(student_id: str) -> dict:
+    """Returns the mastery map (skillKey -> SkillMastery) for a user, or {}."""
+    doc = db.collection('user_profiles').document(student_id).get()
+    if doc.exists:
+        return (doc.to_dict() or {}).get("mastery", {}) or {}
+    return {}
+
+def save_student_mastery(student_id: str, mastery: dict):
+    """Upserts the full mastery map onto the user's profile doc."""
+    db.collection('user_profiles').document(student_id).set({"mastery": mastery}, merge=True)
+
 def compute_streak(student_id: str) -> int:
     """Computes the current streak from actual quiz attempt dates."""
     attempts = db.collection('user_profiles').document(student_id).collection('quiz_attempts') \

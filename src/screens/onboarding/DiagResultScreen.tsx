@@ -2,9 +2,11 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar } from '../../prototype/shared';
-import { scoreFromSet, classAwareWeakChapters, STATIC_FALLBACK, DIAG_RUNGS, type DiagLevelId, type GenQ } from '../../content/diagnostic';
+import { scoreFromSet, classAwareWeakChapters, chapterIdForArea, STATIC_FALLBACK, DIAG_RUNGS, type DiagLevelId, type GenQ } from '../../content/diagnostic';
 import { buildWeekPlan, type PlanSlot } from '../../content/weekPlan';
 import { classChapters } from '../../content/syllabus';
+import { seedDiagnostic } from '../../lib/mastery';
+import type { MasteryMap } from '../../types';
 import api from '../../api/vidya';
 import type { ScreenProps } from '../../types';
 
@@ -31,6 +33,18 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
   const tone = LEVEL_DEFAULT[level].tone;
   const chapterName = (ch: string) => t(`diagQ.chapters.${ch}`, ch);
 
+  // Seed day-1 mastery priors from the diagnostic so Progress isn't empty:
+  // weak chapters start at "needs help", strong at "confident".
+  const seededMastery = (): MasteryMap => {
+    let m = (state?.mastery as MasteryMap) || {};
+    const now = new Date().toISOString();
+    outcome.perChapter.forEach((c) => {
+      const id = chapterIdForArea(c.chapter, grade);
+      if (id) m = seedDiagnostic(m, id, null, c.ratio, now);
+    });
+    return m;
+  };
+
   // Option A — Vidya builds the whole week from the weak areas, shows plan review screen.
   // Each weak chapter is expanded into its subtopics so days are subtopic-wise.
   const buildForMe = () => {
@@ -53,13 +67,14 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       ...(today?.topicId ? { planTopicId: today.topicId } : {}),
       planSection: today?.section ?? undefined,
       planSubtopicTitle: today?.subtopicTitle ?? undefined,
+      mastery: seededMastery(),
       ownPlan: false,
     });
     go('week-plan');
   };
   // Option B — student builds their own; Home's coach guides them through it.
   const buildOwn = () => {
-    set && set({ diagLevel: level, diagChapters: outcome.weak, ownPlan: true, coachStep: 0, weekPlan: undefined, planTopicId: undefined });
+    set && set({ diagLevel: level, diagChapters: outcome.weak, ownPlan: true, coachStep: 0, weekPlan: undefined, planTopicId: undefined, mastery: seededMastery() });
     go('home');
   };
 

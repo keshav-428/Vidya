@@ -284,8 +284,20 @@ export const updateProfile = ({
 }: UpdateProfileArgs): Promise<unknown> =>
   post<unknown>('/profile', { user_id: userId, name, grade, language, email });
 
+// ── Mastery sync (cross-device, server-durable) ─────────────
+import type { MasteryMap } from '../types';
+export const getMastery = (userId: string): Promise<MasteryMap> =>
+  fetch(`${BASE}/mastery/${encodeURIComponent(userId)}`)
+    .then((r) => (r.ok ? r.json() : { mastery: {} }))
+    .then((d) => (d.mastery as MasteryMap) || {})
+    .catch(() => ({}));
+export const saveMastery = (userId: string, mastery: MasteryMap): Promise<unknown> =>
+  post<unknown>('/mastery', { user_id: userId, mastery });
+
 export default {
   ask,
+  getMastery,
+  saveMastery,
   generateQuiz,
   generateDiagnostic,
   generateDiagnosticDrill,

@@ -88,6 +88,10 @@ class ProfileUpdate(BaseModel):
     language: Optional[str] = None
     email: Optional[str] = None
 
+class MasteryUpdate(BaseModel):
+    user_id: str
+    mastery: dict          # skillKey -> SkillMastery
+
 class PaperRequest(BaseModel):
     topics: list
     grade: int
@@ -323,6 +327,23 @@ async def update_profile(request: ProfileUpdate):
         return {"status": "success"}
     except Exception as e:
         print(f"Error in POST /profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/mastery/{user_id}")
+async def get_mastery(user_id: str):
+    try:
+        return {"mastery": vidya_service.get_student_mastery(user_id)}
+    except Exception as e:
+        print(f"Error in GET /mastery: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/mastery")
+async def save_mastery(request: MasteryUpdate):
+    try:
+        vidya_service.save_student_mastery(request.user_id, request.mastery)
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Error in POST /mastery: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/report/{user_id}")

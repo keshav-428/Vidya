@@ -149,6 +149,14 @@ const AREA_KEYWORDS: Record<string, string[]> = {
   Data: ['data', 'graph', 'handling'],
 };
 
+/** Resolve a diagnostic area (strand) → a class-aware chapter id, or null. */
+export function chapterIdForArea(area: string, grade: number): string | null {
+  const chs = classChapters(grade);
+  const kws = AREA_KEYWORDS[area] || [area.toLowerCase()];
+  const m = chs.find((c) => kws.some((k) => c.title.toLowerCase().includes(k)));
+  return m ? m.id : null;
+}
+
 /** Class-correct chapter id (g{grade}-…) to seed the plan: weakest matched area, else chapter 1. */
 export function classAwarePlanTopic(outcome: DiagOutcome, grade: number): string | null {
   const chs = classChapters(grade);

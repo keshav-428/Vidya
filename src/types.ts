@@ -57,6 +57,8 @@ export interface AppState {
 
   // progress — accumulating record of quizzes, exams, and sessions
   activityLog?: ActivityEntry[];
+  mastery?: MasteryMap;
+  masteryMigrated?: boolean;   // one-time seed from legacy activityLog done
   askedConcept?: string | null;
   askedChapterId?: string | null;
   askedSection?: string | null;
@@ -115,12 +117,28 @@ export interface ActivityEntry {
   /** ISO timestamp (new Date().toISOString()). */
   date: string;
   topic: string;
+  /** Stable catalog coordinates — the aggregation unit for mastery.
+   *  Absent on legacy entries and multi-topic events. */
+  chapterId?: string;
+  section?: string | null;   // subtopic number e.g. "1.2"; null ⇒ chapter-wide
   /** Points earned (0 for a plain session with no score). */
   score: number;
   /** Max points (0 ⇒ unscored, e.g. a session). */
   total: number;
   mistakes?: ActivityMistake[];
 }
+
+/** Recency-weighted mastery for one skill (subtopic or chapter). */
+export interface SkillMastery {
+  ewma: number;        // 0..1 recency-weighted correctness
+  attempts: number;    // total scored questions seen
+  learned: boolean;    // concept session completed at least once
+  lastSeen: string;    // ISO
+  source: 'diagnostic' | 'practice' | 'mixed';
+}
+
+/** skillKey (chapterId or chapterId::section) → mastery. */
+export type MasteryMap = Record<string, SkillMastery>;
 
 // ═══ 2. Backend API shapes ═══════════════════════════════════
 

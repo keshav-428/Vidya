@@ -4,7 +4,8 @@ import VIcon from '../../prototype/icons';
 import { VTopBar, VSoftBackdrop, VidyaAvatar } from '../../prototype/shared';
 import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
-import type { ScreenProps, Paper } from '../../types';
+import { applyResult } from '../../lib/mastery';
+import type { ScreenProps, Paper, ActivityEntry, MasteryMap } from '../../types';
 
 const LINE_KEYS = ['evalLoading.lines.reading', 'evalLoading.lines.matching', 'evalLoading.lines.marking', 'evalLoading.lines.writing'];
 
@@ -35,12 +36,17 @@ export default function ExamEvalLoadingScreen({ go, state, set }: ScreenProps) {
         const examTopics = (state?.examTopics as string[] | undefined) || [];
         const topic = examTopics.length ? examTopics.join(', ') : 'Exam';
         const total = res.total_possible ?? ((state?.examMarks as number | undefined) || 80);
+        // Attribute mastery only when the exam was scoped to a single subtopic.
+        const scope = state?.examScope as { chapterId?: string; section?: string | null } | null | undefined;
+        const entry: ActivityEntry = {
+          kind: 'exam', date: new Date().toISOString(), topic,
+          chapterId: scope?.chapterId || undefined, section: scope?.section ?? null,
+          score: res.total_awarded ?? 0, total,
+        };
         set && set({
           examResult: res,
-          activityLog: appendActivity(state?.activityLog, {
-            kind: 'exam', date: new Date().toISOString(), topic,
-            score: res.total_awarded ?? 0, total,
-          }),
+          activityLog: appendActivity(state?.activityLog, entry),
+          mastery: applyResult((state?.mastery as MasteryMap) || {}, entry),
         });
       })
       .catch(() => { set && set({ examResult: 'error' }); })

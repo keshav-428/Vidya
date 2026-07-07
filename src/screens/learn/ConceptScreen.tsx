@@ -6,7 +6,8 @@ import { getChapterSkills } from '../../content/fractionsChapter';
 import { renderCard, mapScenes, mapVideos } from '../../content/conceptVisuals';
 import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
-import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse } from '../../types';
+import { applyResult } from '../../lib/mastery';
+import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap } from '../../types';
 
 // Build the card array for an LLM-generated topic. Real-life scenes and videos
 // are preloaded by the caller and passed in, so every card is render-ready and
@@ -115,12 +116,20 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topicTitle, grade]);
 
-  // Mark the day active for the streak once the lesson is ready (once per day/topic).
+  // Mark the day active for the streak once the lesson is ready (once per day/topic),
+  // and record coverage ("learned") for this skill in the mastery map.
   useEffect(() => {
     if (!cards || !set) return;
-    set({ activityLog: appendActivity(state?.activityLog, {
-      kind: 'session', date: new Date().toISOString(), topic: topicTitle, score: 0, total: 0,
-    }, { oncePerDay: true }) });
+    const entry: ActivityEntry = {
+      kind: 'session', date: new Date().toISOString(), topic: topicTitle,
+      chapterId: askedChapterId || sessionSub?.chapterId || undefined,
+      section: askedSection ?? sessionSub?.section ?? null,
+      score: 0, total: 0,
+    };
+    set({
+      activityLog: appendActivity(state?.activityLog, entry, { oncePerDay: true }),
+      mastery: applyResult((state?.mastery as MasteryMap) || {}, entry),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 

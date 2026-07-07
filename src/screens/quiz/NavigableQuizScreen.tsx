@@ -5,7 +5,8 @@ import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { getSkill, getChapterSkills } from '../../content/fractionsChapter';
 import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
-import type { ScreenProps } from '../../types';
+import { applyResult } from '../../lib/mastery';
+import type { ScreenProps, ActivityEntry, MasteryMap } from '../../types';
 
 interface QuizItem { q: string; opts: string[]; correct: number; explanation: string; }
 interface QuizScope { chapterId?: string | null; section?: string | null; topic: string; }
@@ -128,15 +129,20 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
       const finalScore = score + (picked === q.correct ? 1 : 0);
       const finalTopic = quizTopics.length > 1 ? quizTopics.join(', ') : quizTopics[0];
       const allMistakes = [...mistakes, ...thisMistake];
+      // Single-scope quizzes attribute to a stable skill key for mastery.
+      const scope = quizScope || sessionSub;
+      const entry: ActivityEntry = {
+        kind: 'quiz', date: new Date().toISOString(), topic: finalTopic,
+        chapterId: scope?.chapterId || undefined, section: scope?.section ?? null,
+        score: finalScore, total: QUIZ.length, mistakes: allMistakes,
+      };
       set({
         lastQuizScore: finalScore,
         lastQuizTotal: QUIZ.length,
         lastQuizTopic: finalTopic,
         lastQuizMistakes: allMistakes,
-        activityLog: appendActivity(state?.activityLog, {
-          kind: 'quiz', date: new Date().toISOString(), topic: finalTopic,
-          score: finalScore, total: QUIZ.length, mistakes: allMistakes,
-        }),
+        activityLog: appendActivity(state?.activityLog, entry),
+        mastery: applyResult((state?.mastery as MasteryMap) || {}, entry),
         // Guests get a limited number of free sessions before signing up.
         ...(state?.userId ? {} : { guestSessions: (Number(state?.guestSessions) || 0) + 1 }),
       });
