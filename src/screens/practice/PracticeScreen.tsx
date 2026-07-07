@@ -309,7 +309,7 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
               <VIcon name="camera" size={11} color="#fff" />
             </div>
             <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#C2410C', letterSpacing: '0.01em' }}>
-              Take a photo of your classwork to practice it
+              Or take a photo of your classwork
             </span>
           </div>
         )}
