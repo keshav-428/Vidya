@@ -126,7 +126,7 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
   return (
     <VSoftBackdrop variant={idx % 2 ? 'warm' : 'cool'}>
       <VTopBar showBack onBack={goPrev} transparent />
-      <div style={{ padding: '48px 18px 20px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+      <div style={{ padding: '64px 18px 20px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         {/* current area/subtopic pills */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           {!isDrill && (q as GenQ).area && (

@@ -68,7 +68,7 @@ export default function DiagDrillScreen({ go, state, set }: ScreenProps) {
   return (
     <VSoftBackdrop variant={idx % 2 ? 'warm' : 'cool'}>
       <VTopBar showBack onBack={goPrev} transparent />
-      <div style={{ padding: '48px 18px 20px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+      <div style={{ padding: '64px 18px 20px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         {/* Subtopic badge */}
         <div style={{ display: 'flex', marginBottom: 14 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff', minWidth: 0, maxWidth: '70%' }}>
