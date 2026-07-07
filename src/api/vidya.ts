@@ -193,6 +193,16 @@ export const generateConcept = ({
     section,
   });
 
+// ── Identify a concept from photos (class notes / textbook) ──
+// images: array of base64 JPEG strings (no data: prefix)
+export interface IdentifyConceptResult { topic: string; summary: string; detected: boolean; }
+export const identifyConcept = ({
+  images,
+  grade = 6,
+  language = 'English',
+}: { images: string[]; grade?: number; language?: Language }): Promise<IdentifyConceptResult> =>
+  post<IdentifyConceptResult>('/identify-concept', { images, grade, language });
+
 // ── Exam paper generation ────────────────────────────────────
 export interface GeneratePaperArgs {
   topics: string[] | string;
@@ -284,6 +294,7 @@ export default {
   searchVideos,
   realWorld,
   generateConcept,
+  identifyConcept,
   generatePaper,
   gradePaper,
   dailyGreeting,

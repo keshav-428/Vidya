@@ -126,6 +126,11 @@ class ConceptRequest(BaseModel):
     chapter_id: Optional[str] = None
     section: Optional[str] = None
 
+class IdentifyConceptRequest(BaseModel):
+    images: list          # base64-encoded JPEG strings
+    grade: int = 6
+    language: str = "English"
+
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Vidya Backend is running (Root)"}
@@ -352,6 +357,21 @@ async def generate_concept_endpoint(request: ConceptRequest):
         return data
     except Exception as e:
         print(f"Error in /generate-concept: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/identify-concept")
+async def identify_concept_endpoint(request: IdentifyConceptRequest):
+    try:
+        if not request.images:
+            raise HTTPException(status_code=400, detail="No images provided")
+        data = concept_service.identify_concept_from_images(
+            request.images, request.grade, request.language,
+        )
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /identify-concept: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/real-world")

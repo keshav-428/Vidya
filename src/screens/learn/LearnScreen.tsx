@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
-import { VTopBar, VBottomNav, VProfileChip, VContextChip, VSectionHeader } from '../../prototype/shared';
+import { VTopBar, VBottomNav, VProfileChip, VContextChip, VSectionHeader, VidyaAvatar } from '../../prototype/shared';
 import { classChapters } from '../../content/syllabus';
 import api from '../../api/vidya';
 import type { ScreenProps } from '../../types';
@@ -77,10 +77,23 @@ function LearnLiveResults({ q, onPick, onClose, onBrowse }: LearnLiveResultsProp
   );
 }
 
+// Reads a File → raw base64 (no data: prefix), for the vision endpoint.
+function readImageB64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function LearnScreen({ go, set, state }: ScreenProps) {
   const [focused, setFocused] = useState(false);
   const [q, setQ] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const photoRef = useRef<HTMLInputElement | null>(null);
 
   const { t } = useTranslation('learn');
   const cls = api.toGrade(state?.classLevel);
@@ -104,9 +117,48 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
     go('learn-concept');
   };
 
+  // Photo → identify the concept via vision → open a full lesson on it.
+  const onPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';   // allow re-selecting the same file
+    if (files.length === 0) return;
+    setUploadErr(null);
+    setUploading(true);
+    try {
+      const images = await Promise.all(files.map(readImageB64));
+      const res = await api.identifyConcept({ images, grade: cls, language: state?.language || 'English' });
+      if (!res.detected || !res.topic.trim()) {
+        setUploading(false);
+        setUploadErr(res.summary || "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.");
+        return;
+      }
+      set && set({ askedConcept: res.topic.trim() });
+      go('learn-concept');
+    } catch {
+      setUploading(false);
+      setUploadErr('Something went wrong reading that photo. Please try again.');
+    }
+  };
+
+  if (uploading) {
+    return (
+      <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <VTopBar transparent />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 32, minHeight: '70vh' }}>
+          <VidyaAvatar size={64} animated />
+          <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
+            Reading your notes and finding the concept…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', position: 'relative' }}>
       <VTopBar transparent left={<VContextChip go={go} classLevel={state?.classLevel || 6} />} right={<VProfileChip go={go} name={state.name} />} />
+      <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple
+        onChange={onPhotos} style={{ display: 'none' }} />
       <div style={{ padding: '72px 24px 140px' }}>
         <div className="v-eyebrow" style={{ marginBottom: 8 }}>{t('screen.eyebrow')}</div>
         <h1 className="v-h1" style={{ fontSize: 36, marginBottom: 8 }}>{t('screen.title')}</h1>
@@ -139,6 +191,39 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
             onPick={(s) => submitConcept(s)}
             onClose={() => { setFocused(false); setQ(''); }}
             onBrowse={() => go('concept-library')} />
+        )}
+
+        {/* Learned something in class? Snap it → AI builds a full lesson. */}
+        {!focused && (
+          <div
+            className="v-tap"
+            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
+            style={{
+              marginBottom: 12, borderRadius: 18, padding: '14px 16px',
+              background: 'linear-gradient(135deg, var(--indigo-air), #FFF3EA)',
+              border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 13,
+            }}>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="camera" size={19} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15.5, fontWeight: 700, lineHeight: 1.2, color: 'var(--ink)' }}>
+                Learned something in class?
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11.5, color: 'var(--muted)', marginTop: 2, lineHeight: 1.35 }}>
+                Snap your notes — I'll build a lesson on it
+              </div>
+            </div>
+            <VIcon name="arrow-right" size={16} color="var(--muted-2)" />
+          </div>
+        )}
+
+        {uploadErr && !focused && (
+          <div style={{ marginBottom: 12, borderRadius: 14, padding: '11px 14px', background: '#FFF7ED', border: '1px solid var(--accent-warn)', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+            <VIcon name="camera" size={14} color="#B45309" />
+            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12, color: '#B45309', lineHeight: 1.45 }}>{uploadErr}</div>
+            <div className="v-tap" onClick={() => setUploadErr(null)} style={{ color: '#B45309', flexShrink: 0 }}><VIcon name="x" size={13} color="#B45309" /></div>
+          </div>
         )}
 
         <div style={{ opacity: focused ? 0.35 : 1, transition: 'opacity .2s', marginTop: 12 }}>
