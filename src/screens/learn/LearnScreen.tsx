@@ -162,38 +162,47 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
       <div style={{ padding: '72px 24px 140px' }}>
         <h1 className="v-h1" style={{ fontSize: 36, marginBottom: 18 }}>{t('screen.title')}</h1>
 
-        {/* Two clear, friendly ways in — a kid immediately gets both. */}
-        {!focused && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
-            {/* Ask a question → opens the typing input */}
-            <div
-              className="v-tap"
-              onClick={() => { setFocused(true); setTimeout(() => inputRef.current && inputRef.current.focus(), 0); }}
-              style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
-              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <VIcon name="pencil" size={21} color="var(--indigo)" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Ask a question</div>
-                <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Type anything you're stuck on</div>
-              </div>
-              <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
-            </div>
+        {/* Ask a question — always-visible search/chat field */}
+        <div style={{ background: '#fff', borderRadius: 18, border: `1.5px solid ${focused ? 'var(--indigo)' : 'var(--border)'}`, padding: '14px 14px 14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, boxShadow: focused ? '0 4px 18px rgba(56,72,168,0.10)' : '0 4px 18px rgba(28,25,23,0.05)', transition: 'border-color .15s, box-shadow .15s' }}>
+          <VIcon name="search" size={18} color={focused ? 'var(--indigo)' : 'var(--muted-2)'} />
+          <input
+            ref={inputRef}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter') submitConcept(); }}
+            placeholder="Ask a question…"
+            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
+          <button
+            onClick={() => { if (q.trim()) submitConcept(); else inputRef.current?.focus(); }}
+            style={{ background: 'var(--indigo)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 36, height: 36, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s', flexShrink: 0 }}
+            aria-label="Send">
+            <VIcon name="send" size={14} color="#fff" />
+          </button>
+        </div>
 
-            {/* Take a photo → camera / upload */}
-            <div
-              className="v-tap"
-              onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
-              style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
-              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <VIcon name="camera" size={21} color="#fff" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Take a photo</div>
-                <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Snap your classwork and I'll teach it</div>
-              </div>
-              <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
+        {focused && (
+          <LearnLiveResults
+            q={q}
+            onPick={(s) => submitConcept(s)}
+            onClose={() => { setFocused(false); setQ(''); }}
+            onBrowse={() => go('concept-library')} />
+        )}
+
+        {/* Take a photo — the second way in, hidden while typing */}
+        {!focused && (
+          <div
+            className="v-tap"
+            onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
+            style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="camera" size={21} color="#fff" />
             </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Take a photo</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Snap your classwork and I'll teach it</div>
+            </div>
+            <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
           </div>
         )}
 
@@ -203,33 +212,6 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
             <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.45 }}>{uploadErr}</div>
             <div className="v-tap" onClick={() => setUploadErr(null)} style={{ flexShrink: 0 }}><VIcon name="x" size={14} color="var(--muted-2)" /></div>
           </div>
-        )}
-
-        {/* Typing mode — clean input + live results */}
-        {focused && (
-          <>
-            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid var(--indigo)', padding: '14px 14px 14px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 18px rgba(56,72,168,0.10)' }}>
-              <VIcon name="pencil" size={17} color="var(--indigo)" />
-              <input
-                ref={inputRef}
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') submitConcept(); }}
-                placeholder="Type your question…"
-                style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 15, color: 'var(--ink)', lineHeight: 1.3, padding: 0 }} />
-              <button
-                onClick={() => { if (q.trim()) submitConcept(); }}
-                style={{ background: 'var(--indigo)', opacity: q.trim() ? 1 : 0.35, border: 'none', width: 36, height: 36, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s', flexShrink: 0 }}
-                aria-label="Send">
-                <VIcon name="send" size={14} color="#fff" />
-              </button>
-            </div>
-            <LearnLiveResults
-              q={q}
-              onPick={(s) => submitConcept(s)}
-              onClose={() => { setFocused(false); setQ(''); }}
-              onBrowse={() => go('concept-library')} />
-          </>
         )}
 
         <div style={{ opacity: focused ? 0.35 : 1, transition: 'opacity .2s', marginTop: 12 }}>
