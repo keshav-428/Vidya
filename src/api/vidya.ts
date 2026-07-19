@@ -219,6 +219,30 @@ export const generateLesson = ({
     depth,
   });
 
+// ── Viva: spoken-answer practice ─────────────────────────────
+export interface VivaQuestion { question: string; listen_for: string[]; }
+export const generateViva = ({
+  topics,
+  grade = 6,
+  language = 'English',
+  num = 3,
+}: { topics: string[]; grade?: number; language?: Language; num?: number }): Promise<VivaQuestion[]> =>
+  post<{ questions?: VivaQuestion[] }>('/generate-viva', { topics, grade, language, num })
+    .then((d) => d.questions || []);
+
+export interface VivaFeedback { heard: string; good: string[]; missing: string[]; tip: string; stars: number; }
+export const evaluateViva = ({
+  audio,
+  mimeType = 'audio/webm',
+  question,
+  listenFor = [],
+  grade = 6,
+  language = 'English',
+}: { audio: string; mimeType?: string; question: string; listenFor?: string[]; grade?: number; language?: Language }): Promise<VivaFeedback> =>
+  post<VivaFeedback>('/evaluate-viva', {
+    audio, mime_type: mimeType, question, listen_for: listenFor, grade, language,
+  });
+
 // ── Identify a concept from photos (class notes / textbook) ──
 // images: array of base64 JPEG strings (no data: prefix)
 export interface IdentifyConceptResult { topic: string; summary: string; detected: boolean; }
@@ -333,6 +357,8 @@ export default {
   realWorld,
   generateConcept,
   generateLesson,
+  generateViva,
+  evaluateViva,
   identifyConcept,
   generatePaper,
   gradePaper,

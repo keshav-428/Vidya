@@ -512,6 +512,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           onStart={(chapters) => {
             setVivaOpen(false);
             set({ vivaChapters: chapters });
+            go('viva');
           }}
         />
       )}

@@ -8,6 +8,7 @@ import quiz_service
 import vidya_service
 import exam_service
 import concept_service
+import viva_service
 from dotenv import load_dotenv
 import os
 
@@ -142,6 +143,20 @@ class LessonRequest(BaseModel):
     chapter_id: Optional[str] = None
     section: Optional[str] = None
     depth: str = "full"   # 'full' | 'quick' (student already knows the basics)
+
+class VivaQuestionsRequest(BaseModel):
+    topics: list          # chapter titles
+    grade: int = 6
+    language: str = "English"
+    num: int = 3
+
+class VivaEvalRequest(BaseModel):
+    audio: str            # base64-encoded audio (no data: prefix)
+    mime_type: str = "audio/webm"
+    question: str
+    listen_for: Optional[list] = []
+    grade: int = 6
+    language: str = "English"
 
 @app.get("/")
 def read_root():
@@ -398,6 +413,33 @@ async def generate_lesson_endpoint(request: LessonRequest):
         return data
     except Exception as e:
         print(f"Error in /generate-lesson: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-viva")
+async def generate_viva_endpoint(request: VivaQuestionsRequest):
+    try:
+        data = viva_service.generate_viva_questions(
+            request.topics, request.grade, request.language, request.num,
+        )
+        return data
+    except Exception as e:
+        print(f"Error in /generate-viva: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/evaluate-viva")
+async def evaluate_viva_endpoint(request: VivaEvalRequest):
+    try:
+        if not request.audio:
+            raise HTTPException(status_code=400, detail="No audio provided")
+        data = viva_service.evaluate_viva_answer(
+            request.audio, request.mime_type, request.question,
+            request.listen_for or [], request.grade, request.language,
+        )
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /evaluate-viva: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/identify-concept")

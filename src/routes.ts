@@ -38,6 +38,7 @@ export const SCREEN_ROUTES = {
   'quiz-review-question': '/quiz/review-question',
   'quick-prep': '/quick-prep',
   'practice': '/practice',
+  'viva': '/practice/viva',
   'revise-class': '/practice/revise-class',
   'concept-library': '/practice/concept-library',
   'learning-studio': '/practice/learning-studio',

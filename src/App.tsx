@@ -53,6 +53,7 @@ import QuickPrepScreen          from './screens/quiz/QuickPrepScreen';
 
 // ─── Screen imports — Practice ────────────────────────────────
 import PracticeScreen        from './screens/practice/PracticeScreen';
+import VivaScreen            from './screens/practice/VivaScreen';
 import ReviseClassScreen     from './screens/practice/ReviseClassScreen';
 import ConceptLibraryScreen  from './screens/practice/ConceptLibraryScreen';
 import LearningStudioScreen  from './screens/practice/LearningStudioScreen';
@@ -279,6 +280,7 @@ function AppInner() {
 
           {/* Practice */}
           <Route path="/practice"                 element={<PracticeScreen        go={go} state={state} set={set} />} />
+          <Route path="/practice/viva"            element={<VivaScreen            go={go} state={state} set={set} />} />
           <Route path="/practice/revise-class"    element={<ReviseClassScreen     go={go} state={state} set={set} />} />
           <Route path="/practice/concept-library" element={<ConceptLibraryScreen  go={go} state={state} set={set} />} />
           <Route path="/practice/learning-studio" element={<LearningStudioScreen  go={go} state={state} set={set} />} />
