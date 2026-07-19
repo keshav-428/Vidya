@@ -51,6 +51,110 @@ Strictly return ONLY the JSON object."""
     return json.loads(response.text)
 
 
+def generate_lesson(topic: str, grade: int = 6, language: str = "English",
+                    chapter_id: str = None, section: str = None, depth: str = "full"):
+    """Generates an ADAPTIVE lesson for one subtopic, structured as teaching beats:
+    hook → concept card(s) → hook-resolving check (+ alternate explanation & easier
+    check for the branch when the student misses) → per-part worked examples each
+    with a 'your turn' micro-question → spot-the-mistake game items.
+
+    depth: 'full' (student is new/struggling) → 2 concept cards, 3 examples.
+           'quick' (student already decent) → 1 concept card, 2 examples.
+    """
+    try:
+        context = rag_service.retrieve_context(
+            topic, grade=grade, top_k=5, chapter_id=chapter_id, section=section
+        )
+    except Exception:
+        context = []
+    context_text = "\n\n".join([c.get("content", "") for c in context]) if context else ""
+
+    n_cards, n_examples = (1, 2) if depth == "quick" else (2, 3)
+
+    prompt = f"""You are Vidya — a warm, playful, brilliant maths teacher talking one-on-one
+with a CBSE Class {grade} student (age 11-14) on their phone. You are creating an
+interactive lesson on "{topic}".
+
+LANGUAGE for every text value: {lang_instruction(language)}
+
+{STYLE_GUIDE}
+
+Ground the maths in this NCERT textbook context if relevant (ignore if unrelated):
+\"\"\"{context_text}\"\"\"
+
+VOICE RULES (very important):
+- Talk TO the student like a favourite teacher: "Let's see...", "Now watch what happens...", "Your turn!"
+- Words an 11-year-old uses. No textbook formality, no jargon.
+- Use relatable Indian contexts: cricket scores, ₹ pocket money, pizza/samosas, mobile data, marks.
+
+Return ONLY valid JSON with EXACTLY this structure:
+{{
+  "hook": {{
+    "scenario": "A short, relatable real-world puzzle (2-3 sentences) that {topic} secretly solves. End with a direct question to the student.",
+    "options": ["guess A", "guess B", "guess C"],
+    "best_index": 0,
+    "reveal": "one teasing line that does NOT give the answer away, e.g. 'Hold that thought — let's learn the trick first!'"
+  }},
+  "concept_cards": [
+    {{"heading": "short friendly heading", "body": "the core idea explained in Vidya's talking voice, 2-4 short sentences per paragraph, separate paragraphs with \\n\\n"}}
+  ],
+  "alt_explanation": {{"heading": "Another way to see it", "body": "the SAME core idea explained through a COMPLETELY DIFFERENT representation (if the cards used numbers, use a picture-in-words / money / food analogy). Shown only to students who missed the check."}},
+  "check": {{
+    "prompt": "resolve the hook: re-ask the hook question (or its direct application) now that the idea is taught",
+    "options": ["...", "...", "..."],
+    "correct_index": 0,
+    "right": "one celebratory line that also states WHY it's right",
+    "wrong": "one kind line that names the likely mix-up, never says 'wrong'"
+  }},
+  "easier_check": {{
+    "prompt": "a gentler variant of the check with friendlier numbers",
+    "options": ["...", "...", "..."],
+    "correct_index": 0,
+    "right": "short celebration",
+    "wrong": "short kind line giving the answer and the one-line trick"
+  }},
+  "examples": [
+    {{
+      "part": "the sub-skill this example covers (2-4 words)",
+      "q": "the worked question",
+      "steps": [{{"label": "Step name", "detail": "what we do and why, in talking voice"}}],
+      "answer": "the final answer",
+      "your_turn": {{
+        "prompt": "a TWIN of this example with new numbers — the student applies the exact same steps",
+        "options": ["...", "...", "..."],
+        "correct_index": 0,
+        "right": "celebration naming what they just did",
+        "wrong": "kind line pointing at the exact step to recheck"
+      }}
+    }}
+  ],
+  "spot_mistakes": [
+    {{
+      "story": "A kid's name + the question + their WRONG solution shown briefly (e.g. 'Rohan solved 1/4 + 1/3 like this: 1+1=2, 4+3=7, so 2/7.')",
+      "prompt": "Where did he/she go wrong?",
+      "options": ["...", "...", "..."],
+      "correct_index": 0,
+      "explain": "one line naming the misconception + the correct rule"
+    }}
+  ]
+}}
+
+STRUCTURE RULES:
+- exactly {n_cards} concept_cards and exactly {n_examples} examples.
+- exactly 2 spot_mistakes, each showing a DIFFERENT common misconception for {topic}.
+- The examples together must cover the distinct parts/cases of {topic} (label each via "part").
+- Every options array has exactly 3 options; correct_index must be accurate — double-check the maths.
+- All questions must be answerable in the head or with tiny mental steps (phone screen, no rough work).
+Strictly return ONLY the JSON object."""
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL,
+        contents=prompt,
+        config={"response_mime_type": "application/json"},
+    )
+    return json.loads(response.text)
+
+
 def identify_concept_from_images(images_b64: list, grade: int = 6, language: str = "English"):
     """Looks at one or more photos (e.g. a page of class notes, a textbook page,
     a whiteboard snap) and identifies the single core Maths concept the student

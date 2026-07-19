@@ -193,6 +193,32 @@ export const generateConcept = ({
     section,
   });
 
+// ── Adaptive lesson (teaching beats) for one subtopic ────────
+export interface GenerateLessonArgs {
+  topic: string;
+  grade?: number;
+  language?: Language;
+  chapterId?: string | null;
+  section?: string | null;
+  depth?: 'full' | 'quick';
+}
+export const generateLesson = ({
+  topic,
+  grade = 6,
+  language = 'English',
+  chapterId = null,
+  section = null,
+  depth = 'full',
+}: GenerateLessonArgs): Promise<import('../types').AdaptiveLesson> =>
+  post<import('../types').AdaptiveLesson>('/generate-lesson', {
+    topic,
+    grade,
+    language,
+    chapter_id: chapterId,
+    section,
+    depth,
+  });
+
 // ── Identify a concept from photos (class notes / textbook) ──
 // images: array of base64 JPEG strings (no data: prefix)
 export interface IdentifyConceptResult { topic: string; summary: string; detected: boolean; }
@@ -306,6 +332,7 @@ export default {
   searchVideos,
   realWorld,
   generateConcept,
+  generateLesson,
   identifyConcept,
   generatePaper,
   gradePaper,

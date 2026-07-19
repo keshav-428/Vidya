@@ -6,8 +6,9 @@ import { getChapterSkills } from '../../content/fractionsChapter';
 import { renderCard, mapScenes, mapVideos } from '../../content/conceptVisuals';
 import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
-import { applyResult } from '../../lib/mastery';
-import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap } from '../../types';
+import { applyResult, levelFor, skillKey } from '../../lib/mastery';
+import LessonFlow from './LessonFlow';
+import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap, AdaptiveLesson } from '../../types';
 
 // Build the card array for an LLM-generated topic. Real-life scenes and videos
 // are preloaded by the caller and passed in, so every card is render-ready and
@@ -93,24 +94,51 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
     || (staticSkill ? staticSkill.title : (sessionSub ? sessionSub.title : api.topicTitle(state?.planTopicId)));
   const grade = api.toGrade(state?.classLevel);
 
-  // cards: null = loading; otherwise the array to render.
+  // cards: legacy deck fallback. lesson: the adaptive teaching-beats flow.
   const [cards, setCards] = useState<Card[] | null>(staticSkill ? staticSkill.cards : null);
+  const [lesson, setLesson] = useState<AdaptiveLesson | null>(null);
+  const [videos, setVideos] = useState<VideoItem[]>([]);
   const [idx, setIdx] = useState(0);
   const [exiting, setExiting] = useState(false);
+
+  const scopeChapterId = askedChapterId || sessionSub?.chapterId || null;
+  const scopeSection = askedSection ?? sessionSub?.section ?? null;
 
   useEffect(() => {
     if (staticSkill) return;   // already have rich content
     let alive = true;
-    // Load the lesson, real-world uses, and videos together — so the deck
-    // only appears once every card is ready (no blank-then-fill flicker).
     const lang = state?.language || 'English';
+
+    // Mastery-aware depth: a student who's already decent gets a compressed
+    // lesson (1 concept card, 2 examples); everyone else gets the full build-up.
+    const lvl = scopeChapterId
+      ? levelFor(((state?.mastery as MasteryMap) || {})[skillKey(scopeChapterId, scopeSection)])
+      : 'new';
+    const depth: 'full' | 'quick' = (lvl === 'confident' || lvl === 'strong') ? 'quick' : 'full';
+
+    // Try the adaptive lesson first; fall back to the legacy card deck if the
+    // endpoint is unavailable or returns something unusable.
     Promise.all([
-      api.generateConcept({ topic: topicTitle, grade, language: lang, chapterId: askedChapterId || sessionSub?.chapterId || null, section: askedSection || sessionSub?.section || null })
-        .catch(() => ({} as ConceptResponse)),
-      api.realWorld(topicTitle, grade).catch(() => [] as RealWorldUse[]),
+      api.generateLesson({ topic: topicTitle, grade, language: lang, chapterId: scopeChapterId, section: scopeSection, depth })
+        .catch(() => null),
       api.searchVideos(topicTitle, grade).catch(() => [] as VideoItem[]),
-    ]).then(([concept, uses, vids]) => {
-      if (alive) setCards(buildCards(topicTitle, concept, mapScenes(uses), mapVideos(vids)));
+    ]).then(([les, vids]) => {
+      if (!alive) return;
+      const usable = les && les.hook && Array.isArray(les.concept_cards) && les.concept_cards.length
+        && les.check && Array.isArray(les.examples) && les.examples.length;
+      if (usable) {
+        setVideos(mapVideos(vids));
+        setLesson(les as AdaptiveLesson);
+        return;
+      }
+      // Legacy fallback: definition/mistakes/examples deck.
+      Promise.all([
+        api.generateConcept({ topic: topicTitle, grade, language: lang, chapterId: scopeChapterId, section: scopeSection })
+          .catch(() => ({} as ConceptResponse)),
+        api.realWorld(topicTitle, grade).catch(() => [] as RealWorldUse[]),
+      ]).then(([concept, uses]) => {
+        if (alive) setCards(buildCards(topicTitle, concept, mapScenes(uses), mapVideos(vids)));
+      });
     });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,11 +147,11 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
   // Mark the day active for the streak once the lesson is ready (once per day/topic),
   // and record coverage ("learned") for this skill in the mastery map.
   useEffect(() => {
-    if (!cards || !set) return;
+    if ((!cards && !lesson) || !set) return;
     const entry: ActivityEntry = {
       kind: 'session', date: new Date().toISOString(), topic: topicTitle,
-      chapterId: askedChapterId || sessionSub?.chapterId || undefined,
-      section: askedSection ?? sessionSub?.section ?? null,
+      chapterId: scopeChapterId || undefined,
+      section: scopeSection,
       score: 0, total: 0,
     };
     set({
@@ -131,7 +159,30 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
       mastery: applyResult((state?.mastery as MasteryMap) || {}, entry),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cards]);
+  }, [cards, lesson]);
+
+  // Adaptive lesson ready → run the teaching-beats flow.
+  if (lesson) {
+    return (
+      <>
+        {state?.coachStep === 2 && (
+          <CoachHint
+            text={t('concept.coachHint')}
+            cta={t('concept.coachCta')}
+            onDismiss={() => set({ coachStep: 3 })}
+          />
+        )}
+        <LessonFlow
+          lesson={lesson}
+          videos={videos}
+          topicTitle={topicTitle}
+          doneLabel={fromLearn ? t('concept.done') : t('concept.startQuiz')}
+          onDone={() => go(fromLearn ? 'learn' : 'navigable-quiz')}
+          onExit={() => go(fromLearn ? 'learn' : 'home')}
+        />
+      </>
+    );
+  }
 
   if (!cards) {
     return (

@@ -141,6 +141,47 @@ export interface SkillMastery {
 /** skillKey (chapterId or chapterId::section) → mastery. */
 export type MasteryMap = Record<string, SkillMastery>;
 
+// ── Adaptive lesson (teaching beats) ─────────────────────────
+/** A micro-check question inside a lesson beat. */
+export interface LessonMCQ {
+  prompt: string;
+  options: string[];
+  correct_index: number;
+  right?: string;    // feedback when correct
+  wrong?: string;    // kind feedback when missed
+}
+export interface LessonHook {
+  scenario: string;
+  options: string[];
+  best_index?: number;
+  reveal: string;    // teasing line shown after the guess (no spoiler)
+}
+export interface LessonConceptCard { heading: string; body: string; }
+export interface LessonExample {
+  part: string;      // the sub-skill this example covers
+  q: string;
+  steps: { label: string; detail: string }[];
+  answer: string;
+  your_turn: LessonMCQ;
+}
+export interface SpotMistake {
+  story: string;     // the wrong solution, shown as a mini story
+  prompt?: string;
+  options: string[];
+  correct_index: number;
+  explain: string;
+}
+/** Full adaptive lesson: hook → concept (+alt branch) → examples → mistakes game. */
+export interface AdaptiveLesson {
+  hook: LessonHook;
+  concept_cards: LessonConceptCard[];
+  alt_explanation?: LessonConceptCard;
+  check: LessonMCQ;
+  easier_check?: LessonMCQ;
+  examples: LessonExample[];
+  spot_mistakes: SpotMistake[];
+}
+
 /** Before→after mastery change for one skill, shown after a quiz/exam. */
 export interface MasteryDelta {
   key: string;

@@ -135,6 +135,14 @@ class IdentifyConceptRequest(BaseModel):
     grade: int = 6
     language: str = "English"
 
+class LessonRequest(BaseModel):
+    topic: str
+    grade: int = 6
+    language: str = "English"
+    chapter_id: Optional[str] = None
+    section: Optional[str] = None
+    depth: str = "full"   # 'full' | 'quick' (student already knows the basics)
+
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Vidya Backend is running (Root)"}
@@ -378,6 +386,18 @@ async def generate_concept_endpoint(request: ConceptRequest):
         return data
     except Exception as e:
         print(f"Error in /generate-concept: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-lesson")
+async def generate_lesson_endpoint(request: LessonRequest):
+    try:
+        data = concept_service.generate_lesson(
+            request.topic, request.grade, request.language,
+            chapter_id=request.chapter_id, section=request.section, depth=request.depth,
+        )
+        return data
+    except Exception as e:
+        print(f"Error in /generate-lesson: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/identify-concept")
