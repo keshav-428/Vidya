@@ -5,9 +5,15 @@ import { VTopBar } from '../../prototype/shared';
 import { classChapters, chapterTitleById, subtopicCount, type SyllabusChapter } from '../../content/syllabus';
 import { WEEK_TOPIC_CATALOG, type TopicInfo } from '../../content/weekPlan';
 import api from '../../api/vidya';
-import type { ScreenProps, AppState } from '../../types';
+import { levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
+import type { ScreenProps, AppState, MasteryMap } from '../../types';
 
 const DEFAULT_MINS = 15;
+
+// Level → dot color on topic rows ('new' stays neutral).
+const LEVEL_DOT: Record<MasteryLevel, string> = {
+  new: 'var(--border)', needshelp: '#B84030', improving: '#B45309', confident: 'var(--indigo)', strong: '#1A7A4A',
+};
 
 /** One day in the editable week plan. */
 interface PlanDay {
@@ -133,9 +139,10 @@ interface TopicPickerSheetProps {
   onToggleRest: (idx: number) => void;
   onClose: () => void;
   chapters: SyllabusChapter[];
+  mastery?: MasteryMap;
 }
 
-function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapters }: TopicPickerSheetProps) {
+function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapters, mastery }: TopicPickerSheetProps) {
   const { t } = useTranslation(['extra', 'common']);
   const isRest = day.status === 'rest';
   const usedTopicId = day.topicId;
@@ -210,6 +217,7 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapte
                   </div>
                   {isOpen && info.subtopics.map((sub) => {
                     const isCurrent = hasCurrent && sub.num === usedSection;
+                    const lvl = levelFor((mastery || {})[skillKey(info.id, sub.num)]);
                     return (
                       <div key={sub.id} className="v-tap" onClick={() => onSelect(dayIdx, info.id, sub.num, sub.title)} style={{
                         display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px 11px 16px',
@@ -218,6 +226,7 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapte
                       }}>
                         <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: isCurrent ? 'rgba(255,255,255,0.6)' : 'var(--muted-2)', minWidth: 28, fontVariantNumeric: 'tabular-nums' }}>{sub.num}</span>
                         <div style={{ flex: 1, minWidth: 0, fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.25, color: isCurrent ? '#fff' : 'var(--ink)' }}>{sub.title}</div>
+                        {!isCurrent && <div style={{ width: 7, height: 7, borderRadius: 9999, flexShrink: 0, background: LEVEL_DOT[lvl] }} />}
                         {isCurrent
                           ? <VIcon name="check" size={13} color="#fff" strokeWidth={2.5} />
                           : <VIcon name="chevron-right" size={12} color="var(--muted-2)" />}
@@ -384,6 +393,7 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
           onToggleRest={toggleRest}
           onClose={() => setSheetIdx(null)}
           chapters={chapters}
+          mastery={state?.mastery as MasteryMap}
         />
       )}
     </div>

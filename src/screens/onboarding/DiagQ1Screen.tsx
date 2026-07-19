@@ -139,7 +139,7 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
           {('subtopic' in q && (q as DiagnosticDrillQ).subtopic) && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff', minWidth: 0, maxWidth: '70%' }}>
               <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Subtopic: {(q as DiagnosticDrillQ).subtopic}
+                Topic: {(q as DiagnosticDrillQ).subtopic}
               </span>
             </div>
           )}

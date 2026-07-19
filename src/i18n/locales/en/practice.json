@@ -82,11 +82,7 @@
     "tenQuestions": "10 QUESTIONS",
     "fullPaper": "FULL PAPER",
     "startQuiz": "Start quiz",
-    "startQuizChapters_one": "Start quiz ({{count}} chapter)",
-    "startQuizChapters_other": "Start quiz ({{count}} chapters)",
-    "createExam": "Create exam paper",
-    "createExamChapters_one": "Create exam paper ({{count}} chapter)",
-    "createExamChapters_other": "Create exam paper ({{count}} chapters)"
+    "createExam": "Create exam paper"
   },
   "reviseClass": {
     "topBarTitle": "Revise Class Work",

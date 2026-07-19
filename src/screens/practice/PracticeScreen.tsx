@@ -5,7 +5,13 @@ import { VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '..
 import { classChapters } from '../../content/syllabus';
 import type { Subtopic, SyllabusChapter } from '../../content/syllabus';
 import api from '../../api/vidya';
-import type { ScreenProps } from '../../types';
+import { levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
+import type { ScreenProps, MasteryMap } from '../../types';
+
+// Level → dot color on topic rows ('new' stays neutral).
+const LEVEL_DOT: Record<MasteryLevel, string> = {
+  new: 'var(--border)', needshelp: '#B84030', improving: '#B45309', confident: 'var(--indigo)', strong: '#1A7A4A',
+};
 
 interface SelectedSubtopic {
   chapterId: string;
@@ -204,11 +210,13 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
                     </div>
                     {isOpen && c.subtopics.map((sub) => {
                       const on = isSel(c.id, sub.num);
+                      const lvl = levelFor(((state?.mastery as MasteryMap) || {})[skillKey(c.id, sub.num)]);
                       return (
                         <div key={sub.id} className="v-tap" onClick={() => toggleSub(c, sub)}
                           style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px 11px 30px', borderTop: '1px solid var(--border-soft)', background: on ? '#FAFAFF' : '#fff' }}>
                           <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'var(--muted-2)', minWidth: 28, fontVariantNumeric: 'tabular-nums' }}>{sub.num}</span>
                           <div style={{ flex: 1, minWidth: 0, fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.25 }}>{sub.title}</div>
+                          <div style={{ width: 7, height: 7, borderRadius: 9999, flexShrink: 0, background: LEVEL_DOT[lvl] || 'var(--border)' }} />
                           <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: on ? 'none' : '1.5px solid var(--border)', background: on ? 'var(--indigo)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
                           </div>

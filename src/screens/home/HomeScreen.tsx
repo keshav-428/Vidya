@@ -4,7 +4,13 @@ import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
 import api from '../../api/vidya';
 import { classChapters, chapterInfo, chapterTitleById, type SyllabusChapter } from '../../content/syllabus';
-import type { ScreenProps, GoFn, ScreenId } from '../../types';
+import { levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
+import type { ScreenProps, GoFn, ScreenId, MasteryMap } from '../../types';
+
+// Level → dot color on topic rows ('new' stays neutral).
+const LEVEL_DOT: Record<MasteryLevel, string> = {
+  new: 'var(--border)', needshelp: '#B84030', improving: '#B45309', confident: 'var(--indigo)', strong: '#1A7A4A',
+};
 
 import { WEEK_TOPIC_CATALOG } from '../../content/weekPlan';
 
@@ -199,13 +205,15 @@ function WeekBanner({ weekData, go, highlight }: WeekBannerProps) {
 
 interface NewSessionPickerProps {
   onClose: () => void;
-  onStart: (topicId: string) => void;
+  onStart: (chapterId: string, section: string, title: string) => void;
   chapters: SyllabusChapter[];
+  mastery?: MasteryMap;
 }
 
-function NewSessionPicker({ onClose, onStart, chapters }: NewSessionPickerProps) {
+// Sessions are topic-wise: pick a chapter (the place), then the topic (the thing you do).
+function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPickerProps) {
   const { t } = useTranslation(['home', 'common']);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [openChapter, setOpenChapter] = useState<string | null>(null);
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,48,97,0.45)', backdropFilter: 'blur(3px)' }} />
@@ -215,28 +223,35 @@ function NewSessionPicker({ onClose, onStart, chapters }: NewSessionPickerProps)
           <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{t('newSession.title')}</div>
           <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{t('newSession.desc')}</div>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1, padding: '0 22px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 16 }}>
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 22px 24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {chapters.map(ch => {
-              const on = selected === ch.id;
+              const isOpen = openChapter === ch.id;
               return (
-                <div key={ch.id} className="v-tap" onClick={() => setSelected(ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, background: on ? 'var(--ink)' : '#fff', border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', transition: 'all 150ms ease' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: on ? '#fff' : 'var(--ink)' }}>{ch.title}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: on ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 1 }}>{t('common:topicsCount', { count: ch.subtopics.length })}</div>
+                <div key={ch.id} style={{ borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', background: '#fff' }}>
+                  <div className="v-tap" onClick={() => setOpenChapter(isOpen ? null : ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{ch.title}</div>
+                      <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', marginTop: 1 }}>{t('common:topicsCount', { count: ch.subtopics.length })}</div>
+                    </div>
+                    <VIcon name={isOpen ? 'chevron-down' : 'chevron-right'} size={14} color="var(--muted-2)" />
                   </div>
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: on ? 'rgba(255,255,255,0.2)' : 'var(--bg-warm)', border: on ? 'none' : '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
-                  </div>
+                  {isOpen && ch.subtopics.map((sub) => {
+                    const lvl = levelFor((mastery || {})[skillKey(ch.id, sub.num)]);
+                    return (
+                      <div key={sub.id} className="v-tap" onClick={() => onStart(ch.id, sub.num, sub.title)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px 11px 16px', borderTop: '1px solid var(--border-soft)' }}>
+                        <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'var(--muted-2)', minWidth: 28, fontVariantNumeric: 'tabular-nums' }}>{sub.num}</span>
+                        <div style={{ flex: 1, minWidth: 0, fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.25 }}>{sub.title}</div>
+                        <div style={{ width: 7, height: 7, borderRadius: 9999, flexShrink: 0, background: LEVEL_DOT[lvl] }} />
+                        <VIcon name="chevron-right" size={12} color="var(--muted-2)" />
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
           </div>
-        </div>
-        <div style={{ padding: '12px 22px 36px', borderTop: '1px solid var(--border-soft)' }}>
-          <button className="v-btn-primary v-tap" onClick={() => selected && onStart(selected)} disabled={!selected} style={{ opacity: selected ? 1 : 0.4 }}>
-            {t('newSession.start')} <VIcon name="arrow-right" size={14} color="#fff" />
-          </button>
         </div>
       </div>
     </div>
@@ -481,11 +496,12 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
       {newSessionOpen && (
         <NewSessionPicker
           chapters={chapters}
+          mastery={state?.mastery as MasteryMap}
           onClose={() => setNewSessionOpen(false)}
-          onStart={(topicId) => {
+          onStart={(chapterId, section, title) => {
             setNewSessionOpen(false);
-            // Clear any Learn-tab skillId so the session uses the chosen chapter.
-            set({ planTopicId: topicId, planSection: undefined, planSubtopicTitle: undefined, skillId: undefined, sessionStep: 0, sessionDate: new Date().toDateString() });
+            // Sessions are topic-wise: scope today's session to the chosen topic.
+            set({ planTopicId: chapterId, planSection: section, planSubtopicTitle: title, skillId: undefined, sessionStep: 0, sessionDate: new Date().toDateString() });
           }}
         />
       )}

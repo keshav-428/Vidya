@@ -82,11 +82,7 @@
     "tenQuestions": "10 सवाल",
     "fullPaper": "पूरा पेपर",
     "startQuiz": "क्विज़ शुरू करें",
-    "startQuizChapters_one": "क्विज़ शुरू करें ({{count}} अध्याय)",
-    "startQuizChapters_other": "क्विज़ शुरू करें ({{count}} अध्याय)",
-    "createExam": "परीक्षा पेपर बनाएँ",
-    "createExamChapters_one": "परीक्षा पेपर बनाएँ ({{count}} अध्याय)",
-    "createExamChapters_other": "परीक्षा पेपर बनाएँ ({{count}} अध्याय)"
+    "createExam": "परीक्षा पेपर बनाएँ"
   },
   "reviseClass": {
     "topBarTitle": "क्लास का काम दोहराएँ",
