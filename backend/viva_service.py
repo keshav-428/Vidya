@@ -37,6 +37,7 @@ Return ONLY valid JSON:
   "questions": [
     {{
       "question": "the spoken question, addressed directly to the student",
+      "chapter": "EXACTLY one of these chapter names, verbatim: {json.dumps(topics)}",
       "listen_for": ["key point 1 a good answer mentions", "key point 2", "key point 3"]
     }}
   ]

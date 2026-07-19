@@ -4,32 +4,25 @@ import VIcon from '../../prototype/icons';
 import { VTopBar, VBottomNav, VProfileChip, VContextChip, VSectionHeader, VidyaAvatar } from '../../prototype/shared';
 import { classChapters } from '../../content/syllabus';
 import api from '../../api/vidya';
-import type { ScreenProps } from '../../types';
+import { levelFor, skillKey } from '../../lib/mastery';
+import type { ScreenProps, MasteryMap } from '../../types';
 
 interface LearnLiveResultsProps {
   q: string;
+  concepts: ConceptSuggestion[];
   onPick: (s: string) => void;
   onClose: () => void;
-  onBrowse: () => void;
 }
 
-const CONCEPTS = [
-  { t: 'Adding unlike fractions', topic: 'Fractions', keys: ['fraction', 'add', 'unlike', 'denominator', 'lcm'] },
-  { t: 'Why does LCM work?', topic: 'Number sense', keys: ['lcm', 'multiple', 'common', 'denominator'] },
-  { t: 'Area of a triangle', topic: 'Mensuration', keys: ['area', 'triangle', 'half base height'] },
-  { t: 'Linear equations (1 var)', topic: 'Algebra', keys: ['linear', 'equation', 'solve', 'x', 'variable'] },
-  { t: 'Pythagoras theorem', topic: 'Geometry', keys: ['pythagoras', 'right', 'triangle', 'hypotenuse'] },
-  { t: 'Mean, median, mode', topic: 'Data', keys: ['mean', 'median', 'mode', 'average', 'data'] },
-  { t: 'Equivalent fractions', topic: 'Fractions', keys: ['equivalent', 'fraction', 'simplify'] },
-  { t: 'Properties of integers', topic: 'Integers', keys: ['integer', 'negative', 'sign', 'property'] },
-];
+/** A searchable suggestion: a real topic from the student's class syllabus. */
+interface ConceptSuggestion { t: string; topic: string; keys: string[]; }
 
-function LearnLiveResults({ q, onPick, onClose, onBrowse }: LearnLiveResultsProps) {
+function LearnLiveResults({ q, concepts, onPick, onClose }: LearnLiveResultsProps) {
   const { t } = useTranslation('learn');
   const needle = (q || '').toLowerCase().trim();
   const matches = needle
-    ? CONCEPTS.filter(c => c.t.toLowerCase().includes(needle) || c.topic.toLowerCase().includes(needle) || c.keys.some(k => needle.includes(k) || k.includes(needle))).slice(0, 4)
-    : CONCEPTS.slice(0, 4);
+    ? concepts.filter(c => c.t.toLowerCase().includes(needle) || c.topic.toLowerCase().includes(needle) || c.keys.some(k => needle.includes(k) || k.includes(needle))).slice(0, 4)
+    : concepts.slice(0, 4);
   const hasQuery = needle.length > 0;
 
   return (
@@ -67,10 +60,7 @@ function LearnLiveResults({ q, onPick, onClose, onBrowse }: LearnLiveResultsProp
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
-        <button onClick={onBrowse} className="v-tap" style={{ background: 'transparent', border: 'none', padding: '4px 6px', fontFamily: 'Inter', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <VIcon name="search" size={12} color="var(--muted)" /> {t('screen.browseAll')}
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '10px 14px', borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
         <button onClick={onClose} className="v-tap" style={{ background: 'transparent', border: 'none', padding: '4px 6px', fontFamily: 'Inter', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--muted-2)' }}>{t('screen.cancel')}</button>
       </div>
     </div>
@@ -98,6 +88,19 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
   const { t } = useTranslation('learn');
   const cls = api.toGrade(state?.classLevel);
   const chapters = classChapters(cls);
+
+  // Suggestions come from THIS class's syllabus, weakest topics first —
+  // not a hardcoded list.
+  const suggestions = React.useMemo<ConceptSuggestion[]>(() => {
+    const map = (state?.mastery as MasteryMap) || {};
+    const all = chapters.flatMap((c) => c.subtopics.map((sub) => ({
+      t: sub.title,
+      topic: c.title,
+      keys: `${sub.title} ${c.title}`.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2),
+      weak: levelFor(map[skillKey(c.id, sub.num)]) === 'needshelp',
+    })));
+    return [...all.filter((x) => x.weak), ...all.filter((x) => !x.weak)];
+  }, [chapters, state?.mastery]);
 
   const openChapter = (id: string) => {
     set && set({ chapterId: id });
@@ -184,9 +187,9 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
         {focused && (
           <LearnLiveResults
             q={q}
+            concepts={suggestions}
             onPick={(s) => submitConcept(s)}
-            onClose={() => { setFocused(false); setQ(''); }}
-            onBrowse={() => go('concept-library')} />
+            onClose={() => { setFocused(false); setQ(''); }} />
         )}
 
         {/* Take a photo — the second way in, hidden while typing */}

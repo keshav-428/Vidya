@@ -220,7 +220,7 @@ export const generateLesson = ({
   });
 
 // ── Viva: spoken-answer practice ─────────────────────────────
-export interface VivaQuestion { question: string; listen_for: string[]; }
+export interface VivaQuestion { question: string; listen_for: string[]; chapter?: string; }
 export const generateViva = ({
   topics,
   grade = 6,

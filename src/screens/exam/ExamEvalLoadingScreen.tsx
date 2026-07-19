@@ -5,7 +5,7 @@ import { VTopBar, VSoftBackdrop, VidyaAvatar } from '../../prototype/shared';
 import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
 import { applyResult } from '../../lib/mastery';
-import type { ScreenProps, Paper, ActivityEntry, MasteryMap } from '../../types';
+import type { ScreenProps, Paper, ActivityEntry, MasteryMap, PracticeSelection } from '../../types';
 
 const LINE_KEYS = ['evalLoading.lines.reading', 'evalLoading.lines.matching', 'evalLoading.lines.marking', 'evalLoading.lines.writing'];
 
@@ -36,17 +36,53 @@ export default function ExamEvalLoadingScreen({ go, state, set }: ScreenProps) {
         const examTopics = (state?.examTopics as string[] | undefined) || [];
         const topic = examTopics.length ? examTopics.join(', ') : 'Exam';
         const total = res.total_possible ?? ((state?.examMarks as number | undefined) || 80);
-        // Attribute mastery only when the exam was scoped to a single subtopic.
+        // Single-subtopic exams credit that skill directly.
         const scope = state?.examScope as { chapterId?: string; section?: string | null } | null | undefined;
         const entry: ActivityEntry = {
           kind: 'exam', date: new Date().toISOString(), topic,
           chapterId: scope?.chapterId || undefined, section: scope?.section ?? null,
           score: res.total_awarded ?? 0, total,
         };
+        let mastery = applyResult((state?.mastery as MasteryMap) || {}, entry);
+        // Multi-topic exams: join graded marks (section+number) with the
+        // paper's per-question topic tags and credit each skill separately.
+        const examSel = state?.examSel as PracticeSelection[] | null | undefined;
+        if (!scope?.chapterId && examSel?.length) {
+          const norm = (x: string) => x.trim().toLowerCase();
+          const topicByQ = new Map<string, string>();
+          (paper.sections || []).forEach((sec) => {
+            ((sec.questions || []) as { number?: number; topic?: string }[]).forEach((pq) => {
+              if (pq?.topic != null && pq?.number != null) topicByQ.set(`${sec.name}#${pq.number}`, pq.topic);
+            });
+          });
+          const groups = new Map<string, { s: PracticeSelection; got: number; max: number }>();
+          ((res.sections || []) as { name?: string; questions?: { number?: number; marks_awarded?: number; marks_possible?: number }[] }[]).forEach((sec) => {
+            (sec.questions || []).forEach((rq) => {
+              const qTopic = topicByQ.get(`${sec.name}#${rq.number}`);
+              if (!qTopic) return;
+              const match = examSel.find((p) => norm(p.title) === norm(qTopic));
+              if (!match) return;
+              const k = `${match.chapterId}::${match.section}`;
+              const g = groups.get(k) || { s: match, got: 0, max: 0 };
+              g.got += Number(rq.marks_awarded) || 0;
+              g.max += Number(rq.marks_possible) || 0;
+              groups.set(k, g);
+            });
+          });
+          groups.forEach((g) => {
+            if (g.max > 0) {
+              mastery = applyResult(mastery, {
+                kind: 'exam', date: entry.date, topic: g.s.title,
+                chapterId: g.s.chapterId, section: g.s.section,
+                score: Math.min(g.got, g.max), total: g.max,
+              });
+            }
+          });
+        }
         set && set({
           examResult: res,
           activityLog: appendActivity(state?.activityLog, entry),
-          mastery: applyResult((state?.mastery as MasteryMap) || {}, entry),
+          mastery,
         });
       })
       .catch(() => { set && set({ examResult: 'error' }); })

@@ -305,6 +305,7 @@ RULES:
 4. Distribute questions across the selected chapters: {topics_str}
 5. Language: write all question text {lang_name(language)}. {lang_instruction(language)}
 6. Questions should match typical school exam difficulty — not too easy, not JEE level.
+7. EVERY question object must include a "topic" field whose value is EXACTLY one of these strings (verbatim, the topic that question tests): {json.dumps(topics)}
 
 Return ONLY a valid JSON object with this exact structure:
 {{
@@ -316,6 +317,7 @@ Return ONLY a valid JSON object with this exact structure:
       "questions": [
         {{
           "number": 1,
+          "topic": "one of the given topic strings, verbatim",
           "text": "Question text here",
           "type": "mcq",
           "options": ["Option A", "Option B", "Option C", "Option D"],

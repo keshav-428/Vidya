@@ -39,7 +39,6 @@ import WeekPlanScreen      from './screens/home/WeekPlanScreen';
 
 // ─── Screen imports — Learn ───────────────────────────────────
 import LearnScreen         from './screens/learn/LearnScreen';
-import SyllabusScreen      from './screens/learn/SyllabusScreen';
 import ConceptScreen       from './screens/learn/ConceptScreen';
 import ChapterTopicsScreen from './screens/learn/ChapterTopicsScreen';
 
@@ -49,14 +48,10 @@ import NavigableQuizScreen      from './screens/quiz/NavigableQuizScreen';
 import FinalReviewScreen        from './screens/quiz/FinalReviewScreen';
 import QuizResultSummaryScreen  from './screens/quiz/QuizResultSummaryScreen';
 import QuizReviewQuestionScreen from './screens/quiz/QuizReviewQuestionScreen';
-import QuickPrepScreen          from './screens/quiz/QuickPrepScreen';
 
 // ─── Screen imports — Practice ────────────────────────────────
 import PracticeScreen        from './screens/practice/PracticeScreen';
 import VivaScreen            from './screens/practice/VivaScreen';
-import ReviseClassScreen     from './screens/practice/ReviseClassScreen';
-import ConceptLibraryScreen  from './screens/practice/ConceptLibraryScreen';
-import LearningStudioScreen  from './screens/practice/LearningStudioScreen';
 
 // ─── Screen imports — Exam ────────────────────────────────────
 import ExamConfigScreen       from './screens/exam/ExamConfigScreen';
@@ -263,7 +258,6 @@ function AppInner() {
 
           {/* Learn */}
           <Route path="/learn"                  element={<LearnScreen         go={go} state={state} set={set} />} />
-          <Route path="/syllabus"               element={<SyllabusScreen      go={go} state={state} set={set} />} />
           <Route path="/learn/chapter"          element={<ChapterTopicsScreen go={go} state={state} set={set} />} />
           <Route path="/learn/concept"          element={<ConceptScreen       go={go} state={state} set={set} />} />
 
@@ -276,14 +270,10 @@ function AppInner() {
           <Route path="/quiz/final-review"      element={<FinalReviewScreen        go={go} state={state} set={set} />} />
           <Route path="/quiz/result-summary"    element={<QuizResultSummaryScreen  go={go} state={state} set={set} />} />
           <Route path="/quiz/review-question"   element={<QuizReviewQuestionScreen go={go} state={state} set={set} />} />
-          <Route path="/quick-prep"             element={<QuickPrepScreen          go={go} state={state} set={set} />} />
 
           {/* Practice */}
           <Route path="/practice"                 element={<PracticeScreen        go={go} state={state} set={set} />} />
           <Route path="/practice/viva"            element={<VivaScreen            go={go} state={state} set={set} />} />
-          <Route path="/practice/revise-class"    element={<ReviseClassScreen     go={go} state={state} set={set} />} />
-          <Route path="/practice/concept-library" element={<ConceptLibraryScreen  go={go} state={state} set={set} />} />
-          <Route path="/practice/learning-studio" element={<LearningStudioScreen  go={go} state={state} set={set} />} />
 
           {/* Exam */}
           <Route path="/exam/config"             element={<ExamConfigScreen      go={go} state={state} set={set} />} />

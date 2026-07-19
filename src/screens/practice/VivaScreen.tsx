@@ -5,7 +5,8 @@ import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { chapterTitleById } from '../../content/syllabus';
 import api, { type VivaQuestion, type VivaFeedback } from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
-import type { ScreenProps } from '../../types';
+import { applyResult } from '../../lib/mastery';
+import type { ScreenProps, MasteryMap } from '../../types';
 
 // ─────────────────────────────────────────────────────────────
 //  Viva — explain it out loud. Vidya asks a question, the student
@@ -124,10 +125,35 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
   const next = () => {
     if (!questions) return;
     if (qIdx + 1 >= questions.length) {
-      // Mark the day active for the streak.
+      // Credit each question's stars to its chapter in the mastery map
+      // (chapter tag from the backend; single-chapter vivas need no tag).
+      const now = new Date().toISOString();
+      const pairs = chapterIds.map((id) => ({ id, title: chapterTitleById(id) || '' }));
+      const norm = (x: string) => x.trim().toLowerCase();
+      let mastery = (state?.mastery as MasteryMap) || {};
+      const groups = new Map<string, { id: string; stars: number; n: number }>();
+      questions.forEach((qq, i) => {
+        const fb = results[i];
+        if (!fb) return;
+        const match = qq.chapter
+          ? pairs.find((p) => norm(p.title) === norm(qq.chapter!))
+          : (pairs.length === 1 ? pairs[0] : null);
+        if (!match) return;
+        const g = groups.get(match.id) || { id: match.id, stars: 0, n: 0 };
+        g.stars += Math.max(0, Math.min(3, fb.stars || 0));
+        g.n += 1;
+        groups.set(match.id, g);
+      });
+      groups.forEach((g) => {
+        mastery = applyResult(mastery, {
+          kind: 'quiz', date: now, topic: `Viva · ${chapterTitleById(g.id) || ''}`,
+          chapterId: g.id, section: null, score: g.stars, total: g.n * 3,
+        });
+      });
       set && set({
+        mastery,
         activityLog: appendActivity(state?.activityLog, {
-          kind: 'session', date: new Date().toISOString(), topic: `Viva · ${topics.join(', ')}`,
+          kind: 'session', date: now, topic: `Viva · ${topics.join(', ')}`,
           score: 0, total: 0,
         }, { oncePerDay: true }),
       });

@@ -107,7 +107,8 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
     go('navigable-quiz');
   };
   const startExam = () => {
-    set && set({ examTopics: selectedTitles(), examScope: singleScope() });
+    // examSel carries the full selection so grading can credit each topic's skill.
+    set && set({ examTopics: selectedTitles(), examScope: singleScope(), examSel: sel });
     go('exam-config');
   };
 
