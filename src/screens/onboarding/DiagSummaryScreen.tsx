@@ -45,18 +45,18 @@ export default function DiagSummaryScreen({ go, state, set }: ScreenProps) {
     <VSoftBackdrop variant="cool">
       <VTopBar showBack onBack={() => go('diag-q1')} transparent />
       <div style={{ padding: '72px 22px 32px', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-        <div className="v-eyebrow v-enter" style={{ marginBottom: 6 }}>Diagnostic Summary</div>
+        <div className="v-eyebrow v-enter" style={{ marginBottom: 6 }}>{t('diagSummary.eyebrow')}</div>
         <h1 className="v-h1 v-enter" style={{ fontSize: 28, marginBottom: 12, lineHeight: 1.1 }}>
-          Here's what we found
+          {t('diagSummary.title')}
         </h1>
         <p className="v-enter" style={{ fontFamily: 'Inter', fontSize: 13, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>
-          Based on your answers, we identified some areas to focus on:
+          {t('diagSummary.sub')}
         </p>
 
         {/* Weak areas */}
         {outcome.weak.length > 0 && (
           <div className="v-card v-enter" style={{ padding: '18px', marginBottom: 18, background: '#FFF7ED' }}>
-            <div className="v-eyebrow-sm" style={{ marginBottom: 12 }}>Areas to strengthen</div>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 12 }}>{t('diagSummary.weakHeader')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {outcome.weak.slice(0, 3).map((area) => (
                 <div key={area} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -65,7 +65,7 @@ export default function DiagSummaryScreen({ go, state, set }: ScreenProps) {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{area}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted-2)', marginTop: 2 }}>We'll help you build confidence here</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted-2)', marginTop: 2 }}>{t('diagSummary.weakSub')}</div>
                   </div>
                 </div>
               ))}
@@ -76,7 +76,7 @@ export default function DiagSummaryScreen({ go, state, set }: ScreenProps) {
         {/* Strong areas */}
         {outcome.strong.length > 0 && (
           <div className="v-card v-enter" style={{ padding: '18px', marginBottom: 18, background: '#ECFDF5' }}>
-            <div className="v-eyebrow-sm" style={{ marginBottom: 12 }}>You're strong in</div>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 12 }}>{t('diagSummary.strongHeader')}</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {outcome.strong.map((area) => (
                 <div key={area} style={{ padding: '6px 12px', borderRadius: 9999, background: '#fff', border: '1px solid var(--accent-success)', fontSize: 12, fontWeight: 600, color: 'var(--accent-success)' }}>
@@ -98,7 +98,7 @@ export default function DiagSummaryScreen({ go, state, set }: ScreenProps) {
             style={{ opacity: drilling ? 0.6 : 1 }}
           >
             {drilling ? <VIcon name="loader" size={14} color="#fff" /> : <VIcon name="zap" size={14} color="#fff" />}
-            {drilling ? 'Preparing questions...' : 'Dig deeper'}
+            {drilling ? t('diagSummary.preparing') : t('diagSummary.digDeeper')}
           </button>
           <button
             className="v-btn-secondary v-tap"
@@ -106,7 +106,7 @@ export default function DiagSummaryScreen({ go, state, set }: ScreenProps) {
             disabled={drilling}
             style={{ opacity: drilling ? 0.6 : 1 }}
           >
-            Continue to your plan <VIcon name="arrow-right" size={14} color="var(--ink)" />
+            {t('diagSummary.continuePlan')} <VIcon name="arrow-right" size={14} color="var(--ink)" />
           </button>
         </div>
       </div>

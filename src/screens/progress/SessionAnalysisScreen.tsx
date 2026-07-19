@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
 import api from '../../api/vidya';
-import { LEVEL_LABEL, type MasteryLevel } from '../../lib/mastery';
+import { type MasteryLevel } from '../../lib/mastery';
 import type { ScreenProps, QuizFeedback, MasteryDelta } from '../../types';
 
 // Level → accent color for the mastery bar.
@@ -19,7 +19,7 @@ interface QuizMistake {
 }
 
 export default function SessionAnalysisScreen({ go, state }: ScreenProps) {
-  const { t } = useTranslation('progress');
+  const { t } = useTranslation(['progress', 'common']);
   const topicTitle = (state?.lastQuizTopic as string | undefined) || 'Fractions';
 
   const score = (state?.lastQuizScore as number | undefined) ?? 4;
@@ -92,18 +92,18 @@ export default function SessionAnalysisScreen({ go, state }: ScreenProps) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--muted-2)', marginBottom: 3 }}>
-                    {d.leveledUp ? '↑ Level up' : 'Your level'}
+                    {d.leveledUp ? t('delta.levelUp') : t('delta.yourLevel')}
                   </div>
                   <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.title}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   {d.leveledUp && d.fromLevel !== d.toLevel && (
                     <>
-                      <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted-2)' }}>{LEVEL_LABEL[d.fromLevel as MasteryLevel]}</span>
+                      <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted-2)' }}>{t(`common:levels.${d.fromLevel}`)}</span>
                       <VIcon name="arrow-right" size={12} color="var(--muted-2)" />
                     </>
                   )}
-                  <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color }}>{LEVEL_LABEL[to]}</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color }}>{t(`common:levels.${to}`)}</span>
                 </div>
               </div>
               {/* 4-step level bar */}
@@ -113,7 +113,7 @@ export default function SessionAnalysisScreen({ go, state }: ScreenProps) {
                 ))}
               </div>
               <div style={{ fontFamily: 'Inter', fontSize: 11.5, color: 'var(--muted-2)', marginTop: 8 }}>
-                {to === 'new' ? 'Keep practising to unlock your level.' : `Mastery ${d.percent}% · based on your recent answers`}
+                {to === 'new' ? t('delta.keepPractising') : t('delta.masteryPct', { percent: d.percent })}
               </div>
             </div>
           );

@@ -73,7 +73,7 @@ export default function DiagDrillScreen({ go, state, set }: ScreenProps) {
         <div style={{ display: 'flex', marginBottom: 14 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff', minWidth: 0, maxWidth: '70%' }}>
             <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Topic: {q.subtopic}
+              {t('diagQ.topicLabel', { name: q.subtopic })}
             </span>
           </div>
         </div>
@@ -83,9 +83,9 @@ export default function DiagDrillScreen({ go, state, set }: ScreenProps) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', letterSpacing: '0.05em' }}>
-          <span>Question {idx + 1} of {total}</span>
+          <span>{t('diagQ.questionOf', { value: idx + 1, total })}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--accent-blue)', fontWeight: 600 }}>
-            <VIcon name="zap" size={11} color="var(--accent-blue)" /> Deep dive
+            <VIcon name="zap" size={11} color="var(--accent-blue)" /> {t('diagQ.deepDive')}
           </span>
         </div>
 

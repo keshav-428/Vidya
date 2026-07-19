@@ -61,8 +61,8 @@ export default function ProgressScreen({ go, state, set }: ScreenProps) {
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 600 }}>{masteryPct}<span style={{ fontSize: 10 }}>%</span></div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>Topic mastery</div>
-            <div style={{ fontSize: 12, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.4 }}>Your level in every chapter &amp; subtopic · {coveragePct}% explored</div>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>{t('masteryCard.title')}</div>
+            <div style={{ fontSize: 12, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.4 }}>{t('masteryCard.sub', { coverage: coveragePct })}</div>
           </div>
           <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
         </div>
@@ -95,11 +95,11 @@ export default function ProgressScreen({ go, state, set }: ScreenProps) {
         {/* Empty state — no scored activity yet */}
         {!hasData && (
           <div className="v-card" style={{ padding: 24, textAlign: 'center', marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, marginBottom: 6 }}>No progress yet</div>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, marginBottom: 6 }}>{t('progress.emptyTitle')}</div>
             <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 16 }}>
-              Finish a lesson or take a quiz and your mastery, streak, and review list build up here.
+              {t('progress.emptyBody')}
             </div>
-            <button className="v-btn-primary v-tap" onClick={() => go('home')} style={{ width: 'auto', padding: '12px 22px' }}>Start a session</button>
+            <button className="v-btn-primary v-tap" onClick={() => go('home')} style={{ width: 'auto', padding: '12px 22px' }}>{t('progress.emptyCta')}</button>
           </div>
         )}
 

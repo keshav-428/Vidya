@@ -10,7 +10,12 @@
   "classBoard": "Class {{n}} · {{board}}",
   "topicsCount_one": "{{count}} topic",
   "topicsCount_other": "{{count}} topics",
-  "nav": { "home": "Home", "learn": "Learn", "practice": "Practice", "progress": "Progress" },
+  "nav": {
+    "home": "Home",
+    "learn": "Learn",
+    "practice": "Practice",
+    "progress": "Progress"
+  },
   "ask": {
     "title": "Ask Vidya",
     "reading": "Vidya is reading the textbook…",
@@ -26,5 +31,13 @@
       "progress": "Want a study plan for your weak topics?",
       "general": "Stuck somewhere? Ask in simple words."
     }
-  }
+  },
+  "levels": {
+    "new": "Just started",
+    "needshelp": "Let's work on this",
+    "improving": "Getting there",
+    "confident": "Almost got it!",
+    "strong": "You've got this!"
+  },
+  "notStarted": "Not started"
 }

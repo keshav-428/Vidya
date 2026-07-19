@@ -21,10 +21,22 @@
     "otherStartingPoints": "OTHER STARTING POINTS",
     "keepTopic": "Keep \"{{topic}}\"",
     "steps": {
-      "1": { "title": "What does it mean?", "sub": "A simple explanation" },
-      "2": { "title": "A real-life example", "sub": "Where it shows up around you" },
-      "3": { "title": "One solved example", "sub": "Watch how it's done" },
-      "4": { "title": "Try 3 questions", "sub": "Your turn, gently" }
+      "1": {
+        "title": "What does it mean?",
+        "sub": "A simple explanation"
+      },
+      "2": {
+        "title": "A real-life example",
+        "sub": "Where it shows up around you"
+      },
+      "3": {
+        "title": "One solved example",
+        "sub": "Watch how it's done"
+      },
+      "4": {
+        "title": "Try 3 questions",
+        "sub": "Your turn, gently"
+      }
     },
     "pauseNote": "You can pause anytime. Vidya will remember where you left off.",
     "startLearning": "Start Learning",
@@ -46,10 +58,21 @@
   },
   "diagResult": {
     "levels": {
-      "confident": { "label": "Confident", "sub": "You have strong basics. We'll stretch you." },
-      "improving": { "label": "Improving", "sub": "You're on the right path. A little focus will go a long way." },
-      "needs": { "label": "Needs Help", "sub": "No problem. We'll start with the basics and build up." },
-      "strong": { "label": "Strong" }
+      "confident": {
+        "label": "Confident",
+        "sub": "You have strong basics. We'll stretch you."
+      },
+      "improving": {
+        "label": "Improving",
+        "sub": "You're on the right path. A little focus will go a long way."
+      },
+      "needs": {
+        "label": "Needs Help",
+        "sub": "No problem. We'll start with the basics and build up."
+      },
+      "strong": {
+        "label": "Strong"
+      }
     },
     "eyebrow": "Your starting level",
     "title": "Nice work, {{name}}.",
@@ -79,7 +102,10 @@
     "building": "Vidya is preparing your diagnostic…",
     "gotItLast": "Got it. Last one done.",
     "gotItNext": "Got it. Next one coming up.",
-    "finish": "Finish"
+    "finish": "Finish",
+    "topicLabel": "Topic: {{name}}",
+    "deepDive": "Deep dive",
+    "pinpointing": "Pinpointing…"
   },
   "signUp": {
     "titleSignup": "Create your account",
@@ -106,5 +132,16 @@
     "forgotPassword": "Forgot password?",
     "pleaseWait": "Please wait…",
     "createAccount": "Create account"
+  },
+  "diagSummary": {
+    "eyebrow": "Diagnostic Summary",
+    "title": "Here's what we found",
+    "sub": "Based on your answers, we identified some areas to focus on:",
+    "weakHeader": "Areas to strengthen",
+    "weakSub": "We'll help you build confidence here",
+    "strongHeader": "You're strong in",
+    "digDeeper": "Dig deeper",
+    "preparing": "Preparing questions…",
+    "continuePlan": "Continue to your plan"
   }
 }

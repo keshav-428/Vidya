@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar, VBottomNav, VProfileChip } from '../../prototype/shared';
 import { classChapters, chapterByIdC } from '../../content/syllabus';
-import { chapterMastery, levelFor, skillKey, LEVEL_LABEL, type MasteryLevel } from '../../lib/mastery';
+import { chapterMastery, levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
 import api from '../../api/vidya';
 import type { ScreenProps, AppState, MasteryMap } from '../../types';
 
@@ -19,7 +19,7 @@ const LEVEL_COLOR: Record<MasteryLevel, string> = {
 };
 
 export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
-  const { t } = useTranslation('learn');
+  const { t } = useTranslation(['learn', 'common']);
   const cls = api.toGrade(state?.classLevel);
   const chapter = chapterByIdC(cls, state?.chapterId as string) || classChapters(cls)[0];
   const map = (state?.mastery as MasteryMap) || {};
@@ -67,10 +67,10 @@ export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>
-              {cm.touched === 0 ? 'A fresh chapter — let’s explore it!' : `${cm.touched} of ${cm.totalSubtopics} topics explored`}
+              {cm.touched === 0 ? t('tour.fresh') : t('tour.explored', { touched: cm.touched, total: cm.totalSubtopics })}
             </div>
             <div style={{ fontSize: 11.5, color: LEVEL_COLOR[cm.level], fontWeight: 700, marginTop: 3 }}>
-              {LEVEL_LABEL[cm.level]}
+              {t(`common:levels.${cm.level}`)}
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 3 }}>
-                {cm.touched === 0 ? 'Start here' : 'Up next for you'}
+                {cm.touched === 0 ? t('tour.startHere') : t('tour.upNext')}
               </div>
               <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, lineHeight: 1.2 }}>{startHere.num} · {startHere.title}</div>
             </div>
@@ -109,7 +109,7 @@ export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
                     <div style={{ width: 7, height: 7, borderRadius: 9999, background: color }} />
                     <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: lvl === 'new' ? 'var(--muted-2)' : color }}>
-                      {lvl === 'new' ? 'Not started' : LEVEL_LABEL[lvl]}
+                      {lvl === 'new' ? t('common:notStarted') : t(`common:levels.${lvl}`)}
                     </span>
                   </div>
                 </div>

@@ -6,7 +6,15 @@
     "weeklyStreak": "साप्ताहिक लय",
     "thisWeek": "इस हफ़्ते",
     "daysOf": "में से {{total}} दिन",
-    "days": { "mon": "सो", "tue": "मं", "wed": "बु", "thu": "गु", "fri": "शु", "sat": "श", "sun": "र" },
+    "days": {
+      "mon": "सो",
+      "tue": "मं",
+      "wed": "बु",
+      "thu": "गु",
+      "fri": "शु",
+      "sat": "श",
+      "sun": "र"
+    },
     "masteryHeader_one": "महारत · {{count}} विषय",
     "masteryHeader_other": "महारत · {{count}} विषय",
     "buckets": {
@@ -21,7 +29,10 @@
     "strong": "मज़बूत",
     "recentPractice": "हाल का अभ्यास",
     "mistakesToRetry": "दोबारा करने वाली गलतियाँ",
-    "retry": "दोबारा करें →"
+    "retry": "दोबारा करें →",
+    "emptyTitle": "अभी कोई प्रगति नहीं",
+    "emptyBody": "एक पाठ पूरा करो या क्विज़ दो — तुम्हारी महारत, स्ट्रीक और दोहराने की सूची यहाँ बनती जाएगी।",
+    "emptyCta": "सेशन शुरू करो"
   },
   "analysis": {
     "topbarTitle": "विश्लेषण",
@@ -52,5 +63,25 @@
     "gapSub": "भिन्नों के भाग पर दो अभ्यास सत्र इस अंतर को काफ़ी हद तक भर सकते हैं।",
     "concepts": "अवधारणाएँ",
     "practiceWeak": "कमज़ोर वाले अभ्यास करें"
+  },
+  "masteryCard": {
+    "title": "विषय महारत",
+    "sub": "हर अध्याय और विषय में तुम्हारा स्तर · {{coverage}}% देखा"
+  },
+  "masteryMap": {
+    "eyebrow": "तुम्हारे विषय",
+    "ringLabel": "महारत",
+    "explored": "तुमने सिलेबस का {{coverage}}% देख लिया है",
+    "explainer": "किसी विषय का अभ्यास करो और स्तर बढ़ाओ। हरा मतलब आ गया!",
+    "allTopics": "सभी विषय",
+    "needsHelp": "मदद चाहिए",
+    "practised": "{{total}} में से {{touched}} का अभ्यास",
+    "practise": "अभ्यास करो"
+  },
+  "delta": {
+    "levelUp": "↑ स्तर बढ़ा",
+    "yourLevel": "तुम्हारा स्तर",
+    "masteryPct": "महारत {{percent}}% · तुम्हारे हाल के जवाबों के आधार पर",
+    "keepPractising": "अभ्यास करते रहो — स्तर जल्द खुलेगा।"
   }
 }

@@ -5,7 +5,7 @@ import { VTopBar } from '../../prototype/shared';
 import { relativeDay } from '../../lib/progress';
 import {
   chapterMastery, subjectMastery, levelFor, skillKey,
-  LEVEL_LABEL, type MasteryLevel,
+  type MasteryLevel,
 } from '../../lib/mastery';
 import { classChapters } from '../../content/syllabus';
 import api from '../../api/vidya';
@@ -16,7 +16,7 @@ const LEVEL_COLOR: Record<MasteryLevel, string> = {
 };
 
 export default function TopicMasteryScreen({ go, state, set }: ScreenProps) {
-  const { t } = useTranslation('progress');
+  const { t } = useTranslation(['progress', 'common']);
   const grade = api.toGrade(state?.classLevel);
   const chapters = classChapters(grade);
   const map = (state?.mastery as MasteryMap) || {};
@@ -42,7 +42,7 @@ export default function TopicMasteryScreen({ go, state, set }: ScreenProps) {
     <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
       <VTopBar transparent showBack onBack={() => go('progress')} />
       <div style={{ padding: '72px 22px 40px' }}>
-        <div className="v-eyebrow" style={{ marginBottom: 8 }}>YOUR TOPICS</div>
+        <div className="v-eyebrow" style={{ marginBottom: 8 }}>{t('masteryMap.eyebrow')}</div>
         <h1 className="v-h1" style={{ fontSize: 30, marginBottom: 20 }}>{t('mastery.title')}</h1>
 
         {/* Overall ring */}
@@ -55,22 +55,22 @@ export default function TopicMasteryScreen({ go, state, set }: ScreenProps) {
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 30, fontWeight: 600, lineHeight: 1 }}>{pct}<span style={{ fontSize: 15 }}>%</span></div>
-              <div style={{ fontSize: 8.5, letterSpacing: '0.1em', color: 'var(--muted-2)', marginTop: 3 }}>MASTERY</div>
+              <div style={{ fontSize: 8.5, letterSpacing: '0.1em', color: 'var(--muted-2)', marginTop: 3 }}>{t('masteryMap.ringLabel')}</div>
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, marginBottom: 6, lineHeight: 1.25 }}>
-              You've explored {coverage}% of your syllabus
+              {t('masteryMap.explored', { coverage })}
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
-              Practise a topic to raise its level. Green means you've got it.
+              {t('masteryMap.explainer')}
             </div>
           </div>
         </div>
 
         {/* Filter */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          {[{ id: false, label: 'All topics' }, { id: true, label: 'Needs help' }].map((f) => {
+          {[{ id: false, label: t('masteryMap.allTopics') }, { id: true, label: t('masteryMap.needsHelp') }].map((f) => {
             const active = needsOnly === f.id;
             return (
               <div key={String(f.id)} className="v-tap" onClick={() => setNeedsOnly(f.id)} style={{
@@ -102,8 +102,8 @@ export default function TopicMasteryScreen({ go, state, set }: ScreenProps) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 15.5, lineHeight: 1.2 }}>{ch.title}</div>
                     <div style={{ fontSize: 11, marginTop: 2 }}>
-                      <span style={{ color, fontWeight: 700 }}>{LEVEL_LABEL[m.level]}</span>
-                      <span style={{ color: 'var(--muted-2)' }}> · {m.touched}/{m.totalSubtopics} practised</span>
+                      <span style={{ color, fontWeight: 700 }}>{t(`common:levels.${m.level}`)}</span>
+                      <span style={{ color: 'var(--muted-2)' }}> · {t('masteryMap.practised', { touched: m.touched, total: m.totalSubtopics })}</span>
                     </div>
                   </div>
                   <VIcon name={isOpen ? 'chevron-down' : 'chevron-right'} size={16} color="var(--muted-2)" />
@@ -118,10 +118,10 @@ export default function TopicMasteryScreen({ go, state, set }: ScreenProps) {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.25 }}>{sub.title}</div>
                         <div style={{ fontSize: 10.5, color: 'var(--muted-2)', marginTop: 1 }}>
-                          {sm ? `${LEVEL_LABEL[lvl]}${sm.lastSeen ? ` · ${relativeDay(sm.lastSeen)}` : ''}` : 'Not started'}
+                          {sm ? `${t(`common:levels.${lvl}`)}${sm.lastSeen ? ` · ${relativeDay(sm.lastSeen)}` : ''}` : t('common:notStarted')}
                         </div>
                       </div>
-                      <div className="v-link" style={{ fontSize: 12, fontWeight: 600, color: 'var(--indigo)' }}>Practise</div>
+                      <div className="v-link" style={{ fontSize: 12, fontWeight: 600, color: 'var(--indigo)' }}>{t('masteryMap.practise')}</div>
                     </div>
                   );
                 })}

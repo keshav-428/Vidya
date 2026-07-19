@@ -3,7 +3,7 @@
     "eyebrow": "LEARN",
     "title": "Understand a concept",
     "subtitle": "Ask, search, or pick a chapter below.",
-    "searchPlaceholder": "Ask a concept · e.g. why does LCM work?",
+    "searchPlaceholder": "Ask a doubt…",
     "explain": "Explain: \"{{q}}\"",
     "conceptPageHint": "→ Concept page · 6-step walk-through",
     "typeHint": "Type a concept to learn",
@@ -28,5 +28,37 @@
     "wholeChapterSub": "Vidya walks you through {{title}}",
     "topicsHeader": "Topics in this chapter",
     "quiz": "Quiz"
+  },
+  "lesson": {
+    "eyebrowHook": "THINK ABOUT IT 🤔",
+    "eyebrowConcept": "THE IDEA",
+    "eyebrowAlt": "ANOTHER WAY TO SEE IT",
+    "eyebrowCheck": "QUICK TRY ✏️",
+    "eyebrowEasier": "ONE MORE TRY 💪",
+    "eyebrowExample": "WATCH ME SOLVE",
+    "eyebrowYourTurn": "YOUR TURN 🚀",
+    "eyebrowSpot": "SPOT THE MISTAKE 🕵️",
+    "eyebrowVideos": "WATCH & LEARN",
+    "hookRight": "Great instinct!",
+    "hookGuess": "Interesting guess!",
+    "right": "Yes! You got it! 🎉",
+    "wrong": "Good try — let's look at it once more.",
+    "spotPrompt": "Where did it go wrong?",
+    "videosHeading": "See it in the real world",
+    "letsLearn": "Let's learn the trick",
+    "nowYouTry": "Now you try →"
+  },
+  "tour": {
+    "fresh": "A fresh chapter — let's explore it!",
+    "explored": "{{touched}} of {{total}} topics explored",
+    "startHere": "Start here",
+    "upNext": "Up next for you"
+  },
+  "photoCard": {
+    "title": "Take a photo",
+    "sub": "Snap your classwork and I'll teach it",
+    "reading": "Reading your notes and finding the concept…",
+    "errNoTopic": "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.",
+    "errGeneric": "Something went wrong reading that photo. Please try again."
   }
 }

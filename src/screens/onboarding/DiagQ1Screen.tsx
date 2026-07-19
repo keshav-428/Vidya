@@ -139,7 +139,7 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
           {('subtopic' in q && (q as DiagnosticDrillQ).subtopic) && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9999, background: 'var(--accent-blue)', color: '#fff', minWidth: 0, maxWidth: '70%' }}>
               <span style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Topic: {(q as DiagnosticDrillQ).subtopic}
+                {t('diagQ.topicLabel', { name: (q as DiagnosticDrillQ).subtopic })}
               </span>
             </div>
           )}
@@ -150,7 +150,7 @@ export default function DiagQ1Screen({ go, state, set }: ScreenProps) {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', letterSpacing: '0.05em' }}>
           <span>{t('diagQ.questionOf', { value: idx + 1, total })}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--indigo)', fontWeight: 600 }}>
-            <VIcon name="sparkles" size={11} color="var(--indigo)" /> {isDrill ? 'Pinpointing...' : t('diagQ.adapting')}
+            <VIcon name="sparkles" size={11} color="var(--indigo)" /> {isDrill ? t('diagQ.pinpointing') : t('diagQ.adapting')}
           </span>
         </div>
 

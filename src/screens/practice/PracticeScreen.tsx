@@ -59,7 +59,7 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
       const res = await api.identifyConcept({ images, grade: cls, language: state?.language || 'English' });
       if (!res.detected || !res.topic.trim()) {
         setUploading(false);
-        setUploadErr(res.summary || "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.");
+        setUploadErr(res.summary || t('photoCard.errNoTopic'));
         return;
       }
       const topic = res.topic.trim();
@@ -72,7 +72,7 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
       }
     } catch {
       setUploading(false);
-      setUploadErr('Something went wrong reading that photo. Please try again.');
+      setUploadErr(t('photoCard.errGeneric'));
     }
   };
 
@@ -116,7 +116,7 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 32, minHeight: '70vh' }}>
           <VidyaAvatar size={64} animated />
           <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-            Reading your notes and finding the topic…
+            {t('photoCard.reading')}
           </div>
         </div>
       </div>
@@ -143,8 +143,8 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
             <VIcon name="camera" size={21} color="#fff" />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>Take a photo</div>
-            <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>Snap your classwork and I'll make practice for it</div>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>{t('photoCard.title')}</div>
+            <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>{t('photoCard.sub')}</div>
           </div>
           <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
         </div>

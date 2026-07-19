@@ -6,7 +6,15 @@
     "weeklyStreak": "Weekly streak",
     "thisWeek": "This week",
     "daysOf": "of {{total}} days",
-    "days": { "mon": "M", "tue": "T", "wed": "W", "thu": "T", "fri": "F", "sat": "S", "sun": "S" },
+    "days": {
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S",
+      "sun": "S"
+    },
     "masteryHeader_one": "Mastery · {{count}} topic",
     "masteryHeader_other": "Mastery · {{count}} topics",
     "buckets": {
@@ -21,7 +29,10 @@
     "strong": "STRONG",
     "recentPractice": "RECENT PRACTICE",
     "mistakesToRetry": "MISTAKES TO RETRY",
-    "retry": "Retry →"
+    "retry": "Retry →",
+    "emptyTitle": "No progress yet",
+    "emptyBody": "Finish a lesson or take a quiz and your mastery, streak, and review list build up here.",
+    "emptyCta": "Start a session"
   },
   "analysis": {
     "topbarTitle": "Analysis",
@@ -52,5 +63,25 @@
     "gapSub": "Two practice sessions on dividing fractions could close most of the gap.",
     "concepts": "CONCEPTS",
     "practiceWeak": "Practice the weak ones"
+  },
+  "masteryCard": {
+    "title": "Topic mastery",
+    "sub": "Your level in every chapter & topic · {{coverage}}% explored"
+  },
+  "masteryMap": {
+    "eyebrow": "YOUR TOPICS",
+    "ringLabel": "MASTERY",
+    "explored": "You've explored {{coverage}}% of your syllabus",
+    "explainer": "Practise a topic to raise its level. Green means you've got it.",
+    "allTopics": "All topics",
+    "needsHelp": "Needs help",
+    "practised": "{{touched}}/{{total}} practised",
+    "practise": "Practise"
+  },
+  "delta": {
+    "levelUp": "↑ Level up",
+    "yourLevel": "Your level",
+    "masteryPct": "Mastery {{percent}}% · based on your recent answers",
+    "keepPractising": "Keep practising to unlock your level."
   }
 }

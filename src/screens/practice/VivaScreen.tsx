@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { chapterTitleById } from '../../content/syllabus';
@@ -25,6 +26,7 @@ function pickMime(): string {
 }
 
 export default function VivaScreen({ go, state, set }: ScreenProps) {
+  const { t } = useTranslation(['practice', 'common']);
   const grade = api.toGrade(state?.classLevel);
   const chapterIds = (state?.vivaChapters as string[]) || [];
   const topics = chapterIds.map((id) => chapterTitleById(id)).filter(Boolean) as string[];
@@ -84,7 +86,7 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
         });
       }, 1000);
     } catch {
-      setMicErr("I couldn't reach your microphone. Please allow mic access and try again.");
+      setMicErr(t('viva.micDenied'));
     }
   };
 
@@ -97,7 +99,7 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
     const q = questions![qIdx];
     const blob = new Blob(chunksRef.current, { type: mimeRef.current });
     if (blob.size < 1000) {   // essentially empty recording
-      setMicErr("I couldn't hear anything — tap the mic and try answering again.");
+      setMicErr(t('viva.micSilent'));
       setPhase('idle');
       return;
     }
@@ -114,7 +116,7 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
         language: state?.language || 'English',
       })
         .then((fb) => { setFeedback(fb); setResults((r) => [...r, fb]); setPhase('feedback'); })
-        .catch(() => { setMicErr('Something went wrong while listening. Try answering once more.'); setPhase('idle'); });
+        .catch(() => { setMicErr(t('viva.evalFail')); setPhase('idle'); });
     };
     reader.readAsDataURL(blob);
   };
@@ -145,14 +147,14 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
   if (!questions) {
     return (
       <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-        <VTopBar showBack onBack={() => go('home')} title="Viva practice" />
+        <VTopBar showBack onBack={() => go('home')} title={t('viva.topbar')} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 32 }}>
           <VidyaAvatar size={64} animated />
           <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-            {loadErr ? 'Couldn’t prepare your viva. Check your connection and try again.' : 'Getting your viva ready…'}
+            {loadErr ? t('viva.prepFail') : t('viva.preparing')}
           </div>
           {loadErr && (
-            <button className="v-btn-secondary v-tap" onClick={() => go('home')}>Back home</button>
+            <button className="v-btn-secondary v-tap" onClick={() => go('home')}>{t('viva.backHome')}</button>
           )}
         </div>
       </div>
@@ -164,16 +166,16 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
     const totalStars = results.reduce((a, r) => a + (r.stars || 0), 0);
     return (
       <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
-        <VTopBar title="Viva done!" />
+        <VTopBar title={t('viva.doneTitle')} />
         <div style={{ padding: '72px 24px 40px' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <VidyaAvatar size={64} />
-            <h1 className="v-h1" style={{ fontSize: 26, margin: '14px 0 6px' }}>Great talking, {state?.name || 'champ'}!</h1>
+            <h1 className="v-h1" style={{ fontSize: 26, margin: '14px 0 6px' }}>{t('viva.greatTalking', { name: state?.name || '' })}</h1>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 6 }}>
               {[1, 2, 3].map((n) => star(n, totalStars >= n * results.length, 22))}
             </div>
             <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'var(--muted)' }}>
-              You earned {totalStars} of {results.length * 3} stars
+              {t('viva.starsEarned', { earned: totalStars, total: results.length * 3 })}
             </div>
           </div>
 
@@ -190,7 +192,7 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
           </div>
 
           <button className="v-btn-primary v-tap" style={{ width: '100%' }} onClick={() => go('home')}>
-            Done <VIcon name="check" size={14} color="#fff" />
+            {t('viva.done')} <VIcon name="check" size={14} color="#fff" />
           </button>
         </div>
       </div>
@@ -205,7 +207,7 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
         right={<span style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted-2)', fontWeight: 600 }}>{qIdx + 1} / {questions.length}</span>} />
       <div style={{ padding: '72px 24px 32px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--indigo)', marginBottom: 10 }}>
-          SAY IT OUT LOUD 🎤
+          {t('viva.eyebrow')}
         </div>
         <h1 className="v-h1 v-enter" style={{ fontSize: 24, lineHeight: 1.3, marginBottom: 18 }}>{q.question}</h1>
 
@@ -250,7 +252,7 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
                 style={{ width: 84, height: 84, borderRadius: 9999, border: 'none', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(28,25,23,0.25)' }}>
                 <VIcon name="mic" size={32} color="#fff" />
               </button>
-              <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted)' }}>Tap the mic and explain in your own words</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted)' }}>{t('viva.micIdleHint')}</div>
             </>
           )}
           {phase === 'recording' && (
@@ -260,24 +262,24 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
                 <div style={{ width: 26, height: 26, borderRadius: 6, background: '#fff' }} />
               </button>
               <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: '#B84030' }}>
-                I'm listening… {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+                {t('viva.listening', { time: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` })}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted-2)' }}>Tap the square when you're done</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted-2)' }}>{t('viva.stopHint')}</div>
             </>
           )}
           {phase === 'thinking' && (
             <>
               <VidyaAvatar size={64} animated />
-              <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'var(--muted)' }}>Vidya is thinking about your answer…</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'var(--muted)' }}>{t('viva.thinking')}</div>
             </>
           )}
           {phase === 'feedback' && (
             <div style={{ display: 'flex', gap: 10, width: '100%' }}>
               <button className="v-btn-secondary v-tap" style={{ flex: 1 }} onClick={() => { setFeedback(null); setPhase('idle'); setResults((r) => r.slice(0, -1)); }}>
-                Try again
+                {t('viva.tryAgain')}
               </button>
               <button className="v-btn-primary v-tap" style={{ flex: 2 }} onClick={next}>
-                {qIdx + 1 >= questions.length ? 'Finish' : 'Next question'} <VIcon name="arrow-right" size={14} color="#fff" />
+                {qIdx + 1 >= questions.length ? t('viva.finish') : t('viva.nextQuestion')} <VIcon name="arrow-right" size={14} color="#fff" />
               </button>
             </div>
           )}

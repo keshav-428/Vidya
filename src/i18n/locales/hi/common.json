@@ -10,7 +10,12 @@
   "classBoard": "कक्षा {{n}} · {{board}}",
   "topicsCount_one": "{{count}} विषय",
   "topicsCount_other": "{{count}} विषय",
-  "nav": { "home": "होम", "learn": "सीखें", "practice": "अभ्यास", "progress": "प्रगति" },
+  "nav": {
+    "home": "होम",
+    "learn": "सीखें",
+    "practice": "अभ्यास",
+    "progress": "प्रगति"
+  },
   "ask": {
     "title": "विद्या से पूछें",
     "reading": "विद्या पाठ्यपुस्तक पढ़ रही है…",
@@ -26,5 +31,13 @@
       "progress": "अपने कमज़ोर विषयों के लिए अध्ययन योजना चाहिए?",
       "general": "कहीं अटक गए? आसान शब्दों में पूछें।"
     }
-  }
+  },
+  "levels": {
+    "new": "अभी शुरुआत है",
+    "needshelp": "इस पर काम करते हैं",
+    "improving": "अच्छा चल रहा है",
+    "confident": "बस आ ही गया!",
+    "strong": "एकदम पक्का!"
+  },
+  "notStarted": "शुरू नहीं किया"
 }

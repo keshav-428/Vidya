@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar, VOptionButton } from '../../prototype/shared';
 import { renderCard } from '../../content/conceptVisuals';
@@ -40,30 +41,32 @@ function buildSteps(lesson: AdaptiveLesson): Step[] {
 }
 
 // The question object for MCQ-style steps.
-function mcqFor(lesson: AdaptiveLesson, step: Step): LessonMCQ | null {
+function mcqFor(lesson: AdaptiveLesson, step: Step, spotFallback: string): LessonMCQ | null {
   if (step.type === 'check') return lesson.check;
   if (step.type === 'easier') return lesson.easier_check || null;
   if (step.type === 'your_turn') return lesson.examples[step.idx]?.your_turn || null;
   if (step.type === 'spot') {
     const sm = lesson.spot_mistakes[step.idx];
-    return sm ? { prompt: sm.prompt || 'Where did it go wrong?', options: sm.options, correct_index: sm.correct_index, right: sm.explain, wrong: sm.explain } : null;
+    return sm ? { prompt: sm.prompt || spotFallback, options: sm.options, correct_index: sm.correct_index, right: sm.explain, wrong: sm.explain } : null;
   }
   return null;
 }
 
-const EYEBROW: Record<StepType, string> = {
-  hook: 'THINK ABOUT IT 🤔',
-  concept: 'THE IDEA',
-  alt: 'ANOTHER WAY TO SEE IT',
-  check: 'QUICK TRY ✏️',
-  easier: 'ONE MORE TRY 💪',
-  example: 'WATCH ME SOLVE',
-  your_turn: 'YOUR TURN 🚀',
-  spot: 'SPOT THE MISTAKE 🕵️',
-  videos: 'WATCH & LEARN',
+// i18n keys per step type for the small eyebrow label.
+const EYEBROW_KEY: Record<StepType, string> = {
+  hook: 'lesson.eyebrowHook',
+  concept: 'lesson.eyebrowConcept',
+  alt: 'lesson.eyebrowAlt',
+  check: 'lesson.eyebrowCheck',
+  easier: 'lesson.eyebrowEasier',
+  example: 'lesson.eyebrowExample',
+  your_turn: 'lesson.eyebrowYourTurn',
+  spot: 'lesson.eyebrowSpot',
+  videos: 'lesson.eyebrowVideos',
 };
 
 export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDone, onExit }: LessonFlowProps) {
+  const { t } = useTranslation(['learn', 'common']);
   const [steps, setSteps] = useState<Step[]>(() => buildSteps(lesson));
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -73,7 +76,7 @@ export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDo
   const step = steps[idx];
   const isLast = idx === steps.length - 1;
   const pct = ((idx + 1) / steps.length) * 100;
-  const mcq = mcqFor(lesson, step);
+  const mcq = mcqFor(lesson, step, t('lesson.spotPrompt'));
   const answered = picked !== null;
   const wasCorrect = mcq && picked !== null && picked === mcq.correct_index;
 
@@ -114,7 +117,7 @@ export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDo
           {answered && (
             <div className="v-enter-fade" style={feedbackBox('var(--indigo-air)')}>
               <span style={{ fontFamily: 'Inter', fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>
-                {picked === h.best_index ? 'Great instinct! ' : 'Interesting guess! '}{h.reveal}
+                {picked === h.best_index ? t('lesson.hookRight') : t('lesson.hookGuess')} {h.reveal}
               </span>
             </div>
           )}
@@ -159,10 +162,10 @@ export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDo
     }
 
     if (step.type === 'videos') {
-      const card: Card = { type: 'videos', eyebrow: 'WATCH & LEARN', heading: `Videos on ${topicTitle}`, videos };
+      const card: Card = { type: 'videos', eyebrow: t('lesson.eyebrowVideos'), heading: `${topicTitle}`, videos };
       return (
         <>
-          <h2 style={headingStyle}>See it in the real world</h2>
+          <h2 style={headingStyle}>{t('lesson.videosHeading')}</h2>
           {renderCard(card, topicTitle)}
         </>
       );
@@ -191,7 +194,7 @@ export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDo
           {answered && (
             <div className="v-enter-fade" style={feedbackBox(wasCorrect ? '#EDFAF3' : '#FFF7ED')}>
               <span style={{ fontFamily: 'Inter', fontSize: 13, color: wasCorrect ? '#1A7A4A' : '#B45309', lineHeight: 1.5 }}>
-                {wasCorrect ? (mcq.right || 'Yes! You got it! 🎉') : (mcq.wrong || mcq.right || "Good try — let's look at it once more.")}
+                {wasCorrect ? (mcq.right || t('lesson.right')) : (mcq.wrong || mcq.right || t('lesson.wrong'))}
               </span>
             </div>
           )}
@@ -204,9 +207,9 @@ export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDo
   // Continue is gated on answering for question-type steps.
   const needsAnswer = (step.type === 'hook' || !!mcq) && !answered;
   const continueLabel =
-    step.type === 'hook' ? "Let's learn the trick" :
-    step.type === 'example' ? 'Now you try →' :
-    isLast ? doneLabel : 'Continue';
+    step.type === 'hook' ? t('lesson.letsLearn') :
+    step.type === 'example' ? t('lesson.nowYouTry') :
+    isLast ? doneLabel : t('common:continue');
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -218,7 +221,7 @@ export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDo
 
         <div style={{ flex: 1, padding: '0 24px 24px', display: 'flex', flexDirection: 'column', animation: exiting ? 'none' : 'vCardSlide 240ms cubic-bezier(.16,1,.3,1) both' }}>
           <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: step.type === 'your_turn' || step.type === 'spot' ? 'var(--indigo)' : 'var(--muted-2)', marginBottom: 10 }}>
-            {step.type === 'example' ? `${EYEBROW.example} · ${lesson.examples[step.idx]?.part || ''}` : EYEBROW[step.type]}
+            {step.type === 'example' ? `${t(EYEBROW_KEY.example)} · ${lesson.examples[step.idx]?.part || ''}` : t(EYEBROW_KEY[step.type])}
           </div>
 
           <div style={{ flex: 1 }}>{renderBody()}</div>
