@@ -38,7 +38,15 @@
     "correct": "Correct!",
     "notQuite": "Not quite",
     "seeResults": "See results",
-    "nextQuestion": "Next question"
+    "nextQuestion": "Next question",
+    "winProgress": "{{wins}} of {{target}} right",
+    "questionLabel": "Question {{n}}",
+    "roundTwo": "ROUND 2 🔁",
+    "streakChip": "{{count}} in a row! 🔥",
+    "hintBtn": "Hint",
+    "correctTitle": "Correct!",
+    "wrongTitle": "Not quite",
+    "askAgain": "No stress — I'll ask this one again in a bit. 🔁"
   },
   "quickPrep": {
     "eyebrow": "QUICK PREP",

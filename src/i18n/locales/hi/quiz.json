@@ -37,8 +37,16 @@
     "question": "सवाल {{num}}",
     "correct": "सही!",
     "notQuite": "बिल्कुल सही नहीं",
-    "seeResults": "परिणाम देखें",
-    "nextQuestion": "अगला सवाल"
+    "seeResults": "नतीजे देखो",
+    "nextQuestion": "अगला सवाल",
+    "winProgress": "{{target}} में से {{wins}} सही",
+    "questionLabel": "सवाल {{n}}",
+    "roundTwo": "राउंड 2 🔁",
+    "streakChip": "लगातार {{count}} सही! 🔥",
+    "hintBtn": "हिंट",
+    "correctTitle": "बिल्कुल सही!",
+    "wrongTitle": "थोड़ा सा चूक गए",
+    "askAgain": "कोई बात नहीं — यह सवाल थोड़ी देर में फिर पूछूँगी। 🔁"
   },
   "quickPrep": {
     "eyebrow": "त्वरित तैयारी",

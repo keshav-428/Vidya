@@ -184,18 +184,21 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
 
         # Distribute questions across chapters when multiple topics
         distribution_note = (
-            f"Distribute the 5 questions proportionally across all {len(topics)} chapters: {topics_str}."
+            f"Distribute the questions proportionally across all {len(topics)} chapters: {topics_str}."
             if len(topics) > 1 else ""
         )
 
         prompt = f"""
         You are an expert Math teacher for NCERT Class {grade}.
-        Generate a 5-question multiple choice quiz {lang_directive} STRICTLY about the topic(s): {topics_str}.
+        Generate a 9-question multiple choice question POOL {lang_directive} STRICTLY about the topic(s): {topics_str}.
+        The pool feeds an adaptive quiz: exactly 3 questions with "difficulty": "easy",
+        3 with "difficulty": "medium", and 3 with "difficulty": "hard".
 
         {STYLE_GUIDE}
 
         {focus_instruction}
         {difficulty_instruction}
+        (The instruction above sets the overall tone; still produce the 3/3/3 easy/medium/hard split relative to it.)
         {distribution_note}
 
         REFERENCE MATERIAL (use ONLY if it is actually about {topics_str}; if it is about a
@@ -209,6 +212,8 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
         3. Only one option must be correct.
         4. The 'question' field must contain ONLY the direct question text. No encouraging phrases.
         5. The 'topic' field must be EXACTLY one of these strings (verbatim, pick the one the question tests): {json.dumps(topics)}
+        6. 'hint' is ONE short strategy nudge (what to think about / first step) — it must NEVER reveal or contain the answer.
+        7. 'option_notes' has exactly 4 short strings aligned with 'options': for the correct option a one-line confirmation of why it's right; for each wrong option, the SPECIFIC mix-up a student who picks it made (e.g. "You added the denominators too — they tell the slice size, they don't add.").
 
         OUTPUT FORMAT:
         You MUST return ONLY a JSON array of objects with this structure:
@@ -216,10 +221,13 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
           {{
             "id": 1,
             "topic": "one of the given topic strings, verbatim",
+            "difficulty": "easy",
             "question": "What is...?",
             "options": ["A", "B", "C", "D"],
             "answer": 0,
-            "explanation": "Brief explanation why..."
+            "explanation": "Brief explanation why...",
+            "hint": "one-line strategy nudge, no answer",
+            "option_notes": ["why right", "the mix-up behind B", "the mix-up behind C", "the mix-up behind D"]
           }}
         ]
         """

@@ -212,6 +212,12 @@ export interface QuizQuestion {
   explanation?: string;
   /** Which of the requested topics this question tests (verbatim topic string). */
   topic?: string;
+  /** Difficulty tier in the adaptive pool. */
+  difficulty?: 'easy' | 'medium' | 'hard';
+  /** One strategy nudge (never the answer). */
+  hint?: string;
+  /** Per-option note: why-right for the correct one, the specific mix-up for wrong ones. */
+  option_notes?: string[];
 }
 
 /** One picked practice unit (subtopic) — carried into the quiz for
