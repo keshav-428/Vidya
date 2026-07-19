@@ -58,7 +58,8 @@ export interface AppState {
   // progress — accumulating record of quizzes, exams, and sessions
   activityLog?: ActivityEntry[];
   mastery?: MasteryMap;
-  masteryMigrated?: boolean;   // one-time seed from legacy activityLog done
+  masteryMigrated?: boolean;      // one-time seed from legacy activityLog done
+  masteryLearnedFixed?: boolean;  // one-time strip of load-time 'learned' flags done
   lastMasteryDelta?: MasteryDelta;
   askedConcept?: string | null;
   askedChapterId?: string | null;

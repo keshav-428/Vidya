@@ -179,6 +179,17 @@ export function mergeMastery(a: MasteryMap | undefined, b: MasteryMap | undefine
   return out;
 }
 
+/** One-time repair: 'learned' used to be set when a lesson merely LOADED,
+ *  inflating "topics explored". Drop learned flags with zero practice
+ *  evidence; genuine flags are re-earned on lesson completion. */
+export function stripStaleLearned(map: MasteryMap | undefined): MasteryMap {
+  const out: MasteryMap = {};
+  for (const [k, m] of Object.entries(map || {})) {
+    out[k] = m.learned && m.attempts === 0 ? { ...m, learned: false } : m;
+  }
+  return out;
+}
+
 function maxIso(a: string | undefined, b: string): string {
   return a && a > b ? a : b;
 }

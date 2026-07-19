@@ -7,7 +7,7 @@ import { SCREEN_ROUTES, type ScreenId } from './routes';
 import { AppContext, type AppContextValue } from './app-context';
 import { storageKeyFor } from './lib/storage';
 import { guestLimitReached } from './lib/guest';
-import { migrateFromActivityLog, mergeMastery } from './lib/mastery';
+import { migrateFromActivityLog, mergeMastery, stripStaleLearned } from './lib/mastery';
 import type { AppState, SetFn, GoFn } from './types';
 
 // Screens that begin a "learning session" — gated once a guest is out of free runs.
@@ -83,7 +83,7 @@ const PERSIST_KEYS: (keyof AppState)[] = [
   'sessionDuration', 'planMascotSeen', 'buildPlanCoachSeen', 'ownPlan',
   'name', 'class', 'subject', 'goal', 'language', 'role',
   'diagLevel', 'diagChapters', 'conceptLayout', 'skillId',
-  'activityLog', 'mastery', 'masteryMigrated', 'guestSessions',
+  'activityLog', 'mastery', 'masteryMigrated', 'masteryLearnedFixed', 'guestSessions',
 ];
 
 const DEFAULT_STATE: AppState = { name: 'Arjun', conceptLayout: 'cards' };
@@ -142,6 +142,16 @@ function AppInner() {
     setState((s) => ({ ...s, mastery: mergeMastery(s.mastery, derived), masteryMigrated: true }));
   }, [authLoading, state.masteryMigrated, state.activityLog]);
 
+  // One-time repair: 'learned' used to be set when a lesson merely loaded,
+  // inflating "topics explored". Strip flags with no practice evidence; the
+  // ref lets this load's remote pull apply the same strip after merging.
+  const learnedFixRef = useRef(false);
+  useEffect(() => {
+    if (authLoading || state.masteryLearnedFixed || !state.mastery) return;
+    learnedFixRef.current = true;
+    setState((s) => ({ ...s, mastery: stripStaleLearned(s.mastery), masteryLearnedFixed: true }));
+  }, [authLoading, state.masteryLearnedFixed, state.mastery]);
+
   // Sync the profile to Firestore (user_profiles/{uid}) once a signed-in user
   // has onboarding data. Re-runs only when the synced fields actually change.
   const syncedProfile = useRef<string | null>(null);
@@ -165,7 +175,12 @@ function AppInner() {
     api.getMastery(uid)
       .then((remote) => {
         if (remote && Object.keys(remote).length) {
-          setState((s) => ({ ...s, mastery: mergeMastery(s.mastery, remote) }));
+          setState((s) => {
+            const merged = mergeMastery(s.mastery, remote);
+            // If the learned-flag repair ran this load, the remote copy still
+            // carries the stale flags — strip them from the merge too.
+            return { ...s, mastery: learnedFixRef.current ? stripStaleLearned(merged) : merged };
+          });
         }
       })
       .catch(() => {});

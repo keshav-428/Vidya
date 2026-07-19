@@ -145,21 +145,30 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
   }, [topicTitle, grade]);
 
   // Mark the day active for the streak once the lesson is ready (once per day/topic),
-  // and record coverage ("learned") for this skill in the mastery map.
   useEffect(() => {
     if ((!cards && !lesson) || !set) return;
-    const entry: ActivityEntry = {
-      kind: 'session', date: new Date().toISOString(), topic: topicTitle,
-      chapterId: scopeChapterId || undefined,
-      section: scopeSection,
-      score: 0, total: 0,
-    };
+    // Streak only: opening a lesson marks the day active. Coverage ("learned")
+    // is recorded on COMPLETION — merely opening a topic is not "explored".
     set({
-      activityLog: appendActivity(state?.activityLog, entry, { oncePerDay: true }),
-      mastery: applyResult((state?.mastery as MasteryMap) || {}, entry),
+      activityLog: appendActivity(state?.activityLog, {
+        kind: 'session', date: new Date().toISOString(), topic: topicTitle,
+        chapterId: scopeChapterId || undefined, section: scopeSection,
+        score: 0, total: 0,
+      }, { oncePerDay: true }),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, lesson]);
+
+  // Coverage: the topic counts as explored only when the lesson is finished.
+  const markLearned = () => {
+    if (!set) return;
+    const entry: ActivityEntry = {
+      kind: 'session', date: new Date().toISOString(), topic: topicTitle,
+      chapterId: scopeChapterId || undefined, section: scopeSection,
+      score: 0, total: 0,
+    };
+    set({ mastery: applyResult((state?.mastery as MasteryMap) || {}, entry) });
+  };
 
   // Adaptive lesson ready → run the teaching-beats flow.
   if (lesson) {
@@ -177,7 +186,7 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
           videos={videos}
           topicTitle={topicTitle}
           doneLabel={fromLearn ? t('concept.done') : t('concept.startQuiz')}
-          onDone={() => go(fromLearn ? 'learn' : 'navigable-quiz')}
+          onDone={() => { markLearned(); go(fromLearn ? 'learn' : 'navigable-quiz'); }}
           onExit={() => go(fromLearn ? 'learn' : 'home')}
         />
       </>
@@ -205,7 +214,7 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
 
   const advance = () => {
     // Learn is the concept flow — finishing returns to Learn (quizzes live in Practice).
-    if (isLast) { go(fromLearn ? 'learn' : 'navigable-quiz'); return; }
+    if (isLast) { markLearned(); go(fromLearn ? 'learn' : 'navigable-quiz'); return; }
     setExiting(true);
     setTimeout(() => { setIdx(i => i + 1); setExiting(false); }, 160);
   };
