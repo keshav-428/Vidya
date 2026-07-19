@@ -5,10 +5,10 @@ import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { getSkill, getChapterSkills } from '../../content/fractionsChapter';
 import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
-import { applyResult, deltaFor } from '../../lib/mastery';
-import type { ScreenProps, ActivityEntry, MasteryMap } from '../../types';
+import { applyResult, deltaFor, levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
+import type { ScreenProps, ActivityEntry, MasteryMap, PracticeSelection } from '../../types';
 
-interface QuizItem { q: string; opts: string[]; correct: number; explanation: string; }
+interface QuizItem { q: string; opts: string[]; correct: number; explanation: string; topic?: string; }
 interface QuizScope { chapterId?: string | null; section?: string | null; topic: string; }
 interface Mistake { question: string; user_answer: string; correct_answer: string; }
 
@@ -43,11 +43,13 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   // One-shot chapter(s) chosen from the Practice tab. Captured once on mount
   // (lazy useState) so it survives being cleared from global state below.
   const [practiceTopics] = useState<string[] | null>(() => (state?.practiceTopics as string[] | null) || null);
+  // Full picked selection (chapterId+section+title per topic) for per-skill mastery credit.
+  const [practiceSel] = useState<PracticeSelection[] | null>(() => (state?.practiceSel as PracticeSelection[] | null) || null);
   const fromPractice = Array.isArray(practiceTopics) && practiceTopics.length > 0;
   // One-shot subtopic scope from the chapter drill-down ("Quiz" on a subtopic).
   const [quizScope] = useState<QuizScope | null>(() => (state?.quizScope as QuizScope | null) || null);
   useEffect(() => {
-    if ((state?.practiceTopics || state?.quizScope) && set) set({ practiceTopics: null, quizScope: null });
+    if ((state?.practiceTopics || state?.practiceSel || state?.quizScope) && set) set({ practiceTopics: null, practiceSel: null, quizScope: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -78,14 +80,29 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [mistakes, setMistakes] = useState<Mistake[]>([]);
+  // Per-question correctness, for per-skill mastery credit on multi-topic quizzes.
+  const perQRight = React.useRef<boolean[]>([]);
+
+  // Mastery-aware difficulty: struggling skills get Easy, mastered ones get Hard.
+  const [difficulty] = useState<string>(() => {
+    const map = (state?.mastery as MasteryMap) || {};
+    const levels: MasteryLevel[] = [];
+    const single = quizScope || sessionSub;
+    if (single?.chapterId) levels.push(levelFor(map[skillKey(single.chapterId, single.section)]));
+    else if (practiceSel?.length) practiceSel.forEach((s) => levels.push(levelFor(map[skillKey(s.chapterId, s.section)])));
+    const known = levels.filter((l) => l !== 'new');
+    if (known.some((l) => l === 'needshelp')) return 'Easy';
+    if (known.length && known.every((l) => l === 'strong')) return 'Hard';
+    return 'Medium';
+  });
 
   useEffect(() => {
     let alive = true;
-    api.generateQuiz({ topics: quizTopics, grade, language: state?.language || 'English', difficulty: 'Medium', chapterId: quizScope?.chapterId || sessionSub?.chapterId || null, section: quizScope?.section || sessionSub?.section || null })
+    api.generateQuiz({ topics: quizTopics, grade, language: state?.language || 'English', difficulty, chapterId: quizScope?.chapterId || sessionSub?.chapterId || null, section: quizScope?.section || sessionSub?.section || null })
       .then((items) => {
         const mapped = (items || [])
           .filter((it) => it && it.question && Array.isArray(it.options) && it.options.length)
-          .map((it): QuizItem => ({ q: it.question, opts: it.options, correct: it.answer ?? 0, explanation: it.explanation || '' }));
+          .map((it): QuizItem => ({ q: it.question, opts: it.options, correct: it.answer ?? 0, explanation: it.explanation || '', topic: it.topic }));
         if (alive) setQuiz(mapped.length ? mapped : fallbackQuiz);
       })
       .catch(() => { if (alive) setQuiz(fallbackQuiz); });
@@ -122,6 +139,7 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   const handleNext = () => {
     // Record this question's outcome for the post-quiz feedback.
     const wrong = picked !== q.correct;
+    perQRight.current[qIdx] = !wrong;
     const thisMistake: Mistake[] = wrong
       ? [{ question: q.q, user_answer: q.opts[picked as number], correct_answer: q.opts[q.correct] }]
       : [];
@@ -137,7 +155,30 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
         score: finalScore, total: QUIZ.length, mistakes: allMistakes,
       };
       const oldMap = (state?.mastery as MasteryMap) || {};
-      const newMap = applyResult(oldMap, entry);
+      let newMap = applyResult(oldMap, entry);
+      // Multi-topic practice: credit each question's result to its own skill,
+      // matched via the LLM's per-question topic tag.
+      if (!scope?.chapterId && practiceSel?.length) {
+        const norm = (s: string) => s.trim().toLowerCase();
+        const groups = new Map<string, { s: PracticeSelection; score: number; total: number }>();
+        QUIZ.forEach((item, i) => {
+          if (!item.topic) return;
+          const match = practiceSel.find((p) => norm(p.title) === norm(item.topic!));
+          if (!match) return;
+          const k = skillKey(match.chapterId, match.section);
+          const g = groups.get(k) || { s: match, score: 0, total: 0 };
+          g.total += 1;
+          if (perQRight.current[i]) g.score += 1;
+          groups.set(k, g);
+        });
+        groups.forEach((g) => {
+          newMap = applyResult(newMap, {
+            kind: 'quiz', date: entry.date, topic: g.s.title,
+            chapterId: g.s.chapterId, section: g.s.section,
+            score: g.score, total: g.total,
+          });
+        });
+      }
       const delta = deltaFor(oldMap, newMap, entry.chapterId, entry.section, finalTopic);
       set({
         lastQuizScore: finalScore,

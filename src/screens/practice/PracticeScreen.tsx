@@ -101,7 +101,9 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
   const startQuiz = () => {
     const scope = singleScope();
     if (scope) set && set({ quizScope: { ...scope, topic: sel[0].title }, skillId: null });
-    else set && set({ practiceTopics: selectedTitles(), skillId: null });
+    // Multi-topic: pass the full selection too, so each question's result can
+    // be credited to its own skill in the mastery map.
+    else set && set({ practiceTopics: selectedTitles(), practiceSel: sel, skillId: null });
     go('navigable-quiz');
   };
   const startExam = () => {

@@ -208,12 +208,14 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
         2. Each question must have exactly 4 options.
         3. Only one option must be correct.
         4. The 'question' field must contain ONLY the direct question text. No encouraging phrases.
+        5. The 'topic' field must be EXACTLY one of these strings (verbatim, pick the one the question tests): {json.dumps(topics)}
 
         OUTPUT FORMAT:
         You MUST return ONLY a JSON array of objects with this structure:
         [
           {{
             "id": 1,
+            "topic": "one of the given topic strings, verbatim",
             "question": "What is...?",
             "options": ["A", "B", "C", "D"],
             "answer": 0,

@@ -210,6 +210,16 @@ export interface QuizQuestion {
   options: string[];
   answer: number;
   explanation?: string;
+  /** Which of the requested topics this question tests (verbatim topic string). */
+  topic?: string;
+}
+
+/** One picked practice unit (subtopic) — carried into the quiz for
+ *  per-skill mastery attribution. */
+export interface PracticeSelection {
+  chapterId: string;
+  section: string;
+  title: string;
 }
 
 /** Structured post-quiz feedback (POST /quiz-feedback). Shape is LLM-driven. */
