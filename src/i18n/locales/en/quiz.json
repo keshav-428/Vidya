@@ -41,13 +41,12 @@
     "correctTitle": "Correct!",
     "wrongTitle": "Not quite",
     "askAgain": "No stress — I'll ask this one again in a bit. 🔁",
-    "rules": "Get {{target}} right and you're done. Miss one and it comes back later — hints are free, they just count for half.",
-    "levelLabel": "LEVEL {{n}}",
-    "levelWarm": "WARM-UP",
-    "levelBuild": "BUILDING",
-    "levelChallenge": "CHALLENGE",
+    "rules": "Every right answer fills a star. Fill all {{target}} and the quiz is done. Get one wrong and it comes back later — hints are free, they just count for half.",
     "secondTry": "SECOND TRY ↻",
-    "check": "Check my answer"
+    "check": "Check my answer",
+    "starsToGo_one": "1 to go",
+    "starsToGo_other": "{{count}} to go",
+    "harderNow": "HARDER NOW ↑"
   },
   "quickPrep": {
     "eyebrow": "QUICK PREP",

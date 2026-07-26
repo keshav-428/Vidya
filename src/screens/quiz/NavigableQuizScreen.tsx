@@ -14,7 +14,10 @@ import QuestionBody, { AUTO_SUBMIT } from './formats';
 import type { ScreenProps, ActivityEntry, MasteryMap, PracticeSelection } from '../../types';
 
 const TIERS: Question['difficulty'][] = ['easy', 'medium', 'hard'];
-const LEVEL_KEYS = ['navigable.levelWarm', 'navigable.levelBuild', 'navigable.levelChallenge'];
+const CHIP: React.CSSProperties = {
+  fontFamily: 'Inter', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em',
+  borderRadius: 9999, padding: '3px 9px',
+};
 const WIN_TARGET = 5;    // the quiz ends when you've got this many right…
 const MAX_ATTEMPTS = 9;  // …or after this many tries (no death spirals)
 interface FirstTry { right: boolean; hint: boolean; topic?: string; q: string; userAnswer: string; correctAnswer: string; }
@@ -51,19 +54,25 @@ function CoachHint({ text, cta, onDismiss }: CoachHintProps) {
  *  It replaced a "2 of 5 right" counter that ran alongside a "QUESTION 6"
  *  counter — two scales for the same run, which is what made the quiz
  *  confusing to read. */
-function Stars({ wins, target }: { wins: number; target: number }) {
+function Stars({ wins, target, label }: { wins: number; target: number; label: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-      {Array.from({ length: target }, (_, i) => (
-        <span key={i} style={{
-          display: 'inline-flex',
-          transform: i < wins ? 'scale(1)' : 'scale(0.86)',
-          transition: 'transform 260ms cubic-bezier(.16,1,.3,1)',
-        }}>
-          <VIcon name={i < wins ? 'star-fill' : 'star'} size={15}
-            color={i < wins ? 'var(--saffron)' : 'var(--border)'} strokeWidth={1.8} />
-        </span>
-      ))}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+      {/* Bare stars could be points, or lives. The count says which. */}
+      <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, color: 'var(--muted-2)', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        {Array.from({ length: target }, (_, i) => (
+          <span key={i} style={{
+            display: 'inline-flex',
+            transform: i < wins ? 'scale(1)' : 'scale(0.86)',
+            transition: 'transform 260ms cubic-bezier(.16,1,.3,1)',
+          }}>
+            <VIcon name={i < wins ? 'star-fill' : 'star'} size={15}
+              color={i < wins ? 'var(--saffron)' : 'var(--border)'} strokeWidth={1.8} />
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -140,10 +149,12 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   const [streak, setStreak] = useState(0);
   const tierRef = React.useRef<Question['difficulty']>('medium');
   const tierRightsRef = React.useRef(0);
-  // The level the student SEES only ever climbs. The ladder below still drops a
-  // rung after a miss — but showing that would read as a demotion for getting
-  // one question wrong, which is the opposite of the encouragement intended.
-  const [levelSeen, setLevelSeen] = useState(2);
+  // Difficulty is told as a MOMENT, not a running score: a chip on the question
+  // that just got harder. A permanent "LEVEL 2" next to the stars was a second
+  // number to decode, and a student shouldn't have to work out which of two
+  // indicators means what. It also never announces a drop — being demoted for
+  // one wrong answer reads as punishment.
+  const [harderNow, setHarderNow] = useState(false);
   const usedIdsRef = React.useRef<Set<number>>(new Set());
   const requeueRef = React.useRef<{ item: Question; queuedAt: number }[]>([]);
   // First showing of each question is the honest signal that feeds mastery.
@@ -165,7 +176,6 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   // Starting rung of the in-quiz ladder mirrors the overall difficulty.
   useEffect(() => {
     tierRef.current = difficulty === 'Easy' ? 'easy' : difficulty === 'Hard' ? 'hard' : 'medium';
-    setLevelSeen(TIERS.indexOf(tierRef.current) + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -300,14 +310,16 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     }
     const newWins = wins + (wasRight ? 1 : 0);
     const newAttempted = attempted + 1;
+    let steppedUp = false;
     // Difficulty ladder + streak run on clean first-try results.
     if (!isRetry) {
       if (wasRight && !hintShown) {
         tierRightsRef.current += 1;
         if (tierRightsRef.current >= 2) {
+          const before = tierRef.current;
           tierRef.current = TIERS[Math.min(TIERS.length - 1, TIERS.indexOf(tierRef.current) + 1)];
           tierRightsRef.current = 0;
-          setLevelSeen((x) => Math.max(x, TIERS.indexOf(tierRef.current) + 1));
+          steppedUp = tierRef.current !== before;
         }
         setStreak((x) => x + 1);
       } else {
@@ -328,6 +340,8 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     setAttempted(newAttempted);
     setCurrent(next.item);
     setIsRetry(next.retry);
+    // Only worth saying when the question actually is the harder one.
+    setHarderNow(steppedUp && !next.retry);
     setAnswer(null);
     setSubmitted(false);
     setHintShown(false);
@@ -336,7 +350,8 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <VTopBar transparent showBack onBack={() => go(fromPractice ? 'practice' : 'home')}
-        right={<Stars wins={wins} target={WIN_TARGET} />}
+        right={<Stars wins={wins} target={WIN_TARGET}
+          label={t('navigable.starsToGo', { count: WIN_TARGET - wins })} />}
       />
 
       {state?.coachStep === 3 && (
@@ -360,21 +375,25 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--muted-2)' }}>
-            {t('navigable.levelLabel', { n: levelSeen })} · {t(LEVEL_KEYS[levelSeen - 1])}
-          </span>
-          {isRetry && (
-            <span style={{ fontFamily: 'Inter', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em', color: '#B45309', background: '#FFF7ED', border: '1px solid var(--accent-warn)', borderRadius: 9999, padding: '3px 9px' }}>
-              {t('navigable.secondTry')}
-            </span>
-          )}
-          {!isRetry && streak >= 3 && (
-            <span style={{ fontFamily: 'Inter', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--saffron)', background: '#FFF3EA', border: '1px solid var(--saffron)', borderRadius: 9999, padding: '3px 9px' }}>
-              {t('navigable.streakChip', { count: streak })}
-            </span>
-          )}
-        </div>
+        {/* At most ONE chip, so there's never a row of badges to decode:
+            this-came-back beats you-earned-harder-ones beats you're-on-a-run. */}
+        {(isRetry || harderNow || streak >= 3) && (
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+            {isRetry ? (
+              <span style={{ ...CHIP, color: '#B45309', background: '#FFF7ED', border: '1px solid var(--accent-warn)' }}>
+                {t('navigable.secondTry')}
+              </span>
+            ) : harderNow ? (
+              <span style={{ ...CHIP, color: 'var(--indigo)', background: 'var(--indigo-air)', border: '1px solid var(--indigo-soft)' }}>
+                {t('navigable.harderNow')}
+              </span>
+            ) : (
+              <span style={{ ...CHIP, color: 'var(--saffron)', background: '#FFF3EA', border: '1px solid var(--saffron)' }}>
+                {t('navigable.streakChip', { count: streak })}
+              </span>
+            )}
+          </div>
+        )}
 
         <h1 style={{ fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 23, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.28, marginBottom: 22 }}>
           {heading}
