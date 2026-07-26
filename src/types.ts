@@ -207,8 +207,21 @@ export interface AdaptiveLesson {
 }
 
 // ── Chapter notes (one screen, screenshot before a test) ─────
+// One subtopic's block of notes. `num`/`title` mirror the syllabus, so the
+// screen can show the same section numbers the student sees in their textbook.
+export interface NotesSection {
+  num?: string;
+  title: string;
+  summary?: string;
+  points?: string[];
+  formulas?: string[];
+  example?: { q: string; a: string };
+}
+
 export interface ChapterNotes {
   title?: string;
+  big_idea?: string;
+  sections?: NotesSection[];
   rules?: { name: string; rule: string }[];
   tricks?: { trick: string; why?: string }[];
   traps?: { mistake: string; fix: string }[];

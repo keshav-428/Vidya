@@ -132,11 +132,12 @@ class HomeworkRequest(BaseModel):
     language: str = "English"
     mime_types: Optional[list] = None
 
-class SheetRequest(BaseModel):
+class NotesRequest(BaseModel):
     topic: str
     grade: int = 6
     language: str = "English"
     chapter_id: Optional[str] = None
+    subtopics: Optional[list] = None   # [{num, title}] — drives full-chapter coverage
 
 class TrickRequest(BaseModel):
     topic: str
@@ -470,14 +471,15 @@ async def homework_help_endpoint(request: HomeworkRequest):
         print(f"Error in /homework-help: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/generate-sheet")
-async def generate_sheet_endpoint(request: SheetRequest):
+@app.post("/generate-notes")
+async def generate_notes_endpoint(request: NotesRequest):
     try:
-        return concept_service.generate_sheet(
-            request.topic, request.grade, request.language, chapter_id=request.chapter_id,
+        return concept_service.generate_notes(
+            request.topic, request.grade, request.language,
+            chapter_id=request.chapter_id, subtopics=request.subtopics,
         )
     except Exception as e:
-        print(f"Error in /generate-sheet: {e}")
+        print(f"Error in /generate-notes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-trick")

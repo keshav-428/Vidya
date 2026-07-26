@@ -52,7 +52,36 @@ def _candidate_docs(grade, chapter_id=None, section=None):
                 return scoped
         if docs:
             return docs
-    return [d.to_dict() for d in col.where('metadata.grade', '==', grade).stream()]
+    # Grade is ingested as a string, so compare as one — an int here silently
+    # matched nothing and made this last-resort scope always come back empty.
+    return [d.to_dict() for d in col.where('metadata.grade', '==', str(grade)).stream()]
+
+
+def chapter_context_by_section(grade: int, chapter_id: str, char_cap: int = 6000):
+    """Every ingested chunk of one chapter, grouped by section number.
+
+    For whole-chapter work (revision notes) the section's OWN text is what's
+    wanted, not a semantic top-k of it — and grouping one chapter-wide read beats
+    a separate scoped query plus query embedding per section.
+
+    Returns: { section_num: "the section's text, capped" }
+    """
+    if not db or not chapter_id:
+        return {}
+    try:
+        docs = [d.to_dict() for d in db.collection('ncert_knowledge_base')
+                .where('metadata.chapter_id', '==', chapter_id).stream()]
+    except Exception as e:
+        print(f"Warning: chapter context read failed for {chapter_id}: {e}")
+        return {}
+
+    grouped = {}
+    for d in docs:
+        sec = str((d.get('metadata') or {}).get('section') or '').strip()
+        if not sec:
+            continue
+        grouped.setdefault(sec, []).append(d.get('content') or '')
+    return {sec: "\n\n".join(parts)[:char_cap] for sec, parts in grouped.items()}
 
 
 def retrieve_context(query: str, grade: int = 6, top_k: int = 5,

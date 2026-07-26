@@ -252,8 +252,15 @@ export const generateNotes = ({
   grade = 6,
   language = 'English',
   chapterId = null,
-}: { topic: string; grade?: number; language?: Language; chapterId?: string | null }): Promise<import('../types').ChapterNotes> =>
-  post<import('../types').ChapterNotes>('/generate-sheet', { topic, grade, language, chapter_id: chapterId });
+  subtopics = null,
+}: {
+  topic: string; grade?: number; language?: Language; chapterId?: string | null;
+  // The chapter's real subtopic list — what makes the notes cover the whole chapter.
+  subtopics?: { num: string; title: string }[] | null;
+}): Promise<import('../types').ChapterNotes> =>
+  post<import('../types').ChapterNotes>('/generate-notes', {
+    topic, grade, language, chapter_id: chapterId, subtopics,
+  });
 
 // ── Homework help: read the page, nudge before solving ───────
 export const homeworkHelp = ({

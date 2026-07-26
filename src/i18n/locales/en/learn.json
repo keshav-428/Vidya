@@ -84,15 +84,24 @@
   "notes": {
     "topbar": "Chapter notes",
     "eyebrow": "CHAPTER {{num}} · NOTES",
-    "screenshotHint": "Screenshot this before your test",
+    "covers_one": "Covers the 1 topic in this chapter",
+    "covers_other": "Covers all {{count}} topics in this chapter",
     "building": "Writing up your {{chapter}} notes…",
+    "buildingSub_one": "Going through the 1 topic in it",
+    "buildingSub_other": "Going through all {{count}} topics in it",
     "failed": "Couldn't make the notes just now. Try again in a bit.",
+    "bigIdea": "WHAT THIS CHAPTER IS ABOUT",
+    "contents": "WHAT'S INSIDE",
+    "formulas": "REMEMBER",
+    "example": "EXAMPLE",
+    "screenshotHint": "Screenshot this part before your test",
     "rules": "IMPORTANT RULES",
     "tricks": "SHORTCUTS",
     "traps": "WHERE MARKS ARE LOST",
+    "testCta": "Test yourself on this chapter",
     "cardTitle": "Chapter notes",
-    "cardSub": "All the important points on one screen",
+    "cardSub": "Revise a whole chapter, topic by topic",
     "pickTitle": "Notes for which chapter?",
-    "pickDesc": "Pick a chapter and I'll put its important points on one screen."
+    "pickDesc": "Pick a chapter and I'll write up notes for every topic in it."
   }
 }
