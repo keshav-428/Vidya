@@ -12,7 +12,7 @@ const LEVEL_DOT: Record<MasteryLevel, string> = {
   new: 'var(--border)', needshelp: '#B84030', improving: '#B45309', confident: 'var(--indigo)', strong: '#1A7A4A',
 };
 
-import { WEEK_TOPIC_CATALOG } from '../../content/weekPlan';
+import { WEEK_TOPIC_CATALOG, refreshPlanDays } from '../../content/weekPlan';
 
 /** One day cell in the home week strip. */
 interface WeekDay {
@@ -25,6 +25,7 @@ interface WeekDay {
 /** A week-strip slot: a day plus its plan info. */
 interface WeekSlot extends Partial<WeekDay> {
   isToday?: boolean;
+  month?: string;
   topicId?: string | null;
   section?: string | null;
   subtopicTitle?: string | null;
@@ -34,16 +35,17 @@ interface WeekSlot extends Partial<WeekDay> {
 
 function getWeekDays(): WeekDay[] {
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun
   const days = [];
+  // Rolling week: starts today, so no already-past days sit in the strip.
   for (let i = 0; i < 7; i++) {
     const d = new Date(today);
-    d.setDate(today.getDate() - dayOfWeek + i);
+    d.setDate(today.getDate() + i);
+    const dow = d.getDay();
     days.push({
-      day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i],
+      day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dow],
       date: d.getDate(),
-      isWeekday: i > 0 && i < 6,
-      isToday: i === dayOfWeek,
+      isWeekday: dow !== 0 && dow !== 6,
+      isToday: i === 0,
     });
   }
   return days;
@@ -58,13 +60,11 @@ function weekTopicTitle(id: string): string {
 function buildWeekBannerData(startTopicId: string, savedWeekPlan: unknown, chapters: SyllabusChapter[]): WeekSlot[] {
   const days = getWeekDays();
   if (Array.isArray(savedWeekPlan) && savedWeekPlan.length === 7) {
-    // Today's slot always reflects the current session chapter, so the strip
-    // and the session card never disagree. Other days keep the saved plan.
-    return days.map((d, i) => {
-      const slot: WeekSlot = { ...d, ...savedWeekPlan[i] };
-      if (d.isToday) slot.topicId = startTopicId;
-      return slot;
-    });
+    // Use the plan's OWN days (it stores its dates) and re-mark today, so the
+    // strip stays correct as the week rolls on. Today's slot always reflects the
+    // current session chapter, so the strip and the session card never disagree.
+    return refreshPlanDays(savedWeekPlan as WeekSlot[]).map((slot) =>
+      slot.isToday ? { ...slot, topicId: startTopicId } : slot);
   }
   // Default week: TODAY = the chosen chapter; other days step through the
   // chapter list relative to today (yesterday = prev chapter, tomorrow = next).

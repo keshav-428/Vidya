@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { classChapters, chapterTitleById, subtopicCount, type SyllabusChapter } from '../../content/syllabus';
-import { WEEK_TOPIC_CATALOG, type TopicInfo } from '../../content/weekPlan';
+import { WEEK_TOPIC_CATALOG, refreshPlanDays, type TopicInfo } from '../../content/weekPlan';
 import api from '../../api/vidya';
 import { levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
 import type { ScreenProps, AppState, MasteryMap } from '../../types';
@@ -44,19 +44,20 @@ type WeekDayBase = Omit<PlanDay, 'topicId' | 'mins' | 'status'>;
 
 function getThisWeekDays(): WeekDayBase[] {
   const today = new Date();
-  const dow = today.getDay();
   const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Rolling week: starts today (see buildWeekPlan).
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today);
-    d.setDate(today.getDate() - dow + i);
+    d.setDate(today.getDate() + i);
+    const dow = d.getDay();
     return {
-      day: DAY_NAMES[i],
+      day: DAY_NAMES[dow],
       date: d.getDate(),
       month: MONTHS[d.getMonth()],
       fullDate: d,
-      weekday: i > 0 && i < 6,
-      isToday: i === dow,
+      weekday: dow !== 0 && dow !== 6,
+      isToday: i === 0,
     };
   });
 }
@@ -73,7 +74,9 @@ function emptyWeekPlan(): PlanDay[] {
 }
 
 function ensureWeekPlan(state: AppState): PlanDay[] {
-  if (state?.weekPlan && Array.isArray(state.weekPlan) && state.weekPlan.length === 7) return state.weekPlan as PlanDay[];
+  // Re-mark today: a plan made on Monday still says Monday is today on Wednesday.
+  if (state?.weekPlan && Array.isArray(state.weekPlan) && state.weekPlan.length === 7)
+    return refreshPlanDays(state.weekPlan as PlanDay[]);
   return emptyWeekPlan();
 }
 

@@ -119,14 +119,17 @@ export function buildWeekPlan(input: PlanSlot[] | string[]): AutoPlanDay[] {
     typeof it === 'string' ? { chapterId: it, section: null, title: null } : (it as PlanSlot),
   );
   const today = new Date();
-  const dow = today.getDay();
   let k = 0;
+  // A ROLLING week: day 0 is today, not the previous Sunday. Anchoring to the
+  // calendar week meant signing up on a Thursday produced a plan whose first
+  // four days were already in the past.
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today);
-    d.setDate(today.getDate() - dow + i);
-    const weekday = i > 0 && i < 6;
-    const isToday = i === dow;
-    const base = { day: _DAY[i], date: d.getDate(), month: _MON[d.getMonth()], fullDate: d, weekday, isToday };
+    d.setDate(today.getDate() + i);
+    const dow = d.getDay();
+    const weekday = dow !== 0 && dow !== 6;   // from the real date, not the index
+    const isToday = i === 0;
+    const base = { day: _DAY[dow], date: d.getDate(), month: _MON[d.getMonth()], fullDate: d, weekday, isToday };
     if (!weekday && !isToday) return { ...base, topicId: null, section: null, subtopicTitle: null, mins: 0, status: 'rest' };
     const slot = slots.length ? slots[k++ % slots.length] : null;
     return {
@@ -137,5 +140,19 @@ export function buildWeekPlan(input: PlanSlot[] | string[]): AutoPlanDay[] {
       mins: slot ? 15 : 0,
       status: isToday ? 'today' : 'upcoming',
     };
+  });
+}
+
+/** A saved plan stores which day was "today" when it was made, so the marker
+ *  goes stale the next morning. Recompute it from the stored date + month. */
+export function refreshPlanDays<T extends { date?: number; month?: string; isToday?: boolean }>(plan: T[]): T[] {
+  const now = new Date();
+  const d = now.getDate();
+  const m = _MON[now.getMonth()];
+  return plan.map((x) => {
+    // 7 consecutive days can never repeat a day-of-month, so the date alone
+    // identifies the slot; month is checked too when the plan stored it.
+    const isToday = x.date === d && (x.month === undefined || x.month === m);
+    return isToday === !!x.isToday ? x : { ...x, isToday };
   });
 }
