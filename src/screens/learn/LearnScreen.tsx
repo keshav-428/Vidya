@@ -67,11 +67,16 @@ function LearnLiveResults({ q, concepts, onPick, onClose }: LearnLiveResultsProp
   );
 }
 
-// Reads a File → raw base64 (no data: prefix), for the vision endpoint.
-function readImageB64(file: File): Promise<string> {
+// Reads a File → raw base64 + its real mime type, for the vision endpoint.
+// (Sending a mislabelled HEIC/PNG as image/jpeg makes Gemini reject the image.)
+function readImageB64(file: File): Promise<{ b64: string; mime: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onload = () => {
+      const url = String(reader.result);
+      const mime = url.slice(5, url.indexOf(';')) || file.type || 'image/jpeg';
+      resolve({ b64: url.split(',')[1] || '', mime });
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -128,8 +133,12 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
     setUploadErr(null);
     setUploading(true);
     try {
-      const images = await Promise.all(files.map(readImageB64));
-      const res = await api.identifyConcept({ images, grade: cls, language: state?.language || 'English' });
+      const read = await Promise.all(files.map(readImageB64));
+      const res = await api.identifyConcept({
+        images: read.map((r) => r.b64),
+        mimeTypes: read.map((r) => r.mime),
+        grade: cls, language: state?.language || 'English',
+      });
       if (!res.detected || !res.topic.trim()) {
         setUploading(false);
         setUploadErr(res.summary || t('photoCard.errNoTopic'));

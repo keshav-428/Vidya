@@ -127,9 +127,10 @@ class ConceptRequest(BaseModel):
     section: Optional[str] = None
 
 class IdentifyConceptRequest(BaseModel):
-    images: list          # base64-encoded JPEG strings
+    images: list          # base64-encoded image bytes
     grade: int = 6
     language: str = "English"
+    mime_types: Optional[list] = None   # per-image, as reported by the browser
 
 class LessonRequest(BaseModel):
     topic: str
@@ -438,6 +439,7 @@ async def identify_concept_endpoint(request: IdentifyConceptRequest):
             raise HTTPException(status_code=400, detail="No images provided")
         data = concept_service.identify_concept_from_images(
             request.images, request.grade, request.language,
+            mime_types=request.mime_types,
         )
         return data
     except HTTPException:

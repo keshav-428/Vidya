@@ -246,10 +246,11 @@ export const evaluateViva = ({
 export interface IdentifyConceptResult { topic: string; summary: string; detected: boolean; }
 export const identifyConcept = ({
   images,
+  mimeTypes = null,
   grade = 6,
   language = 'English',
-}: { images: string[]; grade?: number; language?: Language }): Promise<IdentifyConceptResult> =>
-  post<IdentifyConceptResult>('/identify-concept', { images, grade, language });
+}: { images: string[]; mimeTypes?: string[] | null; grade?: number; language?: Language }): Promise<IdentifyConceptResult> =>
+  post<IdentifyConceptResult>('/identify-concept', { images, mime_types: mimeTypes, grade, language });
 
 // ── Exam paper generation ────────────────────────────────────
 export interface GeneratePaperArgs {

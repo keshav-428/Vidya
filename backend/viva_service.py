@@ -82,7 +82,7 @@ Strictly return ONLY the JSON object."""
 
     audio_bytes = base64.b64decode(audio_b64)
     parts = [
-        types.Part.from_text(prompt),
+        types.Part.from_text(text=prompt),
         types.Part(inline_data=types.Blob(mime_type=mime_type or "audio/webm", data=audio_bytes)),
     ]
     response = gen_client.models.generate_content(

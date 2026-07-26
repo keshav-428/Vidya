@@ -87,7 +87,7 @@ Return ONLY a valid JSON object with this exact structure:
 }}"""
 
     # Build multimodal content: text prompt + all images
-    parts = [types.Part.from_text(prompt)]
+    parts = [types.Part.from_text(text=prompt)]
     for img_b64 in images_b64:
         image_bytes = base64.b64decode(img_b64)
         parts.append(types.Part(
