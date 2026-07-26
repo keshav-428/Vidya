@@ -79,6 +79,40 @@ export interface PlanSlot {
 const _DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const _MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+/** Minimal chapter shape needed to build slots (structurally satisfied by
+ *  SyllabusChapter — kept loose so this module stays decoupled from syllabus.ts). */
+export interface PlanChapter { id: string; subtopics: { num: string; title: string }[] }
+
+/** Turn an ordered list of chapter ids into day slots, ROUND-ROBIN across the
+ *  first `focusCount` chapters — one subtopic from each per pass.
+ *
+ *  Depth-first ordering (all of chapter A, then all of B) meant a 5-day week
+ *  never got past chapter A, since most chapters have 6-12 subtopics. Weeks
+ *  built from several weak areas now actually cover them.
+ *
+ *  Chapters beyond `focusCount` are appended (also round-robined) as filler for
+ *  weeks that need more days than the focus chapters can supply. */
+export function planSlots(orderedIds: string[], chapters: PlanChapter[], focusCount = 3): PlanSlot[] {
+  const byId = new Map(chapters.map((c) => [c.id, c]));
+  const groupFor = (id: string): PlanSlot[] => {
+    const ch = byId.get(id);
+    return ch && ch.subtopics.length
+      ? ch.subtopics.map((s) => ({ chapterId: id, section: s.num, title: s.title }))
+      : [{ chapterId: id, section: null, title: null }];   // coarse fallback
+  };
+  const groups = orderedIds.map(groupFor);
+  const roundRobin = (gs: PlanSlot[][]): PlanSlot[] => {
+    const out: PlanSlot[] = [];
+    const depth = gs.reduce((m, g) => Math.max(m, g.length), 0);
+    for (let i = 0; i < depth; i++) for (const g of gs) if (g[i]) out.push(g[i]);
+    return out;
+  };
+  return [
+    ...roundRobin(groups.slice(0, Math.max(1, focusCount))),
+    ...roundRobin(groups.slice(Math.max(1, focusCount))),
+  ];
+}
+
 // Accepts subtopic slots (preferred) or bare chapter ids (coarse fallback).
 export function buildWeekPlan(input: PlanSlot[] | string[]): AutoPlanDay[] {
   const slots: PlanSlot[] = (input as unknown[]).map((it) =>

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar } from '../../prototype/shared';
 import { scoreFromSet, classAwareWeakChapters, chapterIdForArea, STATIC_FALLBACK, DIAG_RUNGS, type DiagLevelId, type GenQ } from '../../content/diagnostic';
-import { buildWeekPlan, type PlanSlot } from '../../content/weekPlan';
+import { buildWeekPlan, planSlots } from '../../content/weekPlan';
 import { classChapters } from '../../content/syllabus';
 import { seedDiagnostic } from '../../lib/mastery';
 import type { MasteryMap } from '../../types';
@@ -46,19 +46,15 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
   };
 
   // Option A — Vidya builds the whole week from the weak areas, shows plan review screen.
-  // Each weak chapter is expanded into its subtopics so days are subtopic-wise.
+  // Days are subtopic-wise, ROUND-ROBINED across the weak chapters so the week
+  // actually covers every area the summary named. (Depth-first filled all ~5
+  // weekdays from the first chapter alone, since chapters have 6-12 subtopics.)
   const buildForMe = () => {
-    const ids = classAwareWeakChapters(outcome, grade);
-    const chs = classChapters(grade);
-    const slots: PlanSlot[] = [];
-    ids.forEach((id) => {
-      const ch = chs.find((c) => c.id === id);
-      if (ch && ch.subtopics.length) {
-        ch.subtopics.forEach((sub) => slots.push({ chapterId: id, section: sub.num, title: sub.title }));
-      } else {
-        slots.push({ chapterId: id, section: null, title: null });   // coarse fallback
-      }
-    });
+    const ids = classAwareWeakChapters(outcome, grade);   // weak first, then filler
+    // How many chapters to interleave: the weak ones the summary showed (max 3).
+    // With a single weak area, stay on it — depth beats variety when there's one gap.
+    const weakIds = [...new Set(outcome.weak.map((a) => chapterIdForArea(a, grade)).filter(Boolean))];
+    const slots = planSlots(ids, classChapters(grade), Math.min(3, Math.max(1, weakIds.length)));
     const plan = buildWeekPlan(slots.length ? slots : ids);
     const today = plan.find((d) => d.isToday && d.topicId);
     set && set({
