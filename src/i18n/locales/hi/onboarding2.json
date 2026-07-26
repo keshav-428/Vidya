@@ -103,9 +103,7 @@
     "gotItLast": "समझ गए। आख़िरी हो गया।",
     "gotItNext": "समझ गए। अगला आ रहा है।",
     "finish": "पूरा करें",
-    "topicLabel": "विषय: {{name}}",
-    "deepDive": "गहराई से",
-    "pinpointing": "सटीक ढूँढ रही हूँ…"
+    "topicLabel": "विषय: {{name}}"
   },
   "signUp": {
     "titleSignup": "अपना खाता बनाएं",
@@ -140,8 +138,6 @@
     "weakHeader": "मज़बूत करने वाले हिस्से",
     "weakSub": "यहाँ हम तुम्हारा आत्मविश्वास बढ़ाएँगे",
     "strongHeader": "तुम इनमें अच्छे हो",
-    "digDeeper": "और गहराई में जाओ",
-    "preparing": "सवाल तैयार हो रहे हैं…",
-    "continuePlan": "अपने प्लान पर चलो"
+    "buildPlan": "मेरा प्लान बनाओ"
   }
 }

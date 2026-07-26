@@ -53,51 +53,6 @@ GOAL_FLAVOR = {
     "mixed":      "Keep a balanced mix of conceptual and computational questions for a fair placement.",
 }
 
-def generate_diagnostic_drill(chapter_id: str, language: str = "English", num: int = 4):
-    """
-    Adaptive drill-down into a specific chapter's subtopics. Used after the coarse
-    placement diagnostic identifies a weakest chapter. Generates ~num questions,
-    each tagged with a subtopic it tests. Each question targets a different subtopic
-    within the chapter for fine-grained placement.
-    Returns {"questions": [{subtopic, prompt, options[4], correct_index}]}.
-    """
-    prompt = f"""You are an expert CBSE Mathematics teacher generating a targeted
-diagnostic drill for a specific chapter. A student has shown weak performance in
-this chapter during a placement assessment, and we need to pinpoint which subtopics
-within the chapter are the main gap.
-
-Generate EXACTLY {num} multiple-choice questions, each targeting a DIFFERENT subtopic
-within the chapter. Spread them across {num} distinct subtopics if the chapter has
-that many; otherwise, test the major subtopics of the chapter.
-
-For each question:
-- Tag it with the subtopic name (e.g., "Linear Equations", "Factoring Polynomials").
-- Write a clear, focused question that tests understanding of that specific subtopic.
-- Include 4 options with exactly one correct answer.
-
-Language: write all question text and options {lang_name(language)}. {lang_instruction(language)}
-
-Return ONLY a valid JSON object:
-{{
-  "questions": [
-    {{ "subtopic": "subtopic name", "prompt": "the question",
-       "options": ["A","B","C","D"], "correct_index": 0 }}
-  ]
-}}"""
-    try:
-        response = gen_client.models.generate_content(
-            model=GEN_MODEL, contents=prompt,
-            config={"response_mime_type": "application/json"},
-        )
-        data = json.loads(response.text)
-        qs = data.get("questions", data if isinstance(data, list) else [])
-        clean = [q for q in qs if q.get("subtopic") and q.get("prompt") and isinstance(q.get("options"), list)
-                 and len(q["options"]) == 4 and isinstance(q.get("correct_index"), int)]
-        return {"questions": clean[:num]}
-    except Exception as e:
-        print(f"Error in generate_diagnostic_drill: {e}")
-        return {"questions": []}
-
 def generate_diagnostic(grade: int, goal: str = "mixed", language: str = "English", num: int = 10):
     """
     One-shot onboarding placement diagnostic: ~`num` MCQs spanning the key strands of

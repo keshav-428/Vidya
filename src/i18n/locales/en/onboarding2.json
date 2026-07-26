@@ -103,9 +103,7 @@
     "gotItLast": "Got it. Last one done.",
     "gotItNext": "Got it. Next one coming up.",
     "finish": "Finish",
-    "topicLabel": "Topic: {{name}}",
-    "deepDive": "Deep dive",
-    "pinpointing": "Pinpointing…"
+    "topicLabel": "Topic: {{name}}"
   },
   "signUp": {
     "titleSignup": "Create your account",
@@ -140,8 +138,6 @@
     "weakHeader": "Areas to strengthen",
     "weakSub": "We'll help you build confidence here",
     "strongHeader": "You're strong in",
-    "digDeeper": "Dig deeper",
-    "preparing": "Preparing questions…",
-    "continuePlan": "Continue to your plan"
+    "buildPlan": "Build my plan"
   }
 }

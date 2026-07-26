@@ -1,45 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
-import { VSoftBackdrop, VTopBar, VidyaAvatar } from '../../prototype/shared';
-import { weakestChapterForDrill, type DiagOutcome } from '../../content/diagnostic';
-import api from '../../api/vidya';
+import { VSoftBackdrop, VTopBar } from '../../prototype/shared';
+import { type DiagOutcome } from '../../content/diagnostic';
 import type { ScreenProps } from '../../types';
 
-export default function DiagSummaryScreen({ go, state, set }: ScreenProps) {
+export default function DiagSummaryScreen({ go, state }: ScreenProps) {
   const { t } = useTranslation(['onboarding2', 'common']);
-  const grade = api.toGrade(state?.classLevel);
-  const [drilling, setDrilling] = useState(false);
 
   const outcome = (state?.diagOutcome as DiagOutcome) || null;
   if (!outcome) {
     go('diag-intro');
     return null;
   }
-
-  const handleDrill = async () => {
-    setDrilling(true);
-    const weakChapter = weakestChapterForDrill(outcome, grade);
-    if (!weakChapter) {
-      go('diag-result');
-      return;
-    }
-    try {
-      const qs = await api.generateDiagnosticDrill({
-        chapterId: weakChapter,
-        language: state?.language || 'English',
-        num: 4,
-      });
-      if (!qs || qs.length === 0) {
-        go('diag-result');
-        return;
-      }
-      set && set({ diagDrillQuestions: qs, diagDrillChapter: weakChapter });
-      go('diag-drill');
-    } catch {
-      go('diag-result');
-    }
-  };
 
   return (
     <VSoftBackdrop variant="cool">
@@ -89,24 +62,9 @@ export default function DiagSummaryScreen({ go, state, set }: ScreenProps) {
 
         <div style={{ flex: 1, minHeight: 18 }} />
 
-        {/* Two options */}
-        <div className="v-enter" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button
-            className="v-btn-primary v-tap"
-            onClick={handleDrill}
-            disabled={drilling}
-            style={{ opacity: drilling ? 0.6 : 1 }}
-          >
-            {drilling ? <VIcon name="loader" size={14} color="#fff" /> : <VIcon name="zap" size={14} color="#fff" />}
-            {drilling ? t('diagSummary.preparing') : t('diagSummary.digDeeper')}
-          </button>
-          <button
-            className="v-btn-secondary v-tap"
-            onClick={() => go('diag-result')}
-            disabled={drilling}
-            style={{ opacity: drilling ? 0.6 : 1 }}
-          >
-            {t('diagSummary.continuePlan')} <VIcon name="arrow-right" size={14} color="var(--ink)" />
+        <div className="v-enter">
+          <button className="v-btn-primary v-tap" onClick={() => go('diag-result')} style={{ width: '100%' }}>
+            {t('diagSummary.buildPlan')} <VIcon name="arrow-right" size={14} color="#fff" />
           </button>
         </div>
       </div>

@@ -14,7 +14,6 @@ export const SCREEN_ROUTES = {
   'build-plan': '/onb/build-plan',
   'diag-q1': '/onb/diag-q1',
   'diag-summary': '/onb/diag-summary',
-  'diag-drill': '/onb/diag-drill',
   'diag-building': '/onb/diag-building',
   'diag-result': '/onb/diag-result',
   'first-plan': '/onb/first-plan',

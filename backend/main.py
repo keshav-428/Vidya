@@ -51,11 +51,6 @@ class GenerateDiagnosticRequest(BaseModel):
     language: str = "English"
     num: int = 10
 
-class GenerateDiagnosticDrillRequest(BaseModel):
-    chapter_id: str              # e.g. 'g6-fractions'
-    language: str = "English"
-    num: int = 4                 # subtopic-level questions
-
 class DailyGreetingRequest(BaseModel):
     user_id: str
     name: str
@@ -238,15 +233,6 @@ async def generate_diagnostic_endpoint(request: GenerateDiagnosticRequest):
         return quiz_service.generate_diagnostic(request.grade, request.goal, request.language, request.num)
     except Exception as e:
         print(f"Error in /generate-diagnostic: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/generate-diagnostic-drill")
-async def generate_diagnostic_drill_endpoint(request: GenerateDiagnosticDrillRequest):
-    """Subtopic-level drill into the weakest chapter identified by the coarse diagnostic."""
-    try:
-        return quiz_service.generate_diagnostic_drill(request.chapter_id, request.language, request.num)
-    except Exception as e:
-        print(f"Error in /generate-diagnostic-drill: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/suggestion/{user_id}")

@@ -86,7 +86,7 @@ export const generateQuiz = ({
   }).then((d) => d.quiz || []);
 
 // ── Onboarding diagnostic (placement, tuned to class + goal) ──
-export interface DiagnosticQ { area: string; prompt: string; options: string[]; correct_index: number; }
+export interface DiagnosticQ { area: string; prompt: string; options: string[]; correct_index: number; subtopic?: string; }
 export interface GenerateDiagnosticArgs {
   grade?: number;
   goal?: string;          // understand | practice | tests | mixed
@@ -102,15 +102,6 @@ export const generateDiagnostic = ({
   post<{ questions?: DiagnosticQ[] }>('/generate-diagnostic', { grade, goal, language, num })
     .then((d) => d.questions || []);
 
-// Subtopic-level drill on the weakest chapter.
-export interface DiagnosticDrillQ extends DiagnosticQ { subtopic?: string; }
-export const generateDiagnosticDrill = ({
-  chapterId,
-  language = 'English',
-  num = 4,
-}: { chapterId: string; language?: string; num?: number }): Promise<DiagnosticDrillQ[]> =>
-  post<{ questions?: DiagnosticDrillQ[] }>('/generate-diagnostic-drill', { chapter_id: chapterId, language, num })
-    .then((d) => d.questions || []);
 
 // ── Explain a wrong answer ───────────────────────────────────
 export interface ExplainMistakeArgs {
@@ -350,7 +341,6 @@ export default {
   saveMastery,
   generateQuiz,
   generateDiagnostic,
-  generateDiagnosticDrill,
   explainMistake,
   quizFeedback,
   searchVideos,

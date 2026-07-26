@@ -104,7 +104,7 @@ export function firstPlanTopic(outcome: DiagOutcome): string | null {
 //  generated at runtime (see api.generateDiagnostic); these helpers score
 //  that set and seed the first plan with a class-correct chapter id.
 // ─────────────────────────────────────────────────────────────
-export interface GenQ { area: string; prompt: string; options: string[]; correct_index: number; }
+export interface GenQ { area: string; prompt: string; options: string[]; correct_index: number; subtopic?: string; }
 
 /** Static fallback set (normalized to the generated shape) if generation fails. */
 export const STATIC_FALLBACK: GenQ[] = DIAG_QUESTIONS.map((q) => ({
@@ -184,38 +184,3 @@ export function classAwareWeakChapters(outcome: DiagOutcome, grade: number): str
   return picked;
 }
 
-/** Score subtopic-level drill questions (each tagged with a subtopic name).
- *  Returns per-subtopic scores and identifies the weakest subtopic. */
-export interface SubtopicScore { subtopic: string; correct: number; attempted: number; ratio: number; }
-export function scoreDrillSet(questions: (GenQ & { subtopic?: string })[], answers: (number | null | undefined)[]): {
-  perSubtopic: SubtopicScore[];
-  correct: number;
-  attempted: number;
-  weakest?: string;  // lowest-scoring subtopic for plan seeding
-} {
-  const bySubtopic: Record<string, { correct: number; attempted: number }> = {};
-  let totalCorrect = 0, totalAttempted = 0;
-  questions.forEach((q, i) => {
-    const st = q.subtopic || '(unknown)';
-    const ans = answers[i];
-    if (ans === null || ans === undefined) return;
-    totalAttempted++;
-    if (!bySubtopic[st]) bySubtopic[st] = { correct: 0, attempted: 0 };
-    bySubtopic[st].attempted++;
-    if (ans === q.correct_index) { bySubtopic[st].correct++; totalCorrect++; }
-  });
-  const perSubtopic = Object.entries(bySubtopic).map(([s, scores]) => ({
-    subtopic: s,
-    correct: scores.correct,
-    attempted: scores.attempted,
-    ratio: scores.attempted ? scores.correct / scores.attempted : 0,
-  })).sort((a, b) => a.ratio - b.ratio);
-  return { perSubtopic, correct: totalCorrect, attempted: totalAttempted, weakest: perSubtopic[0]?.subtopic };
-}
-
-/** Identify the weakest chapter from the coarse diagnostic (for drill).
- *  Returns the first (weakest) chapter id from classAwareWeakChapters. */
-export function weakestChapterForDrill(outcome: DiagOutcome, grade: number): string | null {
-  const ids = classAwareWeakChapters(outcome, grade);
-  return ids.length ? ids[0] : null;
-}
