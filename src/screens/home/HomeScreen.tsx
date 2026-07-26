@@ -5,7 +5,7 @@ import { VSoftBackdrop, VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAv
 import api from '../../api/vidya';
 import { classChapters, chapterInfo, chapterTitleById, type SyllabusChapter } from '../../content/syllabus';
 import { levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
-import type { ScreenProps, GoFn, ScreenId, MasteryMap } from '../../types';
+import type { ScreenProps, GoFn, ScreenId, MasteryMap, PracticeSelection } from '../../types';
 
 // Level → dot color on topic rows ('new' stays neutral).
 const LEVEL_DOT: Record<MasteryLevel, string> = {
@@ -205,15 +205,26 @@ function WeekBanner({ weekData, go, highlight }: WeekBannerProps) {
 
 interface NewSessionPickerProps {
   onClose: () => void;
-  onStart: (chapterId: string, section: string, title: string) => void;
+  onStart: (sel: PracticeSelection[]) => void;
   chapters: SyllabusChapter[];
   mastery?: MasteryMap;
 }
 
-// Sessions are topic-wise: pick a chapter (the place), then the topic (the thing you do).
+// Sessions are topic-wise: pick a chapter (the place), then one or more topics
+// (the things you'll do). Multiple topics run as ONE session covering them all.
 function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPickerProps) {
   const { t } = useTranslation(['home', 'common']);
   const [openChapter, setOpenChapter] = useState<string | null>(null);
+  const [sel, setSel] = useState<PracticeSelection[]>([]);
+  const keyOf = (c: string, s: string) => `${c}::${s}`;
+  const isSel = (c: string, s: string) => sel.some((x) => keyOf(x.chapterId, x.section) === keyOf(c, s));
+  const toggle = (chapterId: string, section: string, title: string) => setSel((prev) => {
+    const k = keyOf(chapterId, section);
+    return prev.some((x) => keyOf(x.chapterId, x.section) === k)
+      ? prev.filter((x) => keyOf(x.chapterId, x.section) !== k)
+      : [...prev, { chapterId, section, title }];
+  });
+  const selCountIn = (ch: SyllabusChapter) => ch.subtopics.filter((sub) => isSel(ch.id, sub.num)).length;
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,48,97,0.45)', backdropFilter: 'blur(3px)' }} />
@@ -227,24 +238,32 @@ function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPic
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {chapters.map(ch => {
               const isOpen = openChapter === ch.id;
+              const chCount = selCountIn(ch);
               return (
-                <div key={ch.id} style={{ borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', background: '#fff' }}>
+                <div key={ch.id} style={{ borderRadius: 14, border: chCount ? '1px solid var(--indigo-soft)' : '1px solid var(--border)', overflow: 'hidden', background: '#fff' }}>
                   <div className="v-tap" onClick={() => setOpenChapter(isOpen ? null : ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{ch.title}</div>
-                      <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', marginTop: 1 }}>{t('common:topicsCount', { count: ch.subtopics.length })}</div>
+                      <div style={{ fontFamily: 'Inter', fontSize: 11, color: chCount ? 'var(--indigo)' : 'var(--muted-2)', marginTop: 1, fontWeight: chCount ? 700 : 400 }}>
+                        {chCount
+                          ? t('newSession.selectedCount', { count: chCount, total: ch.subtopics.length })
+                          : t('common:topicsCount', { count: ch.subtopics.length })}
+                      </div>
                     </div>
                     <VIcon name={isOpen ? 'chevron-down' : 'chevron-right'} size={14} color="var(--muted-2)" />
                   </div>
                   {isOpen && ch.subtopics.map((sub) => {
                     const lvl = levelFor((mastery || {})[skillKey(ch.id, sub.num)]);
+                    const on = isSel(ch.id, sub.num);
                     return (
-                      <div key={sub.id} className="v-tap" onClick={() => onStart(ch.id, sub.num, sub.title)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px 11px 16px', borderTop: '1px solid var(--border-soft)' }}>
+                      <div key={sub.id} className="v-tap" onClick={() => toggle(ch.id, sub.num, sub.title)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px 11px 16px', borderTop: '1px solid var(--border-soft)', background: on ? '#FAFAFF' : '#fff' }}>
                         <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'var(--muted-2)', minWidth: 28, fontVariantNumeric: 'tabular-nums' }}>{sub.num}</span>
                         <div style={{ flex: 1, minWidth: 0, fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.25 }}>{sub.title}</div>
                         <div style={{ width: 7, height: 7, borderRadius: 9999, flexShrink: 0, background: LEVEL_DOT[lvl] }} />
-                        <VIcon name="chevron-right" size={12} color="var(--muted-2)" />
+                        <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: on ? 'none' : '1.5px solid var(--border)', background: on ? 'var(--indigo)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
+                        </div>
                       </div>
                     );
                   })}
@@ -252,6 +271,14 @@ function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPic
               );
             })}
           </div>
+        </div>
+        <div style={{ padding: '12px 22px 36px', borderTop: '1px solid var(--border-soft)' }}>
+          <button className="v-btn-primary v-tap" onClick={() => sel.length && onStart(sel)}
+            disabled={sel.length === 0} style={{ opacity: sel.length === 0 ? 0.4 : 1 }}>
+            {sel.length > 1
+              ? t('newSession.startMulti', { count: sel.length })
+              : t('newSession.start')} <VIcon name="arrow-right" size={14} color="#fff" />
+          </button>
         </div>
       </div>
     </div>
@@ -316,7 +343,10 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   const chapterTitleStr = chapterInfo(topicId)?.title || api.topicTitle(topicId);
   // Subtopic-wise session: today targets one skill; the chapter is context.
   const sessionSubtopic = (state?.planSubtopicTitle as string) || null;
-  const topicTitleStr = sessionSubtopic || chapterTitleStr;
+  const sessionSel = (state?.planSessionSel as PracticeSelection[] | undefined) || null;
+  const topicTitleStr = (sessionSel && sessionSel.length > 1)
+    ? t('multiTopicSession', { count: sessionSel.length })
+    : (sessionSubtopic || chapterTitleStr);
 
   const todayStr = new Date().toDateString();
   const sessionStep = state.sessionDate === todayStr ? (state.sessionStep || 0) : 0;
@@ -500,10 +530,19 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           chapters={chapters}
           mastery={state?.mastery as MasteryMap}
           onClose={() => setNewSessionOpen(false)}
-          onStart={(chapterId, section, title) => {
+          onStart={(sel) => {
             setNewSessionOpen(false);
-            // Sessions are topic-wise: scope today's session to the chosen topic.
-            set({ planTopicId: chapterId, planSection: section, planSubtopicTitle: title, skillId: undefined, sessionStep: 0, sessionDate: new Date().toDateString() });
+            // Sessions are topic-wise. The singular fields mirror sel[0] so
+            // everything that reads them (week strip, mastery seed) still works.
+            set({
+              planSessionSel: sel,
+              planTopicId: sel[0].chapterId,
+              planSection: sel[0].section,
+              planSubtopicTitle: sel[0].title,
+              skillId: undefined,
+              sessionStep: 0,
+              sessionDate: new Date().toDateString(),
+            });
           }}
         />
       )}

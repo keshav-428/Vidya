@@ -74,7 +74,7 @@ const PATH_TO_SCREEN: Record<string, ScreenId> = Object.fromEntries(
 ) as Record<string, ScreenId>;
 
 const PERSIST_KEYS: (keyof AppState)[] = [
-  'sessionStep', 'sessionDate', 'planTopicId', 'planSection', 'planSubtopicTitle', 'weekPlan',
+  'sessionStep', 'sessionDate', 'planTopicId', 'planSection', 'planSubtopicTitle', 'planSessionSel', 'weekPlan',
   'sessionDuration', 'planMascotSeen', 'buildPlanCoachSeen', 'ownPlan',
   'name', 'class', 'subject', 'goal', 'language', 'role',
   'diagLevel', 'diagChapters', 'conceptLayout', 'skillId',

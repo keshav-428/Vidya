@@ -8,7 +8,7 @@ import api from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
 import { applyResult, levelFor, skillKey } from '../../lib/mastery';
 import LessonFlow from './LessonFlow';
-import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap, AdaptiveLesson } from '../../types';
+import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap, AdaptiveLesson, PracticeSelection } from '../../types';
 
 // Build the card array for an LLM-generated topic. Real-life scenes and videos
 // are preloaded by the caller and passed in, so every card is render-ready and
@@ -90,8 +90,15 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
         }
       : null,
   );
+  // A session can cover SEVERAL topics — one lesson teaches them together.
+  const [sessionSel] = useState<PracticeSelection[] | null>(() => {
+    const sel = state?.planSessionSel as PracticeSelection[] | undefined;
+    return (!askedConcept && !state?.skillId && sel && sel.length > 1) ? sel : null;
+  });
   const topicTitle = askedConcept
-    || (staticSkill ? staticSkill.title : (sessionSub ? sessionSub.title : api.topicTitle(state?.planTopicId)));
+    || (staticSkill ? staticSkill.title
+        : (sessionSel ? sessionSel.map((x) => x.title).join(', ')
+          : (sessionSub ? sessionSub.title : api.topicTitle(state?.planTopicId))));
   const grade = api.toGrade(state?.classLevel);
 
   // cards: legacy deck fallback. lesson: the adaptive teaching-beats flow.
@@ -101,8 +108,9 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
   const [idx, setIdx] = useState(0);
   const [exiting, setExiting] = useState(false);
 
-  const scopeChapterId = askedChapterId || sessionSub?.chapterId || null;
-  const scopeSection = askedSection ?? sessionSub?.section ?? null;
+  const scopeChapterId = askedChapterId || sessionSel?.[0]?.chapterId || sessionSub?.chapterId || null;
+  // With several topics in one session there is no single section to scope to.
+  const scopeSection = sessionSel ? null : (askedSection ?? sessionSub?.section ?? null);
 
   useEffect(() => {
     if (staticSkill) return;   // already have rich content
@@ -119,8 +127,12 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
     // Try the adaptive lesson first; fall back to the legacy card deck if the
     // endpoint is unavailable or returns something unusable.
     Promise.all([
-      api.generateLesson({ topic: topicTitle, grade, language: lang, chapterId: scopeChapterId, section: scopeSection, depth })
-        .catch(() => null),
+      api.generateLesson({
+        topic: topicTitle, grade, language: lang,
+        chapterId: scopeChapterId, section: scopeSection, depth,
+        sections: sessionSel ? sessionSel.map((x) => x.section) : null,
+        sectionTitles: sessionSel ? sessionSel.map((x) => x.title) : null,
+      }).catch(() => null),
       api.searchVideos(topicTitle, grade).catch(() => [] as VideoItem[]),
     ]).then(([les, vids]) => {
       if (!alive) return;
@@ -162,12 +174,20 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
   // Coverage: the topic counts as explored only when the lesson is finished.
   const markLearned = () => {
     if (!set) return;
-    const entry: ActivityEntry = {
-      kind: 'session', date: new Date().toISOString(), topic: topicTitle,
-      chapterId: scopeChapterId || undefined, section: scopeSection,
-      score: 0, total: 0,
-    };
-    set({ mastery: applyResult((state?.mastery as MasteryMap) || {}, entry) });
+    const now = new Date().toISOString();
+    let m = (state?.mastery as MasteryMap) || {};
+    // A multi-topic session marks EVERY topic it covered as learned.
+    const covered = sessionSel
+      ? sessionSel.map((x) => ({ chapterId: x.chapterId, section: x.section, title: x.title }))
+      : [{ chapterId: scopeChapterId || undefined, section: scopeSection, title: topicTitle }];
+    covered.forEach((c) => {
+      m = applyResult(m, {
+        kind: 'session', date: now, topic: c.title,
+        chapterId: c.chapterId || undefined, section: c.section ?? null,
+        score: 0, total: 0,
+      } as ActivityEntry);
+    });
+    set({ mastery: m });
   };
 
   // Adaptive lesson ready → run the teaching-beats flow.

@@ -138,6 +138,8 @@ class LessonRequest(BaseModel):
     chapter_id: Optional[str] = None
     section: Optional[str] = None
     depth: str = "full"   # 'full' | 'quick' (student already knows the basics)
+    sections: Optional[list] = None        # several subtopics in one session
+    section_titles: Optional[list] = None  # their titles, for coverage in examples
 
 class VivaQuestionsRequest(BaseModel):
     topics: list          # chapter titles
@@ -395,6 +397,7 @@ async def generate_lesson_endpoint(request: LessonRequest):
         data = concept_service.generate_lesson(
             request.topic, request.grade, request.language,
             chapter_id=request.chapter_id, section=request.section, depth=request.depth,
+            sections=request.sections, section_titles=request.section_titles,
         )
         return data
     except Exception as e:

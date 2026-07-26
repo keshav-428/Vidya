@@ -271,6 +271,7 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
       // Keep today's session scope in sync (subtopic-wise if the slot has one).
       patch.planSection = today.section ?? undefined;
       patch.planSubtopicTitle = today.subtopicTitle ?? undefined;
+      patch.planSessionSel = undefined;   // week plan days are single-topic
     }
     set && set(patch);
   };

@@ -63,6 +63,7 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       ...(today?.topicId ? { planTopicId: today.topicId } : {}),
       planSection: today?.section ?? undefined,
       planSubtopicTitle: today?.subtopicTitle ?? undefined,
+      planSessionSel: undefined,
       mastery: seededMastery(),
       ownPlan: false,
       coachStep: 1,          // after saving, Home nudges "let's study"
@@ -78,7 +79,7 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       diagLevel: level, diagChapters: outcome.weak,
       ownPlan: true, coachStep: 1,
       weekPlan: undefined, planTopicId: undefined,
-      planSection: undefined, planSubtopicTitle: undefined,
+      planSection: undefined, planSubtopicTitle: undefined, planSessionSel: undefined,
       mastery: seededMastery(),
       planIntro: 'own',
     });

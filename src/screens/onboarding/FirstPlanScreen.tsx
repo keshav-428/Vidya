@@ -33,7 +33,7 @@ export default function FirstPlanScreen({ go, state, set }: ScreenProps) {
 
   const chooseTopic = (id: string) => {
     setTopicId(id);
-    set && set({ planTopicId: id });
+    set && set({ planTopicId: id, planSection: undefined, planSubtopicTitle: undefined, planSessionSel: undefined });
     setEditing(false);
   };
 

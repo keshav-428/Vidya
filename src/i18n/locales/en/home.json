@@ -43,8 +43,10 @@
   },
   "newSession": {
     "title": "New session",
-    "desc": "Choose a chapter to study. You will go through Concept, Quiz and Analysis.",
-    "start": "Start session"
+    "desc": "Pick one topic — or a few to cover together in one session.",
+    "start": "Start session",
+    "startMulti": "Start session · {{count}} topics",
+    "selectedCount": "{{count}} of {{total}} selected"
   },
   "vivaPicker": {
     "title": "Start a Viva",
@@ -66,5 +68,6 @@
       "body": "Each session has 3 parts: Concept, Quiz, then Analysis. Let's start the first one.",
       "cta": "Start first session →"
     }
-  }
+  },
+  "multiTopicSession": "{{count}} topics"
 }

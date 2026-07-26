@@ -52,24 +52,50 @@ Strictly return ONLY the JSON object."""
 
 
 def generate_lesson(topic: str, grade: int = 6, language: str = "English",
-                    chapter_id: str = None, section: str = None, depth: str = "full"):
-    """Generates an ADAPTIVE lesson for one subtopic, structured as teaching beats:
+                    chapter_id: str = None, section: str = None, depth: str = "full",
+                    sections: list = None, section_titles: list = None):
+    """Generates an ADAPTIVE lesson, structured as teaching beats:
     hook → concept card(s) → hook-resolving check (+ alternate explanation & easier
     check for the branch when the student misses) → per-part worked examples each
     with a 'your turn' micro-question → spot-the-mistake game items.
 
+    Covers ONE subtopic (`section`), or SEVERAL when the student picked multiple
+    for one session (`sections` + their `section_titles`) — then retrieval widens
+    to the chapter and the examples must cover every named subtopic.
+
     depth: 'full' (student is new/struggling) → 2 concept cards, 3 examples.
            'quick' (student already decent) → 1 concept card, 2 examples.
     """
+    multi = bool(sections) and len(sections) > 1
     try:
-        context = rag_service.retrieve_context(
-            topic, grade=grade, top_k=5, chapter_id=chapter_id, section=section
-        )
+        if multi:
+            # Several subtopics: retrieve per section so each is represented,
+            # falling back to chapter scope if a section returns nothing.
+            chunks = []
+            for sec in sections[:6]:
+                chunks.extend(rag_service.retrieve_context(
+                    topic, grade=grade, top_k=3, chapter_id=chapter_id, section=sec))
+            context = chunks or rag_service.retrieve_context(
+                topic, grade=grade, top_k=6, chapter_id=chapter_id)
+        else:
+            context = rag_service.retrieve_context(
+                topic, grade=grade, top_k=5, chapter_id=chapter_id, section=section)
     except Exception:
         context = []
     context_text = "\n\n".join([c.get("content", "") for c in context]) if context else ""
 
     n_cards, n_examples = (1, 2) if depth == "quick" else (2, 3)
+    # One session covering several subtopics needs at least one example each.
+    covered = [t for t in (section_titles or []) if t]
+    if multi and covered:
+        n_examples = max(n_examples, min(len(covered), 5))
+    coverage_rule = (
+        f"\nThis ONE session covers these {len(covered)} subtopics together: "
+        + "; ".join(covered)
+        + ". The concept card(s) must tie them into one connected idea, and the examples "
+          "must cover EVERY one of them — set each example's \"part\" to the subtopic it covers.\n"
+        if (multi and covered) else ""
+    )
 
     prompt = f"""You are Vidya — a warm, playful, brilliant maths teacher talking one-on-one
 with a CBSE Class {grade} student (age 11-14) on their phone. You are creating an
@@ -139,6 +165,7 @@ Return ONLY valid JSON with EXACTLY this structure:
   ]
 }}
 
+{coverage_rule}
 STRUCTURE RULES:
 - exactly {n_cards} concept_cards and exactly {n_examples} examples.
 - exactly 2 spot_mistakes, each showing a DIFFERENT common misconception for {topic}.

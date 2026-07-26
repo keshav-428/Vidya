@@ -44,6 +44,9 @@ export interface AppState {
   planSection?: string;         // today's subtopic section (e.g. "1.2"); absent ⇒ chapter-wise
   planSubtopicTitle?: string;   // today's subtopic title
   planIntro?: 'auto' | 'own';    // first visit to the week plan, straight from the warm-up
+  /** Topics this session covers. Length 1 = classic single-topic session;
+   *  the singular planSection/planSubtopicTitle mirror entry [0]. */
+  planSessionSel?: PracticeSelection[];
   weekPlan?: unknown;
   ownPlan?: unknown;
   planMascotSeen?: boolean;

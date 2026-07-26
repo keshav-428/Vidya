@@ -69,6 +69,12 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     ? getChapterSkills().find((s) => s.id === state.skillId)
     : null;
   // Subtopic-wise session: quiz the exact skill today's concept taught.
+  // A session may cover several topics; the quiz then spans them all and each
+  // question's result is credited to its own skill (same path as practice).
+  const [sessionSel] = useState<PracticeSelection[] | null>(() => {
+    const sel = state?.planSessionSel as PracticeSelection[] | undefined;
+    return (!fromPractice && !state?.quizScope && !state?.skillId && sel && sel.length > 1) ? sel : null;
+  });
   const [sessionSub] = useState<QuizScope | null>(() =>
     (!fromPractice && !quizScope && !state?.skillId && state?.planSection && state?.planSubtopicTitle)
       ? { chapterId: state?.planTopicId ? String(state.planTopicId) : null, section: String(state.planSection), topic: String(state.planSubtopicTitle) }
@@ -78,9 +84,13 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     ? [quizScope.topic]
     : fromPractice && practiceTopics
     ? practiceTopics
+    : sessionSel
+    ? sessionSel.map((x) => x.title)
     : sessionSub
     ? [sessionSub.topic]
     : [staticSkill ? staticSkill.title : api.topicTitle(state?.planTopicId)];
+  // Whichever selection drives per-skill mastery attribution on finish.
+  const attributionSel: PracticeSelection[] | null = practiceSel?.length ? practiceSel : sessionSel;
   const topicTitle = quizTopics.length > 1 ? t('navigable.chaptersCount', { count: quizTopics.length }) : quizTopics[0];
   const fallbackQuiz: QuizItem[] = ((staticSkill || getSkill(state?.skillId ?? undefined)).quiz as Omit<QuizItem, 'id' | 'difficulty'>[])
     .map((it, i) => ({ ...it, id: i, difficulty: 'medium' as const }));
@@ -109,7 +119,7 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     const levels: MasteryLevel[] = [];
     const single = quizScope || sessionSub;
     if (single?.chapterId) levels.push(levelFor(map[skillKey(single.chapterId, single.section)]));
-    else if (practiceSel?.length) practiceSel.forEach((s) => levels.push(levelFor(map[skillKey(s.chapterId, s.section)])));
+    else if (attributionSel?.length) attributionSel.forEach((s) => levels.push(levelFor(map[skillKey(s.chapterId, s.section)])));
     const known = levels.filter((l) => l !== 'new');
     if (known.some((l) => l === 'needshelp')) return 'Easy';
     if (known.length && known.every((l) => l === 'strong')) return 'Hard';
@@ -214,12 +224,12 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     const oldMap = (state?.mastery as MasteryMap) || {};
     let newMap = applyResult(oldMap, entry);
     // Multi-topic practice: credit each first-try result to its own skill.
-    if (!scope?.chapterId && practiceSel?.length) {
+    if (!scope?.chapterId && attributionSel?.length) {
       const norm = (x: string) => x.trim().toLowerCase();
       const groups = new Map<string, { s: PracticeSelection; score: number; total: number }>();
       tries.forEach((r) => {
         if (!r.topic) return;
-        const match = practiceSel.find((pp) => norm(pp.title) === norm(r.topic!));
+        const match = attributionSel.find((pp) => norm(pp.title) === norm(r.topic!));
         if (!match) return;
         const k = skillKey(match.chapterId, match.section);
         const g = groups.get(k) || { s: match, score: 0, total: 0 };

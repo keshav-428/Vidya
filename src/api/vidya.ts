@@ -192,6 +192,9 @@ export interface GenerateLessonArgs {
   chapterId?: string | null;
   section?: string | null;
   depth?: 'full' | 'quick';
+  /** Several subtopics covered by one session (with their titles). */
+  sections?: string[] | null;
+  sectionTitles?: string[] | null;
 }
 export const generateLesson = ({
   topic,
@@ -200,6 +203,8 @@ export const generateLesson = ({
   chapterId = null,
   section = null,
   depth = 'full',
+  sections = null,
+  sectionTitles = null,
 }: GenerateLessonArgs): Promise<import('../types').AdaptiveLesson> =>
   post<import('../types').AdaptiveLesson>('/generate-lesson', {
     topic,
@@ -208,6 +213,8 @@ export const generateLesson = ({
     chapter_id: chapterId,
     section,
     depth,
+    sections,
+    section_titles: sectionTitles,
   });
 
 // ── Viva: spoken-answer practice ─────────────────────────────
