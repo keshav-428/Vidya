@@ -286,6 +286,47 @@ function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPic
   );
 }
 
+interface ChapterPickerProps {
+  onClose: () => void;
+  onPick: (chapterId: string) => void;
+  chapters: SyllabusChapter[];
+  title: string;
+  desc: string;
+}
+
+// Single-select chapter list — used by Chapter notes, which are chapter-level
+// (no subtopics to choose).
+function ChapterPicker({ onClose, onPick, chapters, title, desc }: ChapterPickerProps) {
+  const { t } = useTranslation(['home', 'common']);
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,48,97,0.45)', backdropFilter: 'blur(3px)' }} />
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '85%', display: 'flex', flexDirection: 'column', animation: 'vSlideUp 0.4s cubic-bezier(.16,1,.3,1) both' }}>
+        <div style={{ padding: '24px 22px 0', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 9999, background: 'var(--border)', margin: '0 auto 20px' }} />
+          <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{title}</div>
+          <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{desc}</div>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 22px 32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {chapters.map((ch) => (
+              <div key={ch.id} className="v-tap" onClick={() => onPick(ch.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 14, border: '1px solid var(--border)', background: '#fff' }}>
+                <div style={{ width: 26, height: 26, borderRadius: 8, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Inter', fontSize: 11.5, fontWeight: 700, color: 'var(--indigo)' }}>{ch.num}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{ch.title}</div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', marginTop: 1 }}>{t('common:topicsCount', { count: ch.subtopics.length })}</div>
+                </div>
+                <VIcon name="chevron-right" size={14} color="var(--muted-2)" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface VivaPickerProps {
   onClose: () => void;
   onStart: (sel: PracticeSelection[], mode: 'learn' | 'practice' | 'both', level: 'easy' | 'normal' | 'hard') => void;
@@ -441,7 +482,7 @@ function VivaPicker({ onClose, onStart, chapters, mastery }: VivaPickerProps) {
 }
 
 export default function HomeScreen({ go, state, set }: ScreenProps) {
-  const { t } = useTranslation(['home', 'common']);
+  const { t } = useTranslation(['home', 'common', 'learn']);
   // A user "has a plan" once they've picked a chapter / built a week plan.
   // Until then the home is a clean empty state — no defaulted session.
   const grade = api.toGrade(state?.classLevel);
@@ -479,6 +520,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
 
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [vivaOpen, setVivaOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
 
   // ── Quick help ──
   // Mistakes we already record, turned into something actionable.
@@ -670,6 +712,18 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
         <div className="v-enter">
           <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>{t('quick.header')}</div>
 
+          <div className="v-tap" onClick={() => setNotesOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
+            <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="book" size={17} color="var(--indigo)" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('learn:notes.cardTitle')}</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('learn:notes.cardSub')}</div>
+            </div>
+            <VIcon name="arrow-right" size={15} color="var(--muted-2)" />
+          </div>
+
           <div className="v-tap" onClick={() => go('homework')}
             style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
             <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -773,6 +827,16 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           }}
         />
       )}
+      {notesOpen && (
+        <ChapterPicker
+          chapters={chapters}
+          title={t('learn:notes.pickTitle')}
+          desc={t('learn:notes.pickDesc')}
+          onClose={() => setNotesOpen(false)}
+          onPick={(chapterId) => { setNotesOpen(false); set({ chapterId }); go('chapter-notes'); }}
+        />
+      )}
+
       {vivaOpen && (
         <VivaPicker
           chapters={chapters}

@@ -75,19 +75,6 @@ export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
           </div>
         </div>
 
-        {/* Cheat sheet — the thing a student screenshots before a test */}
-        <div className="v-tap" onClick={() => go('cheat-sheet')}
-          style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 15px', marginBottom: 20, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <VIcon name="zap" size={16} color="var(--indigo)" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('sheet.cardTitle')}</div>
-            <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('sheet.cardSub')}</div>
-          </div>
-          <VIcon name="arrow-right" size={15} color="var(--muted-2)" />
-        </div>
-
         {/* The journey: every topic with your level */}
         <div className="v-eyebrow" style={{ marginBottom: 10 }}>{t('chapterTopics.topicsHeader')}</div>
         <div className="v-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 24 }}>

@@ -206,8 +206,8 @@ export interface AdaptiveLesson {
   spot_mistakes: SpotMistake[];
 }
 
-// ── Chapter cheat sheet (screenshot before the test) ─────────
-export interface CheatSheet {
+// ── Chapter notes (one screen, screenshot before a test) ─────
+export interface ChapterNotes {
   title?: string;
   rules?: { name: string; rule: string }[];
   tricks?: { trick: string; why?: string }[];

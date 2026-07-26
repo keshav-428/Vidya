@@ -246,14 +246,14 @@ export const evaluateViva = ({
     audio, mime_type: mimeType, question, listen_for: listenFor, grade, language,
   });
 
-// ── One-screen chapter cheat sheet ───────────────────────────
-export const generateSheet = ({
+// ── One-screen chapter notes ─────────────────────────────────
+export const generateNotes = ({
   topic,
   grade = 6,
   language = 'English',
   chapterId = null,
-}: { topic: string; grade?: number; language?: Language; chapterId?: string | null }): Promise<import('../types').CheatSheet> =>
-  post<import('../types').CheatSheet>('/generate-sheet', { topic, grade, language, chapter_id: chapterId });
+}: { topic: string; grade?: number; language?: Language; chapterId?: string | null }): Promise<import('../types').ChapterNotes> =>
+  post<import('../types').ChapterNotes>('/generate-sheet', { topic, grade, language, chapter_id: chapterId });
 
 // ── Homework help: read the page, nudge before solving ───────
 export const homeworkHelp = ({
@@ -409,7 +409,7 @@ export default {
   evaluateViva,
   generateTrick,
   homeworkHelp,
-  generateSheet,
+  generateNotes,
   identifyConcept,
   generatePaper,
   gradePaper,

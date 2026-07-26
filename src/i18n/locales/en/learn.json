@@ -81,16 +81,18 @@
     "showMeHow": "Show me how →",
     "another": "Do another page"
   },
-  "sheet": {
-    "topbar": "Cheat sheet",
-    "eyebrow": "CHAPTER {{num}} · CHEAT SHEET",
+  "notes": {
+    "topbar": "Chapter notes",
+    "eyebrow": "CHAPTER {{num}} · NOTES",
     "screenshotHint": "Screenshot this before your test",
-    "building": "Putting together your {{chapter}} cheat sheet…",
-    "failed": "Couldn't build the sheet just now. Try again in a bit.",
-    "rules": "MUST-KNOW RULES",
+    "building": "Writing up your {{chapter}} notes…",
+    "failed": "Couldn't make the notes just now. Try again in a bit.",
+    "rules": "IMPORTANT RULES",
     "tricks": "SHORTCUTS",
-    "traps": "MARKS TRAPS",
-    "cardTitle": "Cheat sheet",
-    "cardSub": "Rules, shortcuts and traps — on one screen"
+    "traps": "WHERE MARKS ARE LOST",
+    "cardTitle": "Chapter notes",
+    "cardSub": "All the important points on one screen",
+    "pickTitle": "Notes for which chapter?",
+    "pickDesc": "Pick a chapter and I'll put its important points on one screen."
   }
 }
