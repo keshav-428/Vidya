@@ -70,6 +70,8 @@ export interface AppState {
   askedConcept?: string | null;
   askedChapterId?: string | null;
   askedSection?: string | null;
+  /** The specific question a photo/typed ask is about; narrows the lesson. */
+  askedFocus?: string | null;
 
   // auth flow
   afterAuth?: ScreenId;

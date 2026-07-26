@@ -131,6 +131,7 @@ class IdentifyConceptRequest(BaseModel):
     grade: int = 6
     language: str = "English"
     mime_types: Optional[list] = None   # per-image, as reported by the browser
+    syllabus: Optional[list] = None     # the student's class catalog, to pin chapter_id/section
 
 class LessonRequest(BaseModel):
     topic: str
@@ -141,6 +142,7 @@ class LessonRequest(BaseModel):
     depth: str = "full"   # 'full' | 'quick' (student already knows the basics)
     sections: Optional[list] = None        # several subtopics in one session
     section_titles: Optional[list] = None  # their titles, for coverage in examples
+    focus: Optional[str] = None            # answer THIS specific question, not the whole subtopic
 
 class VivaQuestionsRequest(BaseModel):
     topics: list          # chapter titles
@@ -399,6 +401,7 @@ async def generate_lesson_endpoint(request: LessonRequest):
             request.topic, request.grade, request.language,
             chapter_id=request.chapter_id, section=request.section, depth=request.depth,
             sections=request.sections, section_titles=request.section_titles,
+            focus=request.focus,
         )
         return data
     except Exception as e:
@@ -439,7 +442,7 @@ async def identify_concept_endpoint(request: IdentifyConceptRequest):
             raise HTTPException(status_code=400, detail="No images provided")
         data = concept_service.identify_concept_from_images(
             request.images, request.grade, request.language,
-            mime_types=request.mime_types,
+            mime_types=request.mime_types, syllabus=request.syllabus,
         )
         return data
     except HTTPException:

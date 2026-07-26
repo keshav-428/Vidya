@@ -120,7 +120,8 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
   const submitConcept = (raw?: string) => {
     const text = (raw ?? q).trim();
     if (!text) return;
-    set && set({ askedConcept: text });
+    // A typed doubt is its own focus — answer the question, don't lecture.
+    set && set({ askedConcept: text, askedFocus: text, askedChapterId: null, askedSection: null });
     setFocused(false);
     go('learn-concept');
   };
@@ -137,6 +138,13 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
       const res = await api.identifyConcept({
         images: read.map((r) => r.b64),
         mimeTypes: read.map((r) => r.mime),
+        // Send the class catalog so the match is a real NCERT section, which
+        // scopes retrieval and lets the result count toward mastery.
+        syllabus: chapters.map((c) => ({
+          chapter_id: c.id,
+          chapter_title: c.title,
+          subtopics: c.subtopics.map((sb) => ({ section: sb.num, title: sb.title })),
+        })),
         grade: cls, language: state?.language || 'English',
       });
       if (!res.detected || !res.topic.trim()) {
@@ -144,7 +152,12 @@ export default function LearnScreen({ go, set, state }: ScreenProps) {
         setUploadErr(res.summary || t('photoCard.errNoTopic'));
         return;
       }
-      set && set({ askedConcept: res.topic.trim() });
+      set && set({
+        askedConcept: res.topic.trim(),
+        askedFocus: res.focus?.trim() || null,
+        askedChapterId: res.chapter_id || null,
+        askedSection: res.section || null,
+      });
       go('learn-concept');
     } catch {
       setUploading(false);

@@ -69,10 +69,13 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
   // to one subtopic. Null for free-text asks (then retrieval stays grade-wide).
   const [askedChapterId] = useState(() => state?.askedChapterId || null);
   const [askedSection] = useState(() => state?.askedSection || null);
+  // The specific question behind a photo / typed ask. Narrows the lesson so it
+  // answers THAT rather than surveying the whole subtopic.
+  const [askedFocus] = useState(() => state?.askedFocus || null);
   const fromLearn = !!askedConcept;   // came from the Learn tab (browse/ask), not a session
   useEffect(() => {
-    if ((state?.askedConcept || state?.askedChapterId || state?.askedSection) && set)
-      set({ askedConcept: null, askedChapterId: null, askedSection: null });
+    if ((state?.askedConcept || state?.askedChapterId || state?.askedSection || state?.askedFocus) && set)
+      set({ askedConcept: null, askedChapterId: null, askedSection: null, askedFocus: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -132,6 +135,7 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
         chapterId: scopeChapterId, section: scopeSection, depth,
         sections: sessionSel ? sessionSel.map((x) => x.section) : null,
         sectionTitles: sessionSel ? sessionSel.map((x) => x.title) : null,
+        focus: askedFocus,
       }).catch(() => null),
       api.searchVideos(topicTitle, grade).catch(() => [] as VideoItem[]),
     ]).then(([les, vids]) => {

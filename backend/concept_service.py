@@ -53,7 +53,7 @@ Strictly return ONLY the JSON object."""
 
 def generate_lesson(topic: str, grade: int = 6, language: str = "English",
                     chapter_id: str = None, section: str = None, depth: str = "full",
-                    sections: list = None, section_titles: list = None):
+                    sections: list = None, section_titles: list = None, focus: str = None):
     """Generates an ADAPTIVE lesson, structured as teaching beats:
     hook → concept card(s) → hook-resolving check (+ alternate explanation & easier
     check for the branch when the student misses) → per-part worked examples each
@@ -85,10 +85,25 @@ def generate_lesson(topic: str, grade: int = 6, language: str = "English",
     context_text = "\n\n".join([c.get("content", "") for c in context]) if context else ""
 
     n_cards, n_examples = (1, 2) if depth == "quick" else (2, 3)
+    # Answering one specific question needs less scaffolding than teaching a
+    # whole subtopic — keep a focused lesson tight so it stays on the point.
+    if focus:
+        n_cards, n_examples = 1, 2
     # One session covering several subtopics needs at least one example each.
     covered = [t for t in (section_titles or []) if t]
     if multi and covered:
         n_examples = max(n_examples, min(len(covered), 5))
+    # The student asked about ONE thing (a photo of a sum, a typed doubt). Answer
+    # THAT using the NCERT context — don't survey the rest of the subtopic.
+    focus_rule = (
+        f"\nWHAT THE STUDENT IS ACTUALLY ASKING:\n\"{focus}\"\n"
+        "This lesson must answer exactly that. The hook, the concept card(s), the check and the\n"
+        "examples must all serve that specific question — if it names particular numbers or a\n"
+        "particular wording, use them. Do NOT survey the rest of the chapter or teach adjacent\n"
+        "sub-skills the student did not ask about. Stay inside the NCERT context above, and keep\n"
+        "it to the smallest complete explanation that genuinely answers the question.\n"
+        if focus else ""
+    )
     coverage_rule = (
         f"\nThis ONE session covers these {len(covered)} subtopics together: "
         + "; ".join(covered)
@@ -165,7 +180,7 @@ Return ONLY valid JSON with EXACTLY this structure:
   ]
 }}
 
-{coverage_rule}
+{focus_rule}{coverage_rule}
 STRUCTURE RULES:
 - exactly {n_cards} concept_cards and exactly {n_examples} examples.
 - exactly 2 spot_mistakes, each showing a DIFFERENT common misconception for {topic}.
@@ -183,31 +198,55 @@ Strictly return ONLY the JSON object."""
 
 
 def identify_concept_from_images(images_b64: list, grade: int = 6, language: str = "English",
-                                 mime_types: list = None):
-    """Looks at one or more photos (e.g. a page of class notes, a textbook page,
-    a whiteboard snap) and identifies the single core Maths concept the student
-    just learned. Returns a clean topic title that can be fed straight into
-    generate_concept() to build a full lesson.
+                                 mime_types: list = None, syllabus: list = None):
+    """Looks at photo(s) of what a student is stuck on (class notes, a textbook
+    page, a worksheet, a whiteboard) and works out THREE things:
 
-    Returns: { "topic": str, "summary": str, "detected": bool }
+      topic   — a short concept title, for display
+      focus   — the specific thing the page is actually about (the question or
+                sub-idea), so the lesson answers THAT instead of surveying the
+                whole subtopic
+      chapter_id + section — the matching NCERT entry from the student's own
+                syllabus (passed in), so retrieval can be scoped to it and the
+                result can be credited to that skill's mastery
+
+    Returns: { detected, topic, focus, chapter_id, section, summary }
     """
+    catalog = ""
+    if syllabus:
+        lines = []
+        for ch in syllabus:
+            subs = "; ".join(f"{s.get('section')} {s.get('title')}" for s in (ch.get("subtopics") or []))
+            lines.append(f"- chapter_id \"{ch.get('chapter_id')}\" | {ch.get('chapter_title')} | subtopics: {subs}")
+        catalog = ("\nTHE STUDENT'S CLASS SYLLABUS (choose chapter_id and section from THIS list only):\n"
+                   + "\n".join(lines) + "\n")
+
     prompt = f"""You are a CBSE Class {grade} Mathematics teacher.
-A student has uploaded photo(s) of something they just studied in class — this could be
-handwritten notes, a textbook page, a worksheet, a whiteboard, or a problem they wrote down.
+A student has uploaded photo(s) of something they are studying or stuck on — handwritten
+notes, a textbook page, a worksheet, a whiteboard, or a problem they wrote down.
 
 LANGUAGE for the "summary" field: {lang_instruction(language)}
-
-Your job: identify the SINGLE most important Mathematics concept/topic shown, so we can
-build a focused lesson on it. Ignore page numbers, names, dates, and decorations.
+{catalog}
+Your job:
+1. Work out the SINGLE Mathematics concept shown. Ignore page numbers, names, dates, decorations.
+2. Work out what the page is SPECIFICALLY about — the exact question, worked problem, or
+   sub-idea in front of the student. Be precise: if it shows "3/4 + 2/5", the focus is adding
+   fractions with unlike denominators (and mention that example); if it asks "why do we need a
+   common denominator?", the focus is that reasoning. This is what the lesson will answer, so
+   it must be narrower than the whole chapter.
+3. Match it to the syllabus above: give the exact chapter_id and the section number.
 
 Return ONLY valid JSON with EXACTLY this structure:
 {{
   "detected": true if you can clearly identify a maths concept, false if the image has no identifiable maths topic,
-  "topic": "a short, specific concept title (3-6 words) in English, e.g. 'Multiplying Fractions' or 'Linear Equations in One Variable'. Empty string if detected is false.",
+  "topic": "a short concept title (3-6 words) in English, e.g. 'Adding Unlike Fractions'. Empty string if detected is false.",
+  "focus": "one or two sentences in English naming exactly what the student is asking about, including any specific numbers or wording from the page. Empty string if detected is false.",
+  "chapter_id": "the matching chapter_id from the syllabus above, or empty string if none fits",
+  "section": "the matching section number (e.g. '7.2'), or empty string if unsure",
   "summary": "one friendly sentence telling the student what you spotted, in the LANGUAGE above. If not detected, briefly say you couldn't find a maths topic."
 }}
 
-Prefer the most specific NCERT-style topic name. Strictly return ONLY the JSON object."""
+Strictly return ONLY the JSON object."""
 
     # Build multimodal content: text prompt + all images
     parts = [types.Part.from_text(text=prompt)]

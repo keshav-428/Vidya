@@ -195,6 +195,8 @@ export interface GenerateLessonArgs {
   /** Several subtopics covered by one session (with their titles). */
   sections?: string[] | null;
   sectionTitles?: string[] | null;
+  /** Answer this specific question instead of teaching the whole subtopic. */
+  focus?: string | null;
 }
 export const generateLesson = ({
   topic,
@@ -205,6 +207,7 @@ export const generateLesson = ({
   depth = 'full',
   sections = null,
   sectionTitles = null,
+  focus = null,
 }: GenerateLessonArgs): Promise<import('../types').AdaptiveLesson> =>
   post<import('../types').AdaptiveLesson>('/generate-lesson', {
     topic,
@@ -215,6 +218,7 @@ export const generateLesson = ({
     depth,
     sections,
     section_titles: sectionTitles,
+    focus,
   });
 
 // ── Viva: spoken-answer practice ─────────────────────────────
@@ -243,14 +247,30 @@ export const evaluateViva = ({
 
 // ── Identify a concept from photos (class notes / textbook) ──
 // images: array of base64 JPEG strings (no data: prefix)
-export interface IdentifyConceptResult { topic: string; summary: string; detected: boolean; }
+export interface IdentifyConceptResult {
+  topic: string;
+  summary: string;
+  detected: boolean;
+  /** The specific thing the page asks about — the lesson answers THIS. */
+  focus?: string;
+  /** Matched NCERT entry, so retrieval is scoped and mastery gets credited. */
+  chapter_id?: string;
+  section?: string;
+}
+/** One chapter as sent to the vision call, so it can pin an exact section. */
+export interface SyllabusForMatch {
+  chapter_id: string;
+  chapter_title: string;
+  subtopics: { section: string; title: string }[];
+}
 export const identifyConcept = ({
   images,
   mimeTypes = null,
+  syllabus = null,
   grade = 6,
   language = 'English',
-}: { images: string[]; mimeTypes?: string[] | null; grade?: number; language?: Language }): Promise<IdentifyConceptResult> =>
-  post<IdentifyConceptResult>('/identify-concept', { images, mime_types: mimeTypes, grade, language });
+}: { images: string[]; mimeTypes?: string[] | null; syllabus?: SyllabusForMatch[] | null; grade?: number; language?: Language }): Promise<IdentifyConceptResult> =>
+  post<IdentifyConceptResult>('/identify-concept', { images, mime_types: mimeTypes, syllabus, grade, language });
 
 // ── Exam paper generation ────────────────────────────────────
 export interface GeneratePaperArgs {

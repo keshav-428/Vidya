@@ -64,6 +64,13 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
       const res = await api.identifyConcept({
         images: read.map((r) => r.b64),
         mimeTypes: read.map((r) => r.mime),
+        // Send the class catalog so the match is a real NCERT section, which
+        // scopes retrieval and lets the result count toward mastery.
+        syllabus: chapters.map((c) => ({
+          chapter_id: c.id,
+          chapter_title: c.title,
+          subtopics: c.subtopics.map((sb) => ({ section: sb.num, title: sb.title })),
+        })),
         grade: cls, language: state?.language || 'English',
       });
       if (!res.detected || !res.topic.trim()) {
@@ -72,9 +79,14 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
         return;
       }
       const topic = res.topic.trim();
+      // A matched section scopes the questions AND earns the skill mastery credit.
+      const scope = res.chapter_id ? { chapterId: res.chapter_id, section: res.section || null } : null;
       if (practiceTab === 'exam') {
-        set && set({ examTopics: [topic], examScope: null });
+        set && set({ examTopics: [topic], examScope: scope });
         go('exam-config');
+      } else if (scope) {
+        set && set({ quizScope: { ...scope, topic }, skillId: null });
+        go('navigable-quiz');
       } else {
         set && set({ practiceTopics: [topic], skillId: null });
         go('navigable-quiz');
