@@ -62,12 +62,14 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   // A student-chosen level (viva prep) overrides the mastery-derived difficulty
   // for this run only.
   const [levelOverride] = useState(() => (state?.quizLevel as string | null) || null);
+  // Retry card: the questions the student got wrong, so the new ones target them.
+  const [focusPoints] = useState(() => (state?.quizFocusPoints as string[] | null) || null);
   const fromPractice = Array.isArray(practiceTopics) && practiceTopics.length > 0;
   // One-shot subtopic scope from the chapter drill-down ("Quiz" on a subtopic).
   const [quizScope] = useState<QuizScope | null>(() => (state?.quizScope as QuizScope | null) || null);
   useEffect(() => {
-    if ((state?.practiceTopics || state?.practiceSel || state?.quizScope || state?.quizLevel) && set)
-      set({ practiceTopics: null, practiceSel: null, quizScope: null, quizLevel: null });
+    if ((state?.practiceTopics || state?.practiceSel || state?.quizScope || state?.quizLevel || state?.quizFocusPoints) && set)
+      set({ practiceTopics: null, practiceSel: null, quizScope: null, quizLevel: null, quizFocusPoints: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -157,7 +159,7 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
 
   useEffect(() => {
     let alive = true;
-    api.generateQuiz({ topics: quizTopics, grade, language: state?.language || 'English', difficulty, chapterId: quizScope?.chapterId || sessionSub?.chapterId || null, section: quizScope?.section || sessionSub?.section || null })
+    api.generateQuiz({ topics: quizTopics, grade, language: state?.language || 'English', difficulty, focusPoints, chapterId: quizScope?.chapterId || sessionSub?.chapterId || null, section: quizScope?.section || sessionSub?.section || null })
       .then((items) => {
         const mapped = (items || [])
           .filter((it) => it && it.question && Array.isArray(it.options) && it.options.length)

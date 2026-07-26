@@ -86,5 +86,18 @@
       "cta": "Start first session →"
     }
   },
-  "multiTopicSession": "{{count}} topics"
+  "multiTopicSession": "{{count}} topics",
+  "quick": {
+    "header": "QUICK HELP",
+    "retryTitle": "Fix your tricky ones",
+    "retrySub_one": "{{count}} question you got wrong",
+    "retrySub_other": "{{count}} questions you got wrong",
+    "trickTitle": "Trick of the day",
+    "trickSub": "A shortcut for {{topic}}",
+    "trickLoading": "Finding you a good one…",
+    "trickErr": "Couldn't load a trick — try again in a bit.",
+    "whyItWorks": "WHY IT WORKS",
+    "tryIt": "Try it:",
+    "showAnswer": "Tap to see the answer"
+  }
 }

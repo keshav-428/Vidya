@@ -126,6 +126,13 @@ class ConceptRequest(BaseModel):
     chapter_id: Optional[str] = None
     section: Optional[str] = None
 
+class TrickRequest(BaseModel):
+    topic: str
+    grade: int = 6
+    language: str = "English"
+    chapter_id: Optional[str] = None
+    section: Optional[str] = None
+
 class IdentifyConceptRequest(BaseModel):
     images: list          # base64-encoded image bytes
     grade: int = 6
@@ -435,6 +442,17 @@ async def evaluate_viva_endpoint(request: VivaEvalRequest):
         raise
     except Exception as e:
         print(f"Error in /evaluate-viva: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-trick")
+async def generate_trick_endpoint(request: TrickRequest):
+    try:
+        return concept_service.generate_trick(
+            request.topic, request.grade, request.language,
+            chapter_id=request.chapter_id, section=request.section,
+        )
+    except Exception as e:
+        print(f"Error in /generate-trick: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/identify-concept")

@@ -86,5 +86,18 @@
       "cta": "पहला सत्र शुरू करें →"
     }
   },
-  "multiTopicSession": "{{count}} विषय"
+  "multiTopicSession": "{{count}} विषय",
+  "quick": {
+    "header": "झटपट मदद",
+    "retryTitle": "अपनी गलतियाँ सुधारो",
+    "retrySub_one": "{{count}} सवाल गलत हुआ था",
+    "retrySub_other": "{{count}} सवाल गलत हुए थे",
+    "trickTitle": "आज की ट्रिक",
+    "trickSub": "{{topic}} के लिए एक शॉर्टकट",
+    "trickLoading": "एक अच्छी ट्रिक ढूँढ रही हूँ…",
+    "trickErr": "ट्रिक नहीं मिल पाई — थोड़ी देर में कोशिश करो।",
+    "whyItWorks": "यह काम क्यों करता है",
+    "tryIt": "करके देखो:",
+    "showAnswer": "जवाब देखने के लिए टैप करो"
+  }
 }

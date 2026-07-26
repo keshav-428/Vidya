@@ -183,7 +183,14 @@ export function recentPractice(log: ActivityEntry[], limit = 6): RecentItem[] {
     .map((e) => ({ topic: e.topic, score: e.score, total: e.total, bucket: bucketFor(ratio(e)), when: relativeDay(e.date) }));
 }
 
-export interface RetryItem { question: string; topic: string; }
+export interface RetryItem {
+  question: string;
+  topic: string;
+  /** Catalog coordinates of the quiz the mistake came from, when known —
+   *  lets a retry be section-scoped and credited to that skill. */
+  chapterId?: string;
+  section?: string | null;
+}
 
 export function mistakesToRetry(log: ActivityEntry[], limit = 5): RetryItem[] {
   const out: RetryItem[] = [];
@@ -194,7 +201,7 @@ export function mistakesToRetry(log: ActivityEntry[], limit = 5): RetryItem[] {
       const q = m.question;
       if (!q || seen.has(q)) continue;
       seen.add(q);
-      out.push({ question: q, topic: e.topic });
+      out.push({ question: q, topic: e.topic, chapterId: e.chapterId, section: e.section ?? null });
       if (out.length >= limit) return out;
     }
   }

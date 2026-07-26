@@ -262,3 +262,53 @@ Strictly return ONLY the JSON object."""
         config={"response_mime_type": "application/json"},
     )
     return json.loads(response.text)
+
+
+def generate_trick(topic: str, grade: int = 6, language: str = "English",
+                   chapter_id: str = None, section: str = None):
+    """A short shortcut for one topic — plus WHY it works, which is what keeps a
+    trick from breaking when the exam rephrases the question. Grounded in the
+    NCERT context for that subtopic when we have it.
+
+    Returns: { "title", "trick", "why", "try_q", "try_a" }
+    """
+    try:
+        context = rag_service.retrieve_context(
+            topic, grade=grade, top_k=3, chapter_id=chapter_id, section=section)
+    except Exception:
+        context = []
+    context_text = "\n\n".join([c.get("content", "") for c in context]) if context else ""
+
+    prompt = f"""You are Vidya, a warm maths teacher for a CBSE Class {grade} student (age 11-14).
+Give ONE genuinely useful shortcut or quick method for "{topic}" — the kind of thing a student
+would show a friend.
+
+LANGUAGE for every text value: {lang_instruction(language)}
+
+{STYLE_GUIDE}
+
+NCERT context for this topic (use it if relevant, ignore if not):
+\"\"\"{context_text}\"\"\"
+
+RULES:
+- The trick must be CORRECT and must actually save time. Never invent a rule that only
+  works sometimes. If a shortcut has a condition, say it inside "trick".
+- "why" is the important part: explain in one or two plain sentences WHY the shortcut works,
+  so the student isn't lost when a question is worded differently. No hand-waving.
+- Keep every field short enough to read on a phone in a few seconds.
+
+Return ONLY valid JSON:
+{{
+  "title": "3-6 word name for the trick",
+  "trick": "the shortcut itself, one or two lines, with a worked mini-example inline",
+  "why": "one or two plain sentences on why it works",
+  "try_q": "one very short question the student can try in their head",
+  "try_a": "the answer to try_q, plus 3-8 words of reasoning"
+}}
+Strictly return ONLY the JSON object."""
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL, contents=prompt,
+        config={"response_mime_type": "application/json"},
+    )
+    return json.loads(response.text)

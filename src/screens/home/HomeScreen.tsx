@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
-import api from '../../api/vidya';
+import api, { type TrickResult } from '../../api/vidya';
 import { classChapters, chapterInfo, chapterTitleById, type SyllabusChapter } from '../../content/syllabus';
-import { levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
+import { levelFor, skillKey, weakestSkills, type MasteryLevel } from '../../lib/mastery';
 import type { ScreenProps, GoFn, ScreenId, MasteryMap, PracticeSelection } from '../../types';
 
 // Level → dot color on topic rows ('new' stays neutral).
@@ -13,6 +13,7 @@ const LEVEL_DOT: Record<MasteryLevel, string> = {
 };
 
 import { WEEK_TOPIC_CATALOG, refreshPlanDays } from '../../content/weekPlan';
+import { getLog, mistakesToRetry } from '../../lib/progress';
 
 /** One day cell in the home week strip. */
 interface WeekDay {
@@ -479,6 +480,52 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [vivaOpen, setVivaOpen] = useState(false);
 
+  // ── Quick help ──
+  // Mistakes we already record, turned into something actionable.
+  const retries = mistakesToRetry(getLog(state));
+  const startRetry = () => {
+    const scoped = retries.filter((r) => r.chapterId);
+    // Re-ask on the topics those mistakes came from, with the missed questions
+    // as focus points so the new questions target the same weak spots.
+    set({
+      practiceTopics: [...new Set(retries.map((r) => r.topic))],
+      practiceSel: scoped.length
+        ? [...new Map(scoped.map((r) => [`${r.chapterId}::${r.section}`,
+            { chapterId: r.chapterId!, section: r.section || '', title: r.topic }])).values()]
+        : null,
+      quizFocusPoints: retries.map((r) => r.question),
+      quizScope: null, skillId: undefined,
+    });
+    go('navigable-quiz');
+  };
+
+  // Trick of the day — for the topic they're on, else their weakest skill.
+  const [trickOpen, setTrickOpen] = useState(false);
+  const [tryOpen, setTryOpen] = useState(false);
+  const [trick, setTrick] = useState<TrickResult | null>(null);
+  const [trickErr, setTrickErr] = useState(false);
+  const trickTopic = React.useMemo(() => {
+    if (sessionSubtopic && topicId) return { title: sessionSubtopic, chapterId: topicId, section: (state?.planSection as string) || null };
+    const weakest = weakestSkills((state?.mastery as MasteryMap) || {}, 1)[0];
+    if (weakest) {
+      const ch = chapters.find((c) => c.id === weakest.chapterId);
+      const sub = ch?.subtopics.find((x) => x.num === weakest.section);
+      if (ch) return { title: sub?.title || ch.title, chapterId: ch.id, section: sub?.num || null };
+    }
+    return topicId ? { title: chapterTitleStr, chapterId: topicId, section: null } : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionSubtopic, topicId, state?.mastery, chapters]);
+  const openTrick = () => {
+    setTrickOpen((o) => !o);
+    if (trick || !trickTopic) return;           // fetch once, only when opened
+    setTrickErr(false);
+    api.generateTrick({
+      topic: trickTopic.title, grade,
+      language: state?.language || 'English',
+      chapterId: trickTopic.chapterId, section: trickTopic.section,
+    }).then(setTrick).catch(() => setTrickErr(true));
+  };
+
   const STEPS: { id: string; label: string; sub: string; screen: ScreenId }[] = [
     { id: 'concept', label: t('steps.concept.label'), sub: t('steps.concept.sub'), screen: 'learn-concept' },
     { id: 'quiz', label: t('steps.quiz.label'), sub: t('steps.quiz.sub'), screen: 'navigable-quiz' },
@@ -617,7 +664,68 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           </div>
         )}
 
+        {/* Quick help — short, high-pull cards. 'Tricky ones' finally puts the
+            mistakes we already record to work; the trick loads only when tapped
+            so Home stays fast. */}
         <div className="v-enter">
+          <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>{t('quick.header')}</div>
+
+          {retries.length > 0 && (
+            <div className="v-tap" onClick={startRetry}
+              style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 11, background: '#FFF3EA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <VIcon name="target" size={17} color="var(--saffron)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('quick.retryTitle')}</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)' }}>{t('quick.retrySub', { count: retries.length })}</div>
+              </div>
+              <VIcon name="arrow-right" size={15} color="var(--muted-2)" />
+            </div>
+          )}
+
+          <div style={{ marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div className="v-tap" onClick={openTrick}
+              style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <VIcon name="zap" size={17} color="var(--indigo)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('quick.trickTitle')}</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {trick ? trick.title : t('quick.trickSub', { topic: trickTopic?.title || topicTitleStr })}
+                </div>
+              </div>
+              <VIcon name={trickOpen ? 'chevron-down' : 'chevron-right'} size={15} color="var(--muted-2)" />
+            </div>
+            {trickOpen && (
+              <div className="v-enter-fade" style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border-soft)' }}>
+                {!trick ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 14, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted)' }}>
+                    <span className="v-spin" style={{ width: 15, height: 15, border: '2px solid var(--border)', borderTopColor: 'var(--indigo)', borderRadius: '50%', flexShrink: 0 }} />
+                    {trickErr ? t('quick.trickErr') : t('quick.trickLoading')}
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontFamily: 'Inter', fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.55, paddingTop: 14 }}>{trick.trick}</div>
+                    <div style={{ marginTop: 10, padding: '10px 12px', background: 'var(--indigo-air)', borderRadius: 12 }}>
+                      <div className="v-eyebrow-sm" style={{ marginBottom: 3 }}>{t('quick.whyItWorks')}</div>
+                      <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.5 }}>{trick.why}</div>
+                    </div>
+                    {trick.try_q && (
+                      <div className="v-tap" onClick={() => setTryOpen((o) => !o)} style={{ marginTop: 10, padding: '10px 12px', background: 'var(--bg-warm)', borderRadius: 12, border: '1px dashed var(--border)' }}>
+                        <div style={{ fontFamily: 'Inter', fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>{t('quick.tryIt')} {trick.try_q}</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 12, color: tryOpen ? 'var(--accent-success)' : 'var(--indigo)', marginTop: 4 }}>
+                          {tryOpen ? trick.try_a : t('quick.showAnswer')}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="v-tap" onClick={() => setVivaOpen(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
             <div>
               <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{t('viva.title')}</div>

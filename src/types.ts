@@ -85,6 +85,8 @@ export interface AppState {
   /** One-shot difficulty override for the next quiz (student-chosen), instead
    *  of the usual mastery-derived difficulty. */
   quizLevel?: 'easy' | 'normal' | 'hard' | null;
+  /** Past mistakes to aim the next quiz at (the retry card). */
+  quizFocusPoints?: string[] | null;
 
   // auth flow
   afterAuth?: ScreenId;
