@@ -206,6 +206,21 @@ export interface AdaptiveLesson {
   spot_mistakes: SpotMistake[];
 }
 
+// ── Homework help (photograph the page, get nudged) ──────────
+export interface HomeworkQuestion {
+  number?: string;
+  question: string;
+  hint?: string;
+  next_step?: string;
+  steps?: { label: string; detail: string }[];
+  answer?: string;
+}
+export interface HomeworkResult {
+  detected: boolean;
+  summary?: string;
+  questions: HomeworkQuestion[];
+}
+
 /** Before→after mastery change for one skill, shown after a quiz/exam. */
 export interface MasteryDelta {
   key: string;

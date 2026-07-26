@@ -312,3 +312,67 @@ Strictly return ONLY the JSON object."""
         config={"response_mime_type": "application/json"},
     )
     return json.loads(response.text)
+
+
+def homework_help_from_images(images_b64: list, grade: int = 6, language: str = "English",
+                             mime_types: list = None):
+    """Reads a homework page and, for EVERY question on it, gives a nudge first —
+    then the first step, then the full working. Deliberately layered: the app
+    reveals the hint before the solution, so this helps a stuck student get
+    moving instead of handing over answers.
+
+    Returns: { detected, summary, questions: [{number, question, hint, next_step,
+               steps: [{label, detail}], answer}] }
+    """
+    prompt = f"""You are Vidya, a warm maths teacher for a CBSE Class {grade} student (age 11-14).
+The student has photographed their maths homework and is stuck. Read the page carefully.
+
+LANGUAGE for every text value: {lang_instruction(language)}
+
+{STYLE_GUIDE}
+
+For EVERY question you can read on the page (in the order they appear, at most 8):
+- Copy the question as faithfully as you can, keeping its number from the page.
+- "hint": a NUDGE that does NOT solve it — point at what to notice, what kind of problem
+  it is, or which rule applies. A student reading only this should still have to think.
+- "next_step": just the FIRST step, concretely, so a stuck student can get moving.
+- "steps": the full working, one short step at a time.
+- "answer": the final answer.
+
+RULES:
+- Never invent a question that isn't on the page. If handwriting is unreadable for an item,
+  still include it with the question text you can make out and say so in the "hint".
+- Solve carefully and check your arithmetic — a wrong answer here costs the student marks.
+- Ignore headings, names, dates, page numbers and margin doodles.
+
+Return ONLY valid JSON:
+{{
+  "detected": true if you found at least one maths question, else false,
+  "summary": "one friendly sentence — e.g. how many questions you found. If none, say so kindly.",
+  "questions": [
+    {{
+      "number": "the question number as written on the page, e.g. '3' or '(b)'",
+      "question": "the question text",
+      "hint": "a nudge that does not solve it",
+      "next_step": "the concrete first step",
+      "steps": [{{"label": "Step name", "detail": "what to do and why"}}],
+      "answer": "the final answer"
+    }}
+  ]
+}}
+Strictly return ONLY the JSON object."""
+
+    parts = [types.Part.from_text(text=prompt)]
+    for i, img_b64 in enumerate(images_b64):
+        mt = (mime_types[i] if mime_types and i < len(mime_types) and mime_types[i] else "image/jpeg")
+        parts.append(types.Part(inline_data=types.Blob(mime_type=mt, data=base64.b64decode(img_b64))))
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL,
+        contents=types.Content(role="user", parts=parts),
+        config={"response_mime_type": "application/json"},
+    )
+    data = json.loads(response.text)
+    qs = [q for q in (data.get("questions") or []) if q.get("question")]
+    data["questions"] = qs[:8]
+    return data

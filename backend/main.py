@@ -126,6 +126,12 @@ class ConceptRequest(BaseModel):
     chapter_id: Optional[str] = None
     section: Optional[str] = None
 
+class HomeworkRequest(BaseModel):
+    images: list          # base64-encoded image bytes
+    grade: int = 6
+    language: str = "English"
+    mime_types: Optional[list] = None
+
 class TrickRequest(BaseModel):
     topic: str
     grade: int = 6
@@ -442,6 +448,20 @@ async def evaluate_viva_endpoint(request: VivaEvalRequest):
         raise
     except Exception as e:
         print(f"Error in /evaluate-viva: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/homework-help")
+async def homework_help_endpoint(request: HomeworkRequest):
+    try:
+        if not request.images:
+            raise HTTPException(status_code=400, detail="No images provided")
+        return concept_service.homework_help_from_images(
+            request.images, request.grade, request.language, mime_types=request.mime_types,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /homework-help: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-trick")

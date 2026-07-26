@@ -26,6 +26,7 @@ export const SCREEN_ROUTES = {
   'learn': '/learn',
   'chapter-topics': '/learn/chapter',
   'learn-concept': '/learn/concept',
+  'homework': '/homework',
   'quiz-loading-1': '/quiz/loading/1',
   'quiz-loading-2': '/quiz/loading/2',
   'quiz-loading-3': '/quiz/loading/3',

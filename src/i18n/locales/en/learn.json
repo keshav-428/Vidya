@@ -60,5 +60,25 @@
     "reading": "Reading your notes and finding the concept…",
     "errNoTopic": "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.",
     "errGeneric": "Something went wrong reading that photo. Please try again."
+  },
+  "homework": {
+    "topbar": "Homework help",
+    "title": "Stuck on your homework?",
+    "subtitle": "Photograph the page and I'll go through it with you, question by question.",
+    "cta": "Take a photo of your homework",
+    "ctaSub": "One page or a few — get the whole exercise in one go",
+    "promise": "I'll nudge you first, not hand you the answer. 🤝",
+    "reading": "Reading your homework…",
+    "errNone": "I couldn't find any maths questions on that page. Try a clearer, straighter photo.",
+    "errGeneric": "Something went wrong reading that page. Please try again.",
+    "foundHeader": "YOUR HOMEWORK",
+    "found_one": "{{count}} question to work through",
+    "found_other": "{{count}} questions to work through",
+    "foundSub": "Tap any question. You'll get a hint first — the answer only if you still need it.",
+    "hint": "HINT",
+    "firstStep": "FIRST STEP",
+    "stillStuck": "Still stuck? →",
+    "showMeHow": "Show me how →",
+    "another": "Do another page"
   }
 }

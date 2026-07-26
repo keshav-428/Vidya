@@ -670,6 +670,18 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
         <div className="v-enter">
           <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>{t('quick.header')}</div>
 
+          <div className="v-tap" onClick={() => go('homework')}
+            style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
+            <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="camera" size={17} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('quick.hwTitle')}</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('quick.hwSub')}</div>
+            </div>
+            <VIcon name="arrow-right" size={15} color="var(--muted-2)" />
+          </div>
+
           {retries.length > 0 && (
             <div className="v-tap" onClick={startRetry}
               style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>

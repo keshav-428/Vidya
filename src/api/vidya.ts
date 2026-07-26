@@ -246,6 +246,15 @@ export const evaluateViva = ({
     audio, mime_type: mimeType, question, listen_for: listenFor, grade, language,
   });
 
+// ── Homework help: read the page, nudge before solving ───────
+export const homeworkHelp = ({
+  images,
+  mimeTypes = null,
+  grade = 6,
+  language = 'English',
+}: { images: string[]; mimeTypes?: string[] | null; grade?: number; language?: Language }): Promise<import('../types').HomeworkResult> =>
+  post<import('../types').HomeworkResult>('/homework-help', { images, mime_types: mimeTypes, grade, language });
+
 // ── A shortcut for one topic, plus why it works ──────────────
 export interface TrickResult { title: string; trick: string; why: string; try_q?: string; try_a?: string; }
 export const generateTrick = ({
@@ -390,6 +399,7 @@ export default {
   generateViva,
   evaluateViva,
   generateTrick,
+  homeworkHelp,
   identifyConcept,
   generatePaper,
   gradePaper,
