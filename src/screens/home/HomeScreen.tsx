@@ -287,7 +287,7 @@ function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPic
 
 interface VivaPickerProps {
   onClose: () => void;
-  onStart: (sel: PracticeSelection[], mode: 'learn' | 'speak' | 'both', level: 'easy' | 'normal' | 'hard') => void;
+  onStart: (sel: PracticeSelection[], mode: 'learn' | 'practice' | 'both', level: 'easy' | 'normal' | 'hard') => void;
   chapters: SyllabusChapter[];
   mastery?: MasteryMap;
 }
@@ -300,7 +300,7 @@ function VivaPicker({ onClose, onStart, chapters, mastery }: VivaPickerProps) {
   const [step, setStep] = useState<'topics' | 'config'>('topics');
   const [openChapter, setOpenChapter] = useState<string | null>(null);
   const [sel, setSel] = useState<PracticeSelection[]>([]);
-  const [mode, setMode] = useState<'learn' | 'speak' | 'both'>('both');
+  const [mode, setMode] = useState<'learn' | 'practice' | 'both'>('both');
   const [level, setLevel] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   const keyOf = (c: string, x: string) => `${c}::${x}`;
@@ -313,9 +313,9 @@ function VivaPicker({ onClose, onStart, chapters, mastery }: VivaPickerProps) {
   });
   const selCountIn = (ch: SyllabusChapter) => ch.subtopics.filter((sb) => isSel(ch.id, sb.num)).length;
 
-  const MODES: { id: 'learn' | 'speak' | 'both'; label: string; sub: string }[] = [
+  const MODES: { id: 'learn' | 'practice' | 'both'; label: string; sub: string }[] = [
     { id: 'learn', label: t('vivaPicker.modeLearn'), sub: t('vivaPicker.modeLearnSub') },
-    { id: 'speak', label: t('vivaPicker.modeSpeak'), sub: t('vivaPicker.modeSpeakSub') },
+    { id: 'practice', label: t('vivaPicker.modePractice'), sub: t('vivaPicker.modePracticeSub') },
     { id: 'both', label: t('vivaPicker.modeBoth'), sub: t('vivaPicker.modeBothSub') },
   ];
   const LEVELS: { id: 'easy' | 'normal' | 'hard'; label: string }[] = [
@@ -431,7 +431,7 @@ function VivaPicker({ onClose, onStart, chapters, mastery }: VivaPickerProps) {
             {step === 'topics'
               ? t('vivaPicker.next', { count: sel.length })
               : t('vivaPicker.start', { count: sel.length })}
-            <VIcon name={step === 'topics' ? 'arrow-right' : 'mic'} size={14} color="#fff" />
+            <VIcon name="arrow-right" size={14} color="#fff" />
           </button>
         </div>
       </div>
@@ -660,10 +660,20 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           onClose={() => setVivaOpen(false)}
           onStart={(sel, mode, level) => {
             setVivaOpen(false);
-            set({ vivaSel: sel, vivaMode: mode, vivaLevel: level });
-            // 'learn' and 'both' revise the topics first; 'both' then speaks.
-            if (mode === 'speak') { go('viva'); return; }
-            set({ lessonSel: sel, lessonNext: mode === 'both' ? 'viva' : 'home' });
+            // The quiz scope: one topic → section-scoped; several → per-topic
+            // tagged, so either way each answer credits the right skill.
+            const quizPatch = sel.length === 1
+              ? { quizScope: { chapterId: sel[0].chapterId, section: sel[0].section, topic: sel[0].title }, practiceTopics: null, practiceSel: null }
+              : { practiceTopics: sel.map((x) => x.title), practiceSel: sel, quizScope: null };
+            set({ vivaSel: sel, vivaMode: mode, vivaLevel: level, skillId: undefined });
+            if (mode === 'practice') {
+              set({ ...quizPatch, quizLevel: level });
+              go('navigable-quiz');
+              return;
+            }
+            // 'learn' revises only; 'both' revises then goes into that quiz.
+            set({ lessonSel: sel, lessonNext: mode === 'both' ? 'navigable-quiz' : 'home' });
+            if (mode === 'both') set({ ...quizPatch, quizLevel: level });
             go('learn-concept');
           }}
         />

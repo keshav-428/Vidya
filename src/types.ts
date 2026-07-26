@@ -80,8 +80,11 @@ export interface AppState {
 
   // viva
   vivaSel?: PracticeSelection[];
-  vivaMode?: 'learn' | 'speak' | 'both';
+  vivaMode?: 'learn' | 'practice' | 'both';
   vivaLevel?: 'easy' | 'normal' | 'hard';
+  /** One-shot difficulty override for the next quiz (student-chosen), instead
+   *  of the usual mastery-derived difficulty. */
+  quizLevel?: 'easy' | 'normal' | 'hard' | null;
 
   // auth flow
   afterAuth?: ScreenId;

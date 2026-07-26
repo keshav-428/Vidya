@@ -59,11 +59,15 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   // Today's session quiz — as opposed to practice, or a one-off from the
   // mastery map. Only the session quiz may tick the daily checklist.
   const [isSessionQuiz] = useState(() => !state?.practiceTopics && !state?.quizScope);
+  // A student-chosen level (viva prep) overrides the mastery-derived difficulty
+  // for this run only.
+  const [levelOverride] = useState(() => (state?.quizLevel as string | null) || null);
   const fromPractice = Array.isArray(practiceTopics) && practiceTopics.length > 0;
   // One-shot subtopic scope from the chapter drill-down ("Quiz" on a subtopic).
   const [quizScope] = useState<QuizScope | null>(() => (state?.quizScope as QuizScope | null) || null);
   useEffect(() => {
-    if ((state?.practiceTopics || state?.practiceSel || state?.quizScope) && set) set({ practiceTopics: null, practiceSel: null, quizScope: null });
+    if ((state?.practiceTopics || state?.practiceSel || state?.quizScope || state?.quizLevel) && set)
+      set({ practiceTopics: null, practiceSel: null, quizScope: null, quizLevel: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -118,6 +122,7 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
 
   // Mastery-aware difficulty: struggling skills get Easy, mastered ones get Hard.
   const [difficulty] = useState<string>(() => {
+    if (levelOverride) return { easy: 'Easy', normal: 'Medium', hard: 'Hard' }[levelOverride] || 'Medium';
     const map = (state?.mastery as MasteryMap) || {};
     const levels: MasteryLevel[] = [];
     const single = quizScope || sessionSub;
