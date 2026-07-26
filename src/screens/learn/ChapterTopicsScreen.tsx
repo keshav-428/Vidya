@@ -75,45 +75,45 @@ export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
           </div>
         </div>
 
-        {/* Start here CTA */}
-        {startHere && (
-          <div className="v-card v-tap" onClick={() => openTopic(startHere.title, startHere.num)}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22, background: 'var(--ink)', color: '#fff', padding: '15px 16px' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="zap" size={16} color="#fff" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 3 }}>
-                {cm.touched === 0 ? t('tour.startHere') : t('tour.upNext')}
-              </div>
-              <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, lineHeight: 1.2 }}>{startHere.num} · {startHere.title}</div>
-            </div>
-            <VIcon name="arrow-right" size={16} color="#fff" />
-          </div>
-        )}
-
         {/* The journey: every topic with your level */}
         <div className="v-eyebrow" style={{ marginBottom: 10 }}>{t('chapterTopics.topicsHeader')}</div>
         <div className="v-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 24 }}>
           {chapter.subtopics.map((s, i) => {
             const lvl = levelOf(s.num);
             const color = LEVEL_COLOR[lvl];
+            // The recommended topic is highlighted IN PLACE — it used to also
+            // sit in a separate card above, so the same topic appeared twice.
+            const isStart = startHere?.num === s.num;
             return (
               <div key={s.id} className="v-tap" onClick={() => openTopic(s.title, s.num)}
-                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '15px 18px', borderTop: i ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 13, fontWeight: 600, color: 'var(--indigo)' }}>
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: '15px 18px',
+                  borderTop: i ? '1px solid var(--border)' : 'none',
+                  background: isStart ? 'var(--ink)' : 'transparent',
+                }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  background: isStart ? 'rgba(255,255,255,0.12)' : 'var(--indigo-air)',
+                  fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 13, fontWeight: 600,
+                  color: isStart ? '#fff' : 'var(--indigo)',
+                }}>
                   {s.num}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, lineHeight: 1.25 }}>{s.title}</div>
+                  {isStart && (
+                    <div style={{ fontFamily: 'Inter', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--saffron)', marginBottom: 3 }}>
+                      {cm.touched === 0 ? t('tour.startHere') : t('tour.upNext')}
+                    </div>
+                  )}
+                  <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 16, lineHeight: 1.25, color: isStart ? '#fff' : 'var(--ink)' }}>{s.title}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: 9999, background: color }} />
-                    <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: lvl === 'new' ? 'var(--muted-2)' : color }}>
+                    <div style={{ width: 7, height: 7, borderRadius: 9999, background: isStart && lvl === 'new' ? 'rgba(255,255,255,0.4)' : color }} />
+                    <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: isStart ? 'rgba(255,255,255,0.6)' : (lvl === 'new' ? 'var(--muted-2)' : color) }}>
                       {lvl === 'new' ? t('common:notStarted') : t(`common:levels.${lvl}`)}
                     </span>
                   </div>
                 </div>
-                <VIcon name="chevron-right" size={16} color="var(--muted-2)" />
+                <VIcon name={isStart ? 'arrow-right' : 'chevron-right'} size={16} color={isStart ? '#fff' : 'var(--muted-2)'} />
               </div>
             );
           })}
