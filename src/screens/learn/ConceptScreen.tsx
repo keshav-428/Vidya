@@ -8,7 +8,7 @@ import api from '../../api/vidya';
 import { appendActivity, sessionStepPatch } from '../../lib/progress';
 import { applyResult, levelFor, skillKey } from '../../lib/mastery';
 import LessonFlow from './LessonFlow';
-import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap, AdaptiveLesson, PracticeSelection } from '../../types';
+import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap, AdaptiveLesson, PracticeSelection, ScreenId } from '../../types';
 
 // Build the card array for an LLM-generated topic. Real-life scenes and videos
 // are preloaded by the caller and passed in, so every card is render-ready and
@@ -76,6 +76,7 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
   useEffect(() => {
     if ((state?.askedConcept || state?.askedChapterId || state?.askedSection || state?.askedFocus) && set)
       set({ askedConcept: null, askedChapterId: null, askedSection: null, askedFocus: null });
+    if ((state?.lessonSel || state?.lessonNext) && set) set({ lessonSel: null, lessonNext: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,8 +94,14 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
         }
       : null,
   );
+  // An ad-hoc multi-topic lesson (viva prep). One-shot, and deliberately
+  // separate from planSessionSel so it never disturbs today's session.
+  const [lessonSel] = useState<PracticeSelection[] | null>(
+    () => (state?.lessonSel as PracticeSelection[] | undefined) || null);
+  const [lessonNext] = useState(() => (state?.lessonNext as ScreenId | undefined) || null);
   // A session can cover SEVERAL topics — one lesson teaches them together.
   const [sessionSel] = useState<PracticeSelection[] | null>(() => {
+    if (lessonSel && lessonSel.length) return lessonSel;
     const sel = state?.planSessionSel as PracticeSelection[] | undefined;
     return (!askedConcept && !state?.skillId && sel && sel.length > 1) ? sel : null;
   });
@@ -112,8 +119,11 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
   const [exiting, setExiting] = useState(false);
 
   const scopeChapterId = askedChapterId || sessionSel?.[0]?.chapterId || sessionSub?.chapterId || null;
-  // With several topics in one session there is no single section to scope to.
-  const scopeSection = sessionSel ? null : (askedSection ?? sessionSub?.section ?? null);
+  // With several topics in one lesson there is no single section to scope to;
+  // a single ad-hoc topic keeps its own section so retrieval stays tight.
+  const scopeSection = (sessionSel && sessionSel.length > 1)
+    ? null
+    : (askedSection ?? sessionSel?.[0]?.section ?? sessionSub?.section ?? null);
 
   useEffect(() => {
     if (staticSkill) return;   // already have rich content
@@ -212,8 +222,8 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
           videos={videos}
           topicTitle={topicTitle}
           doneLabel={fromLearn ? t('concept.done') : t('concept.startQuiz')}
-          onDone={() => { markLearned(); go(fromLearn ? 'learn' : 'navigable-quiz'); }}
-          onExit={() => go(fromLearn ? 'learn' : 'home')}
+          onDone={() => { markLearned(); go(lessonNext || (fromLearn ? 'learn' : 'navigable-quiz')); }}
+          onExit={() => go(lessonNext ? 'home' : (fromLearn ? 'learn' : 'home'))}
         />
       </>
     );
@@ -240,7 +250,7 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
 
   const advance = () => {
     // Learn is the concept flow — finishing returns to Learn (quizzes live in Practice).
-    if (isLast) { markLearned(); go(fromLearn ? 'learn' : 'navigable-quiz'); return; }
+    if (isLast) { markLearned(); go(lessonNext || (fromLearn ? 'learn' : 'navigable-quiz')); return; }
     setExiting(true);
     setTimeout(() => { setIdx(i => i + 1); setExiting(false); }, 160);
   };

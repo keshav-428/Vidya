@@ -6,7 +6,7 @@ import { chapterTitleById } from '../../content/syllabus';
 import api, { type VivaQuestion, type VivaFeedback } from '../../api/vidya';
 import { appendActivity } from '../../lib/progress';
 import { applyResult } from '../../lib/mastery';
-import type { ScreenProps, MasteryMap } from '../../types';
+import type { ScreenProps, MasteryMap, PracticeSelection } from '../../types';
 
 // ─────────────────────────────────────────────────────────────
 //  Viva — explain it out loud. Vidya asks a question, the student
@@ -29,8 +29,15 @@ function pickMime(): string {
 export default function VivaScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation(['practice', 'common']);
   const grade = api.toGrade(state?.classLevel);
-  const chapterIds = (state?.vivaChapters as string[]) || [];
-  const topics = chapterIds.map((id) => chapterTitleById(id)).filter(Boolean) as string[];
+  // Topics the teacher set, chosen subtopic-wise (falls back to the older
+  // chapter-level selection so an in-flight viva still works).
+  const vivaSel = (state?.vivaSel as PracticeSelection[] | undefined) || null;
+  const legacyIds = (state?.vivaChapters as string[] | undefined) || [];
+  const sel: PracticeSelection[] = vivaSel?.length
+    ? vivaSel
+    : legacyIds.map((id) => ({ chapterId: id, section: '', title: chapterTitleById(id) || '' })).filter((x) => x.title);
+  const topics = sel.map((x) => x.title);
+  const level = (state?.vivaLevel as string) || 'normal';
 
   const [questions, setQuestions] = useState<VivaQuestion[] | null>(null);
   const [loadErr, setLoadErr] = useState(false);
@@ -50,7 +57,7 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
   // Load the questions once.
   useEffect(() => {
     let alive = true;
-    api.generateViva({ topics: topics.length ? topics : ['general maths'], grade, language: state?.language || 'English', num: 3 })
+    api.generateViva({ topics: topics.length ? topics : ['general maths'], grade, language: state?.language || 'English', num: 3, level })
       .then((qs) => { if (alive) { qs.length ? setQuestions(qs) : setLoadErr(true); } })
       .catch(() => { if (alive) setLoadErr(true); });
     return () => { alive = false; };
@@ -125,29 +132,30 @@ export default function VivaScreen({ go, state, set }: ScreenProps) {
   const next = () => {
     if (!questions) return;
     if (qIdx + 1 >= questions.length) {
-      // Credit each question's stars to its chapter in the mastery map
-      // (chapter tag from the backend; single-chapter vivas need no tag).
+      // Credit each question's stars to the TOPIC it tested (tag from the
+      // backend; a single-topic viva needs no tag). Stars out of 3 per answer.
       const now = new Date().toISOString();
-      const pairs = chapterIds.map((id) => ({ id, title: chapterTitleById(id) || '' }));
       const norm = (x: string) => x.trim().toLowerCase();
       let mastery = (state?.mastery as MasteryMap) || {};
-      const groups = new Map<string, { id: string; stars: number; n: number }>();
+      const groups = new Map<string, { s: PracticeSelection; stars: number; n: number }>();
       questions.forEach((qq, i) => {
         const fb = results[i];
         if (!fb) return;
         const match = qq.chapter
-          ? pairs.find((p) => norm(p.title) === norm(qq.chapter!))
-          : (pairs.length === 1 ? pairs[0] : null);
+          ? sel.find((p) => norm(p.title) === norm(qq.chapter!))
+          : (sel.length === 1 ? sel[0] : null);
         if (!match) return;
-        const g = groups.get(match.id) || { id: match.id, stars: 0, n: 0 };
+        const k = `${match.chapterId}::${match.section}`;
+        const g = groups.get(k) || { s: match, stars: 0, n: 0 };
         g.stars += Math.max(0, Math.min(3, fb.stars || 0));
         g.n += 1;
-        groups.set(match.id, g);
+        groups.set(k, g);
       });
       groups.forEach((g) => {
         mastery = applyResult(mastery, {
-          kind: 'quiz', date: now, topic: `Viva · ${chapterTitleById(g.id) || ''}`,
-          chapterId: g.id, section: null, score: g.stars, total: g.n * 3,
+          kind: 'quiz', date: now, topic: `Viva · ${g.s.title}`,
+          chapterId: g.s.chapterId, section: g.s.section || null,
+          score: g.stars, total: g.n * 3,
         });
       });
       set && set({

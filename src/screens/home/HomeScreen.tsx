@@ -287,44 +287,151 @@ function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPic
 
 interface VivaPickerProps {
   onClose: () => void;
-  onStart: (chapters: string[]) => void;
+  onStart: (sel: PracticeSelection[], mode: 'learn' | 'speak' | 'both', level: 'easy' | 'normal' | 'hard') => void;
   chapters: SyllabusChapter[];
+  mastery?: MasteryMap;
 }
 
-function VivaPicker({ onClose, onStart, chapters }: VivaPickerProps) {
+// Two steps: pick the topics the teacher set, then say what you want out of it.
+// A viva is a SPEAKING task, so preparing (understanding it) and practising
+// (saying it) are separate things a student may want either or both of.
+function VivaPicker({ onClose, onStart, chapters, mastery }: VivaPickerProps) {
   const { t } = useTranslation(['home', 'common']);
-  const [selected, setSelected] = useState<string[]>(chapters[0] ? [chapters[0].id] : []);
-  const toggle = (id: string) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  const [step, setStep] = useState<'topics' | 'config'>('topics');
+  const [openChapter, setOpenChapter] = useState<string | null>(null);
+  const [sel, setSel] = useState<PracticeSelection[]>([]);
+  const [mode, setMode] = useState<'learn' | 'speak' | 'both'>('both');
+  const [level, setLevel] = useState<'easy' | 'normal' | 'hard'>('normal');
+
+  const keyOf = (c: string, x: string) => `${c}::${x}`;
+  const isSel = (c: string, x: string) => sel.some((v) => keyOf(v.chapterId, v.section) === keyOf(c, x));
+  const toggle = (chapterId: string, section: string, title: string) => setSel((prev) => {
+    const k = keyOf(chapterId, section);
+    return prev.some((v) => keyOf(v.chapterId, v.section) === k)
+      ? prev.filter((v) => keyOf(v.chapterId, v.section) !== k)
+      : [...prev, { chapterId, section, title }];
+  });
+  const selCountIn = (ch: SyllabusChapter) => ch.subtopics.filter((sb) => isSel(ch.id, sb.num)).length;
+
+  const MODES: { id: 'learn' | 'speak' | 'both'; label: string; sub: string }[] = [
+    { id: 'learn', label: t('vivaPicker.modeLearn'), sub: t('vivaPicker.modeLearnSub') },
+    { id: 'speak', label: t('vivaPicker.modeSpeak'), sub: t('vivaPicker.modeSpeakSub') },
+    { id: 'both', label: t('vivaPicker.modeBoth'), sub: t('vivaPicker.modeBothSub') },
+  ];
+  const LEVELS: { id: 'easy' | 'normal' | 'hard'; label: string }[] = [
+    { id: 'easy', label: t('vivaPicker.levelEasy') },
+    { id: 'normal', label: t('vivaPicker.levelNormal') },
+    { id: 'hard', label: t('vivaPicker.levelHard') },
+  ];
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,48,97,0.45)', backdropFilter: 'blur(3px)' }} />
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '85%', display: 'flex', flexDirection: 'column', animation: 'vSlideUp 0.4s cubic-bezier(.16,1,.3,1) both' }}>
-        <div style={{ padding: '24px 22px 0' }}>
+        <div style={{ padding: '24px 22px 0', flexShrink: 0 }}>
           <div style={{ width: 36, height: 4, borderRadius: 9999, background: 'var(--border)', margin: '0 auto 20px' }} />
-          <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{t('vivaPicker.title')}</div>
-          <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{t('vivaPicker.desc')}</div>
-        </div>
-        <div style={{ overflowY: 'auto', flex: 1, padding: '0 22px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 16 }}>
-            {chapters.map(ch => {
-              const on = selected.includes(ch.id);
-              return (
-                <div key={ch.id} className="v-tap" onClick={() => toggle(ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, background: on ? 'var(--ink)' : '#fff', border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', transition: 'all 150ms ease' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: on ? '#fff' : 'var(--ink)' }}>{ch.title}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: on ? 'rgba(255,255,255,0.55)' : 'var(--muted-2)', marginTop: 1 }}>{t('common:topicsCount', { count: ch.subtopics.length })}</div>
-                  </div>
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: on ? 'rgba(255,255,255,0.2)' : 'var(--bg-warm)', border: on ? 'none' : '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
-                  </div>
-                </div>
-              );
-            })}
+          <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>
+            {step === 'topics' ? t('vivaPicker.title') : t('vivaPicker.configTitle')}
+          </div>
+          <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>
+            {step === 'topics' ? t('vivaPicker.desc') : t('vivaPicker.configDesc', { count: sel.length })}
           </div>
         </div>
-        <div style={{ padding: '12px 22px 36px', borderTop: '1px solid var(--border-soft)' }}>
-          <button className="v-btn-primary v-tap" onClick={() => onStart(selected)} disabled={selected.length === 0} style={{ opacity: selected.length === 0 ? 0.4 : 1 }}>
-            {t('vivaPicker.start', { count: selected.length })} <VIcon name="mic" size={14} color="#fff" />
+
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 22px 20px' }}>
+          {step === 'topics' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {chapters.map((ch) => {
+                const isOpen = openChapter === ch.id;
+                const chCount = selCountIn(ch);
+                return (
+                  <div key={ch.id} style={{ borderRadius: 14, border: chCount ? '1px solid var(--indigo-soft)' : '1px solid var(--border)', overflow: 'hidden', background: '#fff' }}>
+                    <div className="v-tap" onClick={() => setOpenChapter(isOpen ? null : ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{ch.title}</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 11, color: chCount ? 'var(--indigo)' : 'var(--muted-2)', marginTop: 1, fontWeight: chCount ? 700 : 400 }}>
+                          {chCount
+                            ? t('newSession.selectedCount', { count: chCount, total: ch.subtopics.length })
+                            : t('common:topicsCount', { count: ch.subtopics.length })}
+                        </div>
+                      </div>
+                      <VIcon name={isOpen ? 'chevron-down' : 'chevron-right'} size={14} color="var(--muted-2)" />
+                    </div>
+                    {isOpen && ch.subtopics.map((sb) => {
+                      const on = isSel(ch.id, sb.num);
+                      const lvl = levelFor((mastery || {})[skillKey(ch.id, sb.num)]);
+                      return (
+                        <div key={sb.id} className="v-tap" onClick={() => toggle(ch.id, sb.num, sb.title)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px 11px 16px', borderTop: '1px solid var(--border-soft)', background: on ? '#FAFAFF' : '#fff' }}>
+                          <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'var(--muted-2)', minWidth: 28, fontVariantNumeric: 'tabular-nums' }}>{sb.num}</span>
+                          <div style={{ flex: 1, minWidth: 0, fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 14, lineHeight: 1.25 }}>{sb.title}</div>
+                          <div style={{ width: 7, height: 7, borderRadius: 9999, flexShrink: 0, background: LEVEL_DOT[lvl] }} />
+                          <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: on ? 'none' : '1.5px solid var(--border)', background: on ? 'var(--indigo)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>{t('vivaPicker.whatDoYouWant')}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 22 }}>
+                {MODES.map((m) => {
+                  const on = mode === m.id;
+                  return (
+                    <div key={m.id} className="v-tap" onClick={() => setMode(m.id)} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 14,
+                      background: on ? 'var(--ink)' : '#fff',
+                      border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)',
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: 'Inter', fontSize: 13.5, fontWeight: 700, color: on ? '#fff' : 'var(--ink)' }}>{m.label}</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 11.5, color: on ? 'rgba(255,255,255,0.6)' : 'var(--muted-2)', marginTop: 2 }}>{m.sub}</div>
+                      </div>
+                      <div style={{ width: 20, height: 20, borderRadius: 9999, flexShrink: 0, border: on ? 'none' : '1.5px solid var(--border)', background: on ? 'var(--saffron)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {on && <VIcon name="check" size={11} color="#fff" strokeWidth={2.5} />}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>{t('vivaPicker.howHard')}</div>
+              <div style={{ display: 'flex', gap: 6, padding: 4, background: 'var(--bg-warm)', borderRadius: 9999, border: '1px solid var(--border)' }}>
+                {LEVELS.map((l) => {
+                  const on = level === l.id;
+                  return (
+                    <div key={l.id} className="v-tap" onClick={() => setLevel(l.id)} style={{
+                      flex: 1, textAlign: 'center', padding: '9px 8px', borderRadius: 9999,
+                      background: on ? 'var(--ink)' : 'transparent', color: on ? '#fff' : 'var(--ink)',
+                      fontFamily: 'Inter', fontSize: 12.5, fontWeight: on ? 700 : 500,
+                      transition: 'background .15s, color .15s',
+                    }}>{l.label}</div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div style={{ padding: '12px 22px 36px', borderTop: '1px solid var(--border-soft)', display: 'flex', gap: 10, flexShrink: 0 }}>
+          {step === 'config' && (
+            <button className="v-btn-secondary v-tap" style={{ flex: 1 }} onClick={() => setStep('topics')}>
+              {t('vivaPicker.back')}
+            </button>
+          )}
+          <button className="v-btn-primary v-tap"
+            style={{ flex: 2, opacity: sel.length === 0 ? 0.4 : 1 }}
+            disabled={sel.length === 0}
+            onClick={() => (step === 'topics' ? setStep('config') : onStart(sel, mode, level))}>
+            {step === 'topics'
+              ? t('vivaPicker.next', { count: sel.length })
+              : t('vivaPicker.start', { count: sel.length })}
+            <VIcon name={step === 'topics' ? 'arrow-right' : 'mic'} size={14} color="#fff" />
           </button>
         </div>
       </div>
@@ -549,11 +656,15 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
       {vivaOpen && (
         <VivaPicker
           chapters={chapters}
+          mastery={state?.mastery as MasteryMap}
           onClose={() => setVivaOpen(false)}
-          onStart={(chapters) => {
+          onStart={(sel, mode, level) => {
             setVivaOpen(false);
-            set({ vivaChapters: chapters });
-            go('viva');
+            set({ vivaSel: sel, vivaMode: mode, vivaLevel: level });
+            // 'learn' and 'both' revise the topics first; 'both' then speaks.
+            if (mode === 'speak') { go('viva'); return; }
+            set({ lessonSel: sel, lessonNext: mode === 'both' ? 'viva' : 'home' });
+            go('learn-concept');
           }}
         />
       )}

@@ -72,6 +72,16 @@ export interface AppState {
   askedSection?: string | null;
   /** The specific question a photo/typed ask is about; narrows the lesson. */
   askedFocus?: string | null;
+  /** Ad-hoc "teach me these topics" input (viva prep). Distinct from
+   *  planSessionSel so it never disturbs today's session. */
+  lessonSel?: PracticeSelection[] | null;
+  /** Where to go when that ad-hoc lesson finishes. */
+  lessonNext?: ScreenId | null;
+
+  // viva
+  vivaSel?: PracticeSelection[];
+  vivaMode?: 'learn' | 'speak' | 'both';
+  vivaLevel?: 'easy' | 'normal' | 'hard';
 
   // auth flow
   afterAuth?: ScreenId;

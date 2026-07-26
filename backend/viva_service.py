@@ -6,7 +6,8 @@ import rag_service
 from languages import lang_instruction
 
 
-def generate_viva_questions(topics: list, grade: int = 6, language: str = "English", num: int = 3):
+def generate_viva_questions(topics: list, grade: int = 6, language: str = "English", num: int = 3,
+                            level: str = "normal"):
     """Generates open-ended 'explain it out loud' viva questions for the given
     chapter topics, each with the key points a good answer should contain."""
     query = ", ".join(topics) if topics else "mathematics"
@@ -16,8 +17,20 @@ def generate_viva_questions(topics: list, grade: int = 6, language: str = "Engli
         context = []
     context_text = "\n\n".join([c.get("content", "") for c in context]) if context else ""
 
+    LEVELS = {
+        "easy":   "LEVEL: gentle. Ask for plain recall and simple 'what is / where would you use' "
+                  "explanations. A student who revised once should answer comfortably.",
+        "normal": "LEVEL: normal. Ask the student to explain WHY something works and to give an "
+                  "example in their own words — typical school viva difficulty.",
+        "hard":   "LEVEL: challenging. Ask them to justify, compare two ideas, or explain what would "
+                  "happen if a rule were broken — the kind of follow-up a strict teacher asks.",
+    }
+    level_rule = LEVELS.get((level or "normal").lower(), LEVELS["normal"])
+
     prompt = f"""You are Vidya, a warm maths teacher running a friendly viva (oral exam)
-with a CBSE Class {grade} student (age 11-14). Chapters to cover: {query}.
+with a CBSE Class {grade} student (age 11-14). Topics to cover: {query}.
+
+{level_rule}
 
 LANGUAGE for every text value: {lang_instruction(language)}
 
@@ -37,7 +50,7 @@ Return ONLY valid JSON:
   "questions": [
     {{
       "question": "the spoken question, addressed directly to the student",
-      "chapter": "EXACTLY one of these chapter names, verbatim: {json.dumps(topics)}",
+      "chapter": "EXACTLY one of these topic names, verbatim: {json.dumps(topics)}",
       "listen_for": ["key point 1 a good answer mentions", "key point 2", "key point 3"]
     }}
   ]

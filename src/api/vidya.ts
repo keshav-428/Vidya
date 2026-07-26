@@ -228,8 +228,9 @@ export const generateViva = ({
   grade = 6,
   language = 'English',
   num = 3,
-}: { topics: string[]; grade?: number; language?: Language; num?: number }): Promise<VivaQuestion[]> =>
-  post<{ questions?: VivaQuestion[] }>('/generate-viva', { topics, grade, language, num })
+  level = 'normal',
+}: { topics: string[]; grade?: number; language?: Language; num?: number; level?: string }): Promise<VivaQuestion[]> =>
+  post<{ questions?: VivaQuestion[] }>('/generate-viva', { topics, grade, language, num, level })
     .then((d) => d.questions || []);
 
 export interface VivaFeedback { heard: string; good: string[]; missing: string[]; tip: string; stars: number; }

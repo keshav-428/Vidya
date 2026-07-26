@@ -145,10 +145,11 @@ class LessonRequest(BaseModel):
     focus: Optional[str] = None            # answer THIS specific question, not the whole subtopic
 
 class VivaQuestionsRequest(BaseModel):
-    topics: list          # chapter titles
+    topics: list          # topic (or chapter) titles
     grade: int = 6
     language: str = "English"
     num: int = 3
+    level: str = "normal"  # easy | normal | hard, chosen by the student
 
 class VivaEvalRequest(BaseModel):
     audio: str            # base64-encoded audio (no data: prefix)
@@ -413,6 +414,7 @@ async def generate_viva_endpoint(request: VivaQuestionsRequest):
     try:
         data = viva_service.generate_viva_questions(
             request.topics, request.grade, request.language, request.num,
+            level=request.level,
         )
         return data
     except Exception as e:
