@@ -256,7 +256,7 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
   // Captured once: arriving here fresh from the warm-up runs a short
   // guided walkthrough (why this plan / how to build one → edit → save).
   const [planIntro] = useState(() => (state?.planIntro as 'auto' | 'own' | undefined) || null);
-  const introTopic = (state?.diagChapters as string[] | undefined)?.[0] || '';
+  const introLang = (state?.language === 'Hindi' || state?.language === 'hi') ? 'hi' : 'en';
   const [tourStep, setTourStep] = useState<number | null>(planIntro ? 0 : null);
   const tourDayRef = useRef<HTMLDivElement | null>(null);
 
@@ -326,11 +326,24 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
     if (tourStep === 1) tourDayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [tourStep]);
   const endTour = () => { setTourStep(null); set && set({ planIntro: undefined }); };
+  // The distinct chapters this week actually covers, named as the day rows name
+  // them — so the walkthrough can never disagree with the plan below it.
+  const introChapters = [...new Set(week.filter((d) => d.topicId).map((d) => d.topicId as string))]
+    .map((id) => topicInfo(id).title).filter(Boolean).slice(0, 3);
+  const introList = (() => {
+    try {
+      return new Intl.ListFormat(introLang, { style: 'long', type: 'conjunction' }).format(introChapters);
+    } catch {
+      return introChapters.join(', ');
+    }
+  })();
   const tourKind = planIntro === 'own' ? 'own' : 'auto';
   const tourCopy = (step: number) => ({
     title: t(`weekPlan.tour.${tourKind}.title${step + 1}`),
     body: (step === 0 && tourKind === 'auto')
-      ? (introTopic ? t('weekPlan.tour.auto.body1', { topic: introTopic }) : t('weekPlan.tour.auto.body1Plain'))
+      ? (introChapters.length
+          ? t('weekPlan.tour.auto.body1', { count: introChapters.length, topics: introList })
+          : t('weekPlan.tour.auto.body1Plain'))
       : t(`weekPlan.tour.${tourKind}.body${step + 1}`),
     cta: t(`weekPlan.tour.${tourKind}.cta${step + 1}`),
   });

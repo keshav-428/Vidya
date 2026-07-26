@@ -39,7 +39,6 @@
       "stepOf": "Step {{n}} of 3",
       "auto": {
         "title1": "Vidya made this plan for you",
-        "body1": "Your warm-up showed {{topic}} needs a little work, so I've started there. One topic a day, about 15 minutes.",
         "body1Plain": "I picked these topics from your warm-up. One topic a day, about 15 minutes.",
         "cta1": "Show me how →",
         "title2": "Change any day you like",
@@ -47,7 +46,9 @@
         "cta2": "Got it →",
         "title3": "Save and start learning",
         "body3": "Happy with your week? Save it and we'll begin today's topic.",
-        "cta3": "Done"
+        "cta3": "Done",
+        "body1_one": "Your warm-up showed {{topics}} needs a little work, so that's where your week starts. One topic a day, about 15 minutes.",
+        "body1_other": "Your warm-up showed {{topics}} need some work, so your week covers all of them — one topic a day, about 15 minutes."
       },
       "own": {
         "title1": "Your week is empty — you're the boss",
