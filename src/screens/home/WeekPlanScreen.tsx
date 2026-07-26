@@ -151,10 +151,10 @@ function TopicPickerSheet({ day, dayIdx, onSelect, onToggleRest, onClose, chapte
   const [open, setOpen] = useState<string | null>(usedTopicId || null);
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,20,40,0.4)', backdropFilter: 'blur(2px)' }} />
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
+        position: 'fixed', bottom: 0, left: 0, right: 0,
         background: '#fff', borderRadius: '24px 24px 0 0',
         maxHeight: '78%', display: 'flex', flexDirection: 'column',
         animation: 'vSlideUp 0.35s cubic-bezier(.16,1,.3,1) both',

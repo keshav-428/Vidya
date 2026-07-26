@@ -226,9 +226,9 @@ function NewSessionPicker({ onClose, onStart, chapters, mastery }: NewSessionPic
   });
   const selCountIn = (ch: SyllabusChapter) => ch.subtopics.filter((sub) => isSel(ch.id, sub.num)).length;
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,48,97,0.45)', backdropFilter: 'blur(3px)' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '85%', display: 'flex', flexDirection: 'column', animation: 'vSlideUp 0.4s cubic-bezier(.16,1,.3,1) both' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '85%', display: 'flex', flexDirection: 'column', animation: 'vSlideUp 0.4s cubic-bezier(.16,1,.3,1) both' }}>
         <div style={{ padding: '24px 22px 0' }}>
           <div style={{ width: 36, height: 4, borderRadius: 9999, background: 'var(--border)', margin: '0 auto 20px' }} />
           <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{t('newSession.title')}</div>
@@ -296,9 +296,9 @@ function VivaPicker({ onClose, onStart, chapters }: VivaPickerProps) {
   const [selected, setSelected] = useState<string[]>(chapters[0] ? [chapters[0].id] : []);
   const toggle = (id: string) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 200 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,48,97,0.45)', backdropFilter: 'blur(3px)' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '85%', display: 'flex', flexDirection: 'column', animation: 'vSlideUp 0.4s cubic-bezier(.16,1,.3,1) both' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '85%', display: 'flex', flexDirection: 'column', animation: 'vSlideUp 0.4s cubic-bezier(.16,1,.3,1) both' }}>
         <div style={{ padding: '24px 22px 0' }}>
           <div style={{ width: 36, height: 4, borderRadius: 9999, background: 'var(--border)', margin: '0 auto 20px' }} />
           <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{t('vivaPicker.title')}</div>
