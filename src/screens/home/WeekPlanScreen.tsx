@@ -272,6 +272,9 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
       patch.planSection = today.section ?? undefined;
       patch.planSubtopicTitle = today.subtopicTitle ?? undefined;
       patch.planSessionSel = undefined;   // week plan days are single-topic
+      // Today's topic just changed → restart today's checklist.
+      patch.sessionStep = 0;
+      patch.sessionDate = new Date().toDateString();
     }
     set && set(patch);
   };

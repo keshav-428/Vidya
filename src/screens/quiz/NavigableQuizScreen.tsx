@@ -4,7 +4,7 @@ import VIcon from '../../prototype/icons';
 import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { getSkill, getChapterSkills } from '../../content/fractionsChapter';
 import api from '../../api/vidya';
-import { appendActivity } from '../../lib/progress';
+import { appendActivity, sessionStepPatch } from '../../lib/progress';
 import { applyResult, deltaFor, levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
 import type { ScreenProps, ActivityEntry, MasteryMap, PracticeSelection } from '../../types';
 
@@ -56,6 +56,9 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   const [practiceTopics] = useState<string[] | null>(() => (state?.practiceTopics as string[] | null) || null);
   // Full picked selection (chapterId+section+title per topic) for per-skill mastery credit.
   const [practiceSel] = useState<PracticeSelection[] | null>(() => (state?.practiceSel as PracticeSelection[] | null) || null);
+  // Today's session quiz — as opposed to practice, or a one-off from the
+  // mastery map. Only the session quiz may tick the daily checklist.
+  const [isSessionQuiz] = useState(() => !state?.practiceTopics && !state?.quizScope);
   const fromPractice = Array.isArray(practiceTopics) && practiceTopics.length > 0;
   // One-shot subtopic scope from the chapter drill-down ("Quiz" on a subtopic).
   const [quizScope] = useState<QuizScope | null>(() => (state?.quizScope as QuizScope | null) || null);
@@ -251,6 +254,8 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
       lastQuizTotal: ftTotal,
       lastQuizTopic: finalTopic,
       lastQuizMistakes: allMistakes,
+      lastQuizWasSession: isSessionQuiz,
+      ...(isSessionQuiz ? sessionStepPatch(state, 2) : {}),
       activityLog: appendActivity(state?.activityLog, entry),
       mastery: newMap,
       lastMasteryDelta: delta || undefined,

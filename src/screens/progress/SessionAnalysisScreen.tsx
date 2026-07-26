@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
 import api from '../../api/vidya';
+import { sessionStepPatch } from '../../lib/progress';
 import { type MasteryLevel } from '../../lib/mastery';
 import type { ScreenProps, QuizFeedback, MasteryDelta } from '../../types';
 
@@ -18,7 +19,7 @@ interface QuizMistake {
   correct_answer: unknown;
 }
 
-export default function SessionAnalysisScreen({ go, state }: ScreenProps) {
+export default function SessionAnalysisScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation(['progress', 'common']);
   const topicTitle = (state?.lastQuizTopic as string | undefined) || 'Fractions';
 
@@ -30,6 +31,13 @@ export default function SessionAnalysisScreen({ go, state }: ScreenProps) {
   // LLM quiz feedback: { win, pattern, next_step }
   const [feedback, setFeedback] = useState<QuizFeedback | null>(null);   // null = loading
   const [failed, setFailed] = useState(false);
+
+  // Reaching the analysis of the SESSION quiz completes today's session.
+  // A practice or mastery-map quiz also lands here and must not count.
+  useEffect(() => {
+    if (state?.lastQuizWasSession && set) set(sessionStepPatch(state, 3));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let alive = true;

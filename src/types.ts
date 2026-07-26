@@ -65,6 +65,8 @@ export interface AppState {
   masteryMigrated?: boolean;      // one-time seed from legacy activityLog done
   masteryLearnedFixed?: boolean;  // one-time strip of load-time 'learned' flags done
   lastMasteryDelta?: MasteryDelta;
+  /** Was the last quiz today's session quiz (vs practice / mastery-map)? */
+  lastQuizWasSession?: boolean;
   askedConcept?: string | null;
   askedChapterId?: string | null;
   askedSection?: string | null;

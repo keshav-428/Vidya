@@ -5,7 +5,7 @@ import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { getChapterSkills } from '../../content/fractionsChapter';
 import { renderCard, mapScenes, mapVideos } from '../../content/conceptVisuals';
 import api from '../../api/vidya';
-import { appendActivity } from '../../lib/progress';
+import { appendActivity, sessionStepPatch } from '../../lib/progress';
 import { applyResult, levelFor, skillKey } from '../../lib/mastery';
 import LessonFlow from './LessonFlow';
 import type { ScreenProps, Card, ConceptResponse, Scene, VideoItem, RealWorldUse, ActivityEntry, MasteryMap, AdaptiveLesson, PracticeSelection } from '../../types';
@@ -187,7 +187,9 @@ export default function ConceptScreen({ go, set, state }: ScreenProps) {
         score: 0, total: 0,
       } as ActivityEntry);
     });
-    set({ mastery: m });
+    // Finishing the session lesson is what ticks Concept — not merely having
+    // navigated home from this screen (a Learn-tab lesson must not count).
+    set({ mastery: m, ...(fromLearn ? {} : sessionStepPatch(state, 1)) });
   };
 
   // Adaptive lesson ready → run the teaching-beats flow.

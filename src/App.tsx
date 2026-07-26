@@ -207,20 +207,11 @@ function AppInner() {
       navigate(SCREEN_ROUTES['save-progress']);
       return;
     }
-    // Track session steps when navigating back to home
-    if (screenId === 'home') {
-      const todayStr = new Date().toDateString();
-      const currentStep = state.sessionDate === todayStr ? (state.sessionStep || 0) : 0;
-      if (currentScreen === 'learn-concept' && currentStep < 1) {
-        setState((s) => ({ ...s, sessionStep: 1, sessionDate: todayStr }));
-      }
-      if (['navigable-quiz', 'quiz-result-summary', 'final-review'].includes(currentScreen) && currentStep < 2) {
-        setState((s) => ({ ...s, sessionStep: 2, sessionDate: todayStr }));
-      }
-      if (currentScreen === 'session-analysis' && currentStep < 3) {
-        setState((s) => ({ ...s, sessionStep: 3, sessionDate: todayStr }));
-      }
-    }
+    // NOTE: session progress is NOT inferred here. Guessing it from which
+    // screen you left ticked the daily checklist for unrelated work — a
+    // Learn-tab lesson, a practice quiz, or a mastery-map quiz all pass
+    // through the same screens. Each session screen now reports its own step
+    // via sessionStepPatch() when it genuinely completes.
     const path = SCREEN_ROUTES[screenId];
     if (path) navigate(path);
   };

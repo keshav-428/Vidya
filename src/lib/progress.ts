@@ -33,6 +33,19 @@ export function appendActivity(
 export const getLog = (state: AppState | undefined): ActivityEntry[] =>
   (state?.activityLog as ActivityEntry[] | undefined) || [];
 
+
+// ── Today's session checklist ────────────────────────────────
+/** Patch that advances today's session checklist to `step`, never backwards.
+ *  Sessions are day-scoped, so a stale sessionDate means today starts at 0.
+ *  Screens call this when they genuinely finish their step — previously App.tsx
+ *  guessed progress from which screen you navigated home from, which let
+ *  practice quizzes and the Progress tab tick the daily boxes. */
+export function sessionStepPatch(state: AppState | undefined, step: number): Partial<AppState> {
+  const today = new Date().toDateString();
+  const current = state?.sessionDate === today ? (state?.sessionStep || 0) : 0;
+  return current >= step ? {} : { sessionStep: step, sessionDate: today };
+}
+
 // ── Scoring ──────────────────────────────────────────────────
 const scoredEntries = (log: ActivityEntry[]): ActivityEntry[] =>
   log.filter((e) => (e.kind === 'quiz' || e.kind === 'exam') && e.total > 0);

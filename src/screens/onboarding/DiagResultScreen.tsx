@@ -68,6 +68,9 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       ownPlan: false,
       coachStep: 1,          // after saving, Home nudges "let's study"
       planIntro: 'auto',
+      // A new plan starts today's session from scratch — otherwise earlier
+      // progress would leave Concept pre-ticked on a plan never started.
+      sessionStep: 0, sessionDate: new Date().toDateString(),
     });
     go('week-plan');
   };
@@ -82,6 +85,7 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       planSection: undefined, planSubtopicTitle: undefined, planSessionSel: undefined,
       mastery: seededMastery(),
       planIntro: 'own',
+      sessionStep: 0, sessionDate: new Date().toDateString(),
     });
     go('week-plan');
   };
