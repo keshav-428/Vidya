@@ -6,17 +6,15 @@ import { getSkill, getChapterSkills } from '../../content/fractionsChapter';
 import api from '../../api/vidya';
 import { appendActivity, sessionStepPatch } from '../../lib/progress';
 import { applyResult, deltaFor, levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
+import {
+  parsePool, isCorrect as gradeAnswer, isComplete, answerText, correctText,
+  type Question, type Answer,
+} from '../../lib/quizFormats';
+import QuestionBody, { AUTO_SUBMIT } from './formats';
 import type { ScreenProps, ActivityEntry, MasteryMap, PracticeSelection } from '../../types';
 
-interface QuizItem {
-  id: number;
-  q: string; opts: string[]; correct: number; explanation: string;
-  topic?: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  hint?: string;
-  optionNotes?: string[];
-}
-const TIERS: QuizItem['difficulty'][] = ['easy', 'medium', 'hard'];
+const TIERS: Question['difficulty'][] = ['easy', 'medium', 'hard'];
+const LEVEL_KEYS = ['navigable.levelWarm', 'navigable.levelBuild', 'navigable.levelChallenge'];
 const WIN_TARGET = 5;    // the quiz ends when you've got this many right…
 const MAX_ATTEMPTS = 9;  // …or after this many tries (no death spirals)
 interface FirstTry { right: boolean; hint: boolean; topic?: string; q: string; userAnswer: string; correctAnswer: string; }
@@ -45,6 +43,27 @@ function CoachHint({ text, cta, onDismiss }: CoachHintProps) {
         padding: '7px 13px', fontFamily: 'Inter', fontSize: 11, fontWeight: 700,
         color: '#fff', cursor: 'default', flexShrink: 0,
       }}>{cta}</button>
+    </div>
+  );
+}
+
+/** The one progress metaphor in the quiz: fill five stars and you're done.
+ *  It replaced a "2 of 5 right" counter that ran alongside a "QUESTION 6"
+ *  counter — two scales for the same run, which is what made the quiz
+ *  confusing to read. */
+function Stars({ wins, target }: { wins: number; target: number }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+      {Array.from({ length: target }, (_, i) => (
+        <span key={i} style={{
+          display: 'inline-flex',
+          transform: i < wins ? 'scale(1)' : 'scale(0.86)',
+          transition: 'transform 260ms cubic-bezier(.16,1,.3,1)',
+        }}>
+          <VIcon name={i < wins ? 'star-fill' : 'star'} size={15}
+            color={i < wins ? 'var(--saffron)' : 'var(--border)'} strokeWidth={1.8} />
+        </span>
+      ))}
     </div>
   );
 }
@@ -101,24 +120,32 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   // Whichever selection drives per-skill mastery attribution on finish.
   const attributionSel: PracticeSelection[] | null = practiceSel?.length ? practiceSel : sessionSel;
   const topicTitle = quizTopics.length > 1 ? t('navigable.chaptersCount', { count: quizTopics.length }) : quizTopics[0];
-  const fallbackQuiz: QuizItem[] = ((staticSkill || getSkill(state?.skillId ?? undefined)).quiz as Omit<QuizItem, 'id' | 'difficulty'>[])
-    .map((it, i) => ({ ...it, id: i, difficulty: 'medium' as const }));
+  const fallbackQuiz: Question[] = ((staticSkill || getSkill(state?.skillId ?? undefined)).quiz as { q: string; opts: string[]; correct: number; explanation: string }[])
+    .map((it, i): Question => ({
+      id: i, format: 'mcq', q: it.q, opts: it.opts, correct: it.correct,
+      explanation: it.explanation, difficulty: 'medium',
+    }));
   const grade = api.toGrade(state?.classLevel);
 
   // Questions are LLM-generated; the authored quiz is the offline fallback.
-  const [quiz, setQuiz] = useState<QuizItem[] | null>(null);   // null while loading
-  const [picked, setPicked] = useState<number | null>(null);
+  const [quiz, setQuiz] = useState<Question[] | null>(null);   // null while loading
+  const [answer, setAnswer] = useState<Answer | null>(null);
+  const [submitted, setSubmitted] = useState(false);
   const [hintShown, setHintShown] = useState(false);
   // Adaptive loop state: win condition instead of a fixed run of questions.
-  const [current, setCurrent] = useState<QuizItem | null>(null);
+  const [current, setCurrent] = useState<Question | null>(null);
   const [isRetry, setIsRetry] = useState(false);
   const [wins, setWins] = useState(0);
   const [attempted, setAttempted] = useState(0);
   const [streak, setStreak] = useState(0);
-  const tierRef = React.useRef<QuizItem['difficulty']>('medium');
+  const tierRef = React.useRef<Question['difficulty']>('medium');
   const tierRightsRef = React.useRef(0);
+  // The level the student SEES only ever climbs. The ladder below still drops a
+  // rung after a miss — but showing that would read as a demotion for getting
+  // one question wrong, which is the opposite of the encouragement intended.
+  const [levelSeen, setLevelSeen] = useState(2);
   const usedIdsRef = React.useRef<Set<number>>(new Set());
-  const requeueRef = React.useRef<{ item: QuizItem; queuedAt: number }[]>([]);
+  const requeueRef = React.useRef<{ item: Question; queuedAt: number }[]>([]);
   // First showing of each question is the honest signal that feeds mastery.
   const firstTryRef = React.useRef<Map<number, FirstTry>>(new Map());
 
@@ -138,12 +165,13 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   // Starting rung of the in-quiz ladder mirrors the overall difficulty.
   useEffect(() => {
     tierRef.current = difficulty === 'Easy' ? 'easy' : difficulty === 'Hard' ? 'hard' : 'medium';
+    setLevelSeen(TIERS.indexOf(tierRef.current) + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pick the next question: a due retry first, else a fresh one at the
   // current rung (nearest rung as fallback), else any pending retry.
-  const pickNext = (pool: QuizItem[], attemptedNow: number): { item: QuizItem; retry: boolean } | null => {
+  const pickNext = (pool: Question[], attemptedNow: number): { item: Question; retry: boolean } | null => {
     const due = requeueRef.current.length && (attemptedNow - requeueRef.current[0].queuedAt >= 2);
     if (due) return { item: requeueRef.current.shift()!.item, retry: true };
     const fresh = pool.filter((it) => !usedIdsRef.current.has(it.id));
@@ -159,32 +187,20 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
 
   useEffect(() => {
     let alive = true;
+    const start = (pool: Question[]) => {
+      setQuiz(pool);
+      const first = pickNext(pool, 0);
+      if (first) { usedIdsRef.current.add(first.item.id); setCurrent(first.item); setIsRetry(first.retry); }
+    };
     api.generateQuiz({ topics: quizTopics, grade, language: state?.language || 'English', difficulty, focusPoints, chapterId: quizScope?.chapterId || sessionSub?.chapterId || null, section: quizScope?.section || sessionSub?.section || null })
       .then((items) => {
-        const mapped = (items || [])
-          .filter((it) => it && it.question && Array.isArray(it.options) && it.options.length)
-          .map((it, i): QuizItem => ({
-            id: i,
-            q: it.question, opts: it.options, correct: it.answer ?? 0, explanation: it.explanation || '',
-            topic: it.topic,
-            difficulty: (it.difficulty === 'easy' || it.difficulty === 'hard') ? it.difficulty : 'medium',
-            hint: it.hint,
-            optionNotes: Array.isArray(it.option_notes) && it.option_notes.length === it.options.length ? it.option_notes : undefined,
-          }));
-        if (alive) {
-          const pool = mapped.length ? mapped : fallbackQuiz;
-          setQuiz(pool);
-          const first = pickNext(pool, 0);
-          if (first) { usedIdsRef.current.add(first.item.id); setCurrent(first.item); setIsRetry(first.retry); }
-        }
+        // Validation lives in parsePool: anything a student couldn't fairly
+        // answer (a match with a duplicate pair, an out-of-range index) is
+        // dropped rather than shown.
+        const pool = parsePool(items);
+        if (alive) start(pool.length ? pool : fallbackQuiz);
       })
-      .catch(() => {
-        if (alive) {
-          setQuiz(fallbackQuiz);
-          const first = pickNext(fallbackQuiz, 0);
-          if (first) { usedIdsRef.current.add(first.item.id); setCurrent(first.item); setIsRetry(first.retry); }
-        }
-      });
+      .catch(() => { if (alive) start(fallbackQuiz); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topicTitle, grade, state?.language]);
@@ -206,15 +222,15 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   const QUIZ = quiz;
   const q = current;
   if (!q) return null;
-  const isCorrect = picked === q.correct;
-  const pct = (wins / WIN_TARGET) * 100;
-  const endsNext = picked !== null
+  const isCorrect = gradeAnswer(q, answer);
+  const canSubmit = isComplete(q, answer);
+  const endsNext = submitted
     && ((isCorrect ? wins + 1 : wins) >= WIN_TARGET || attempted + 1 >= MAX_ATTEMPTS);
-
-  const handlePick = (i: number) => {
-    if (picked !== null) return;
-    setPicked(i);
-  };
+  // Formats that carry their own prompt (a statement, a sentence with a gap)
+  // would otherwise show it twice.
+  const heading = q.format === 'blank' && q.q === q.sentence ? t('formats.fillBlank')
+    : q.format === 'tf' && q.q === q.statement ? t('formats.trueOrFalse')
+    : q.q;
 
   // Wrap up: only FIRST attempts feed mastery (hints count half); the
   // requeue loop exists to fix mistakes, not to inflate the map.
@@ -273,13 +289,13 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
   };
 
   const handleNext = () => {
-    if (!current || picked === null) return;
-    const wasRight = picked === current.correct;
+    if (!current || !submitted) return;
+    const wasRight = gradeAnswer(current, answer);
     // Record the first showing only — that's the honest evidence.
     if (!isRetry && !firstTryRef.current.has(current.id)) {
       firstTryRef.current.set(current.id, {
         right: wasRight, hint: hintShown, topic: current.topic,
-        q: current.q, userAnswer: current.opts[picked], correctAnswer: current.opts[current.correct],
+        q: current.q, userAnswer: answerText(current, answer), correctAnswer: correctText(current),
       });
     }
     const newWins = wins + (wasRight ? 1 : 0);
@@ -291,6 +307,7 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
         if (tierRightsRef.current >= 2) {
           tierRef.current = TIERS[Math.min(TIERS.length - 1, TIERS.indexOf(tierRef.current) + 1)];
           tierRightsRef.current = 0;
+          setLevelSeen((x) => Math.max(x, TIERS.indexOf(tierRef.current) + 1));
         }
         setStreak((x) => x + 1);
       } else {
@@ -311,14 +328,15 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
     setAttempted(newAttempted);
     setCurrent(next.item);
     setIsRetry(next.retry);
-    setPicked(null);
+    setAnswer(null);
+    setSubmitted(false);
     setHintShown(false);
   };
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <VTopBar transparent showBack onBack={() => go(fromPractice ? 'practice' : 'home')}
-        right={<span style={{ fontFamily: 'Inter', fontSize: 12, color: 'var(--indigo)', fontWeight: 700 }}>⭐ {t('navigable.winProgress', { wins, target: WIN_TARGET })}</span>}
+        right={<Stars wins={wins} target={WIN_TARGET} />}
       />
 
       {state?.coachStep === 3 && (
@@ -329,20 +347,26 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
         />
       )}
 
-      {/* progress bar */}
-      <div style={{ position: 'fixed', top: 56, left: 0, right: 0, height: 3, background: 'var(--border-soft)', zIndex: 30 }}>
-        <div style={{ height: 3, background: 'var(--indigo)', width: `${pct}%`, transition: 'width .4s ease' }} />
-      </div>
+      {/* question area — bottom padding clears the fixed action bar */}
+      <div style={{ padding: '72px 24px 132px', flex: 1 }}>
+        {/* The rules, once, on the first question: nothing else on screen said
+            how the quiz ends, which is what left students counting questions. */}
+        {attempted === 0 && !submitted && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: 'var(--indigo-air)', borderRadius: 14, padding: '12px 14px', marginBottom: 18 }}>
+            <VIcon name="star-fill" size={14} color="var(--saffron)" />
+            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.55 }}>
+              {t('navigable.rules', { target: WIN_TARGET })}
+            </div>
+          </div>
+        )}
 
-      {/* question area */}
-      <div style={{ padding: '76px 24px 24px', flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <span style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--muted-2)' }}>
-            {t('navigable.questionLabel', { n: attempted + 1 })}
+            {t('navigable.levelLabel', { n: levelSeen })} · {t(LEVEL_KEYS[levelSeen - 1])}
           </span>
           {isRetry && (
             <span style={{ fontFamily: 'Inter', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em', color: '#B45309', background: '#FFF7ED', border: '1px solid var(--accent-warn)', borderRadius: 9999, padding: '3px 9px' }}>
-              {t('navigable.roundTwo')}
+              {t('navigable.secondTry')}
             </span>
           )}
           {!isRetry && streak >= 3 && (
@@ -351,11 +375,12 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
             </span>
           )}
         </div>
-        <h1 style={{ fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.25, marginBottom: 28 }}>
-          {q.q}
+
+        <h1 style={{ fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 23, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.28, marginBottom: 22 }}>
+          {heading}
         </h1>
 
-        {q.hint && picked === null && (
+        {q.hint && !submitted && (
           hintShown ? (
             <div className="v-enter-fade" style={{ display: 'flex', gap: 9, background: 'var(--indigo-air)', borderRadius: 14, padding: '11px 14px', marginBottom: 16 }}>
               <span style={{ fontSize: 14, lineHeight: 1 }}>💡</span>
@@ -368,39 +393,28 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
           )
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {q.opts.map((opt, i) => {
-            const isPickedOpt = picked === i;
-            const isRight = i === q.correct;
-            let bg = '#fff', border = '1px solid var(--border)', color = 'var(--ink)';
-            if (picked !== null) {
-              if (isRight) { bg = '#EDFAF3'; border = '2px solid #1A7A4A'; color = '#1A7A4A'; }
-              else if (isPickedOpt) { bg = '#FEF2F2'; border = '2px solid #C84040'; color = '#C84040'; }
-              else { bg = '#fff'; color = 'var(--muted-2)'; border = '1px solid var(--border-soft)'; }
-            }
-            return (
-              <button key={i} className="v-tap" onClick={() => handlePick(i)} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '14px 16px', borderRadius: 14, textAlign: 'left',
-                background: bg, border, color,
-                fontFamily: 'Inter', fontSize: 15, fontWeight: 500,
-                transition: 'all 180ms ease', cursor: picked !== null ? 'default' : 'pointer',
-                opacity: picked !== null && !isRight && !isPickedOpt ? 0.45 : 1,
-              }}>
-                <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: picked !== null && isRight ? '#1A7A4A' : picked !== null && isPickedOpt ? '#C84040' : 'var(--bg-warm)', border: picked !== null && (isRight || isPickedOpt) ? 'none' : '1px solid var(--border)', transition: 'all 180ms' }}>
-                  {picked !== null && isRight && <VIcon name="check" size={12} color="#fff" strokeWidth={2.5} />}
-                  {picked !== null && isPickedOpt && !isRight && <VIcon name="x" size={12} color="#fff" strokeWidth={2.5} />}
-                  {(picked === null || (!isRight && !isPickedOpt)) && <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, color: picked !== null ? 'var(--muted-2)' : 'var(--muted)' }}>{['A','B','C','D'][i]}</span>}
-                </div>
-                {opt}
-              </button>
-            );
-          })}
-        </div>
+        <QuestionBody
+          q={q}
+          answer={answer}
+          submitted={submitted}
+          onChange={(a) => { if (!submitted) setAnswer(a); }}
+          onCommit={AUTO_SUBMIT.includes(q.format) ? () => setSubmitted(true) : undefined}
+        />
       </div>
 
+      {/* Check — only the formats that need several taps get a submit button */}
+      {!submitted && !AUTO_SUBMIT.includes(q.format) && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 45, padding: '14px 22px 26px', background: 'linear-gradient(to top, var(--bg) 62%, transparent)' }}>
+          <button className="v-btn-primary v-tap" disabled={!canSubmit}
+            onClick={() => setSubmitted(true)}
+            style={{ width: '100%', opacity: canSubmit ? 1 : 0.45, cursor: canSubmit ? 'pointer' : 'default' }}>
+            {t('navigable.check')}
+          </button>
+        </div>
+      )}
+
       {/* feedback panel — slides up after answering */}
-      {picked !== null && (
+      {submitted && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
           background: isCorrect ? '#EDFAF3' : '#FEF2F2',
@@ -417,7 +431,8 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
             </div>
           </div>
           <div style={{ fontFamily: 'Inter', fontSize: 13, color: isCorrect ? '#2D7A50' : '#9B3030', lineHeight: 1.55, marginBottom: isCorrect ? 16 : 8, paddingLeft: 38 }}>
-            {(!isCorrect && q.optionNotes?.[picked as number]) || q.explanation}
+            {/* MCQ carries a note per wrong option — say exactly which mix-up this was. */}
+            {(!isCorrect && q.format === 'mcq' && answer?.kind === 'index' ? q.optionNotes?.[answer.value] : null) || q.explanation}
           </div>
           {!isCorrect && !endsNext && (
             <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: '#9B3030', opacity: 0.8, lineHeight: 1.5, marginBottom: 16, paddingLeft: 38 }}>

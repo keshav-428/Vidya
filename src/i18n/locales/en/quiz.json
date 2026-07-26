@@ -34,19 +34,20 @@
     "chaptersCount": "{{count}} chapters",
     "coachHint": "Pick an answer for each question. You'll get instant feedback and see the explanation.",
     "coachCta": "Got it →",
-    "question": "Question {{num}}",
-    "correct": "Correct!",
-    "notQuite": "Not quite",
     "seeResults": "See results",
     "nextQuestion": "Next question",
-    "winProgress": "{{wins}} of {{target}} right",
-    "questionLabel": "Question {{n}}",
-    "roundTwo": "ROUND 2 🔁",
     "streakChip": "{{count}} in a row! 🔥",
     "hintBtn": "Hint",
     "correctTitle": "Correct!",
     "wrongTitle": "Not quite",
-    "askAgain": "No stress — I'll ask this one again in a bit. 🔁"
+    "askAgain": "No stress — I'll ask this one again in a bit. 🔁",
+    "rules": "Get {{target}} right and you're done. Miss one and it comes back later — hints are free, they just count for half.",
+    "levelLabel": "LEVEL {{n}}",
+    "levelWarm": "WARM-UP",
+    "levelBuild": "BUILDING",
+    "levelChallenge": "CHALLENGE",
+    "secondTry": "SECOND TRY ↻",
+    "check": "Check my answer"
   },
   "quickPrep": {
     "eyebrow": "QUICK PREP",
@@ -120,5 +121,21 @@
     "prev": "Prev",
     "next": "Next",
     "done": "Done"
+  },
+  "formats": {
+    "typeNumber": "Type your answer",
+    "typeAnswer": "Type the missing word",
+    "theAnswerIs": "Answer: {{answer}}",
+    "fillBlank": "Fill in the blank",
+    "trueOrFalse": "True or false?",
+    "true": "True",
+    "false": "False",
+    "whyBecause": "AND WHY?",
+    "tapToMatch": "TAP A MATCH FOR THE SELECTED ROW",
+    "correctPairs": "THE CORRECT MATCHES",
+    "tapInOrder": "TAP THE STEPS IN THE RIGHT ORDER",
+    "correctOrder": "THE RIGHT ORDER",
+    "tapWrongStep": "TAP THE STEP THAT IS WRONG",
+    "shouldHaveBeen": "WHAT SHOULD HAVE HAPPENED"
   }
 }

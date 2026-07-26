@@ -264,10 +264,34 @@ export interface AskResponse {
 }
 
 /** One multiple-choice question. `answer` is the index into `options`. */
+/** One generated question as it comes off the wire. Shapes vary by `format`
+ *  (see POOL_MIX in backend/quiz_service.py); `parseQuestion` in
+ *  src/lib/quizFormats.ts validates and narrows it before the quiz uses it. */
 export interface QuizQuestion {
-  question: string;
-  options: string[];
-  answer: number;
+  /** Which question format this is — defaults to 'mcq' when absent. */
+  format?: 'mcq' | 'numeric' | 'blank' | 'match' | 'order' | 'tf' | 'mistake';
+  question?: string;
+  /** mcq */
+  options?: string[];
+  answer?: number | string;
+  /** numeric, blank — other correct writings of the same answer */
+  accepted?: string[];
+  unit?: string;
+  /** blank — carries the ___ gap */
+  sentence?: string;
+  /** match */
+  left?: string[];
+  right?: string[];
+  pairs?: number[];
+  /** order, mistake — for 'order' these are in the correct sequence */
+  steps?: string[];
+  wrong_step?: number;
+  fix?: string;
+  /** tf */
+  statement?: string;
+  is_true?: boolean;
+  reasons?: string[];
+  correct_reason?: number;
   explanation?: string;
   /** Which of the requested topics this question tests (verbatim topic string). */
   topic?: string;

@@ -34,19 +34,20 @@
     "chaptersCount": "{{count}} अध्याय",
     "coachHint": "हर सवाल का एक उत्तर चुनें। आपको तुरंत प्रतिक्रिया और समझ मिलेगी।",
     "coachCta": "समझ गया →",
-    "question": "सवाल {{num}}",
-    "correct": "सही!",
-    "notQuite": "बिल्कुल सही नहीं",
     "seeResults": "नतीजे देखो",
     "nextQuestion": "अगला सवाल",
-    "winProgress": "{{target}} में से {{wins}} सही",
-    "questionLabel": "सवाल {{n}}",
-    "roundTwo": "राउंड 2 🔁",
     "streakChip": "लगातार {{count}} सही! 🔥",
     "hintBtn": "हिंट",
     "correctTitle": "बिल्कुल सही!",
     "wrongTitle": "थोड़ा सा चूक गए",
-    "askAgain": "कोई बात नहीं — यह सवाल थोड़ी देर में फिर पूछूँगी। 🔁"
+    "askAgain": "कोई बात नहीं — यह सवाल थोड़ी देर में फिर पूछूँगी। 🔁",
+    "rules": "{{target}} सही करो और हो गया। कोई ग़लत हुआ तो वह फिर आएगा — हिंट लेना ठीक है, बस वह आधा गिना जाता है।",
+    "levelLabel": "लेवल {{n}}",
+    "levelWarm": "शुरुआत",
+    "levelBuild": "आगे बढ़ो",
+    "levelChallenge": "चुनौती",
+    "secondTry": "दूसरी कोशिश ↻",
+    "check": "मेरा जवाब जाँचो"
   },
   "quickPrep": {
     "eyebrow": "त्वरित तैयारी",
@@ -120,5 +121,21 @@
     "prev": "पिछला",
     "next": "अगला",
     "done": "हो गया"
+  },
+  "formats": {
+    "typeNumber": "अपना जवाब लिखो",
+    "typeAnswer": "ख़ाली जगह का शब्द लिखो",
+    "theAnswerIs": "जवाब: {{answer}}",
+    "fillBlank": "ख़ाली जगह भरो",
+    "trueOrFalse": "सही या ग़लत?",
+    "true": "सही",
+    "false": "ग़लत",
+    "whyBecause": "और क्यों?",
+    "tapToMatch": "चुनी हुई पंक्ति का जोड़ा दबाओ",
+    "correctPairs": "सही जोड़े",
+    "tapInOrder": "चरणों को सही क्रम में दबाओ",
+    "correctOrder": "सही क्रम",
+    "tapWrongStep": "जो चरण ग़लत है उसे दबाओ",
+    "shouldHaveBeen": "यहाँ क्या होना चाहिए था"
   }
 }

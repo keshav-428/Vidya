@@ -43,6 +43,7 @@ const VIcon = ({ name, size = 20, color = 'currentColor', strokeWidth = 1.6 }: V
     case 'target':      return <svg {...props}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill={color}/></svg>;
     case 'zap':         return <svg {...props}><polygon points="13 3 4 14 11 14 10 21 19 10 12 10"/></svg>;
     case 'star':        return <svg {...props}><polygon points="12 3 14.5 9 21 9.5 16 14 17.5 21 12 17.5 6.5 21 8 14 3 9.5 9.5 9"/></svg>;
+    case 'star-fill':   return <svg {...props}><polygon points="12 3 14.5 9 21 9.5 16 14 17.5 21 12 17.5 6.5 21 8 14 3 9.5 9.5 9" fill={color} stroke={color}/></svg>;
     case 'plus':        return <svg {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
     case 'pencil':      return <svg {...props}><path d="M14 4l6 6L10 20H4v-6z"/></svg>;
     case 'feather':     return <svg {...props}><path d="M20 4c-6 0-10 4-12 8-1 2-1 4 0 5l5-1 7-7"/><line x1="20" y1="4" x2="9" y2="15"/></svg>;
