@@ -323,7 +323,9 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
 
   const weekData = buildWeekBannerData(topicId, state?.weekPlan, chapters);
 
-  const coachStep = state?.ownPlan && (state?.coachStep ?? 0) < 2 ? (state?.coachStep ?? 0) : undefined;
+  // Gated on coachStep alone: BOTH plan paths get the tutorial nudges.
+  // (Was gated on ownPlan, so students who took Vidya's plan got none.)
+  const coachStep = (state?.coachStep ?? 99) < 2 ? (state?.coachStep as number) : undefined;
   const handleCoachAction = (step: number) => {
     if (step === 0) {
       set({ coachStep: 1 });

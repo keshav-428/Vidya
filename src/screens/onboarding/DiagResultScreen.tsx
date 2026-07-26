@@ -69,13 +69,24 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       planSubtopicTitle: today?.subtopicTitle ?? undefined,
       mastery: seededMastery(),
       ownPlan: false,
+      coachStep: 1,          // after saving, Home nudges "let's study"
+      planIntro: 'auto',
     });
     go('week-plan');
   };
-  // Option B — student builds their own; Home's coach guides them through it.
+  // Option B — student picks their own topics, on the same week-plan screen
+  // (with build-your-own guidance). coachStep 1 so Home's next nudge is
+  // "start your first lesson", not "set up the week" they just set up.
   const buildOwn = () => {
-    set && set({ diagLevel: level, diagChapters: outcome.weak, ownPlan: true, coachStep: 0, weekPlan: undefined, planTopicId: undefined, mastery: seededMastery() });
-    go('home');
+    set && set({
+      diagLevel: level, diagChapters: outcome.weak,
+      ownPlan: true, coachStep: 1,
+      weekPlan: undefined, planTopicId: undefined,
+      planSection: undefined, planSubtopicTitle: undefined,
+      mastery: seededMastery(),
+      planIntro: 'own',
+    });
+    go('week-plan');
   };
 
   return (
@@ -148,6 +159,9 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
         )}
 
         <div style={{ flex: 1, minHeight: 6 }} />
+        <div style={{ fontFamily: 'Inter', fontSize: 11.5, color: 'var(--muted-2)', textAlign: 'center', lineHeight: 1.45, marginBottom: 10 }}>
+          {t('diagResult.ctaHelp')}
+        </div>
         <button className="v-btn-primary v-tap" onClick={buildForMe} style={{ marginBottom: 8 }}>
           <VIcon name="sparkles" size={14} color="#fff" /> {t('diagResult.buildForMe')}
         </button>

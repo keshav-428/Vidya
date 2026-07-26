@@ -33,6 +33,33 @@
       "alreadyFree": "Already a free day",
       "markFree": "Mark as free day",
       "topicMeta": "{{sub}} · {{mins}} min"
+    },
+    "tour": {
+      "skip": "Skip",
+      "stepOf": "Step {{n}} of 3",
+      "auto": {
+        "title1": "Vidya made this plan for you",
+        "body1": "Your warm-up showed {{topic}} needs a little work, so I've started there. One topic a day, about 15 minutes.",
+        "body1Plain": "I picked these topics from your warm-up. One topic a day, about 15 minutes.",
+        "cta1": "Show me how →",
+        "title2": "Change any day you like",
+        "body2": "Tap a day to pick a different topic. It's your week — you're in full control.",
+        "cta2": "Got it →",
+        "title3": "Save and start learning",
+        "body3": "Happy with your week? Save it and we'll begin today's topic.",
+        "cta3": "Done"
+      },
+      "own": {
+        "title1": "Your week is empty — you're the boss",
+        "body1": "You chose to pick your own topics, so I've left every day blank for you to fill.",
+        "cta1": "How do I add one? →",
+        "title2": "Tap a day to add a topic",
+        "body2": "Pick a chapter, then the topic you want to study that day. Weekend days can stay free.",
+        "cta2": "Got it →",
+        "title3": "Save when you're ready",
+        "body3": "Add as many days as you like, then save your week and we'll start.",
+        "cta3": "Done"
+      }
     }
   },
   "concept": {

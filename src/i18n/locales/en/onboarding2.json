@@ -84,8 +84,9 @@
     "whatNextBody": "We've picked one topic for today. Small, simple, doable.",
     "seeFirstPlan": "See my first plan",
     "nextEyebrow": "How do you want to start?",
-    "buildForMe": "Build my week plan for me",
-    "buildOwn": "I'll build my own plan"
+    "buildForMe": "Start with Vidya's plan",
+    "buildOwn": "I'll pick my own topics",
+    "ctaHelp": "Made from your warm-up — you can change any day later."
   },
   "diagQ": {
     "chapters": {

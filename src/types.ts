@@ -43,6 +43,7 @@ export interface AppState {
   planTopicId?: string;
   planSection?: string;         // today's subtopic section (e.g. "1.2"); absent ⇒ chapter-wise
   planSubtopicTitle?: string;   // today's subtopic title
+  planIntro?: 'auto' | 'own';    // first visit to the week plan, straight from the warm-up
   weekPlan?: unknown;
   ownPlan?: unknown;
   planMascotSeen?: boolean;

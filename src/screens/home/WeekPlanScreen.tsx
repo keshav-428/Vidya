@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
-import { VTopBar } from '../../prototype/shared';
+import { VTopBar, VidyaAvatar } from '../../prototype/shared';
 import { classChapters, chapterTitleById, subtopicCount, type SyllabusChapter } from '../../content/syllabus';
 import { WEEK_TOPIC_CATALOG, type TopicInfo } from '../../content/weekPlan';
 import api from '../../api/vidya';
@@ -253,6 +253,12 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
   const initialWeek = upgradeToSubtopics(rawWeek, chapters);
   const [week, setWeek] = useState<PlanDay[]>(initialWeek);
   const [sheetIdx, setSheetIdx] = useState<number | null>(null);
+  // Captured once: arriving here fresh from the warm-up runs a short
+  // guided walkthrough (why this plan / how to build one → edit → save).
+  const [planIntro] = useState(() => (state?.planIntro as 'auto' | 'own' | undefined) || null);
+  const introTopic = (state?.diagChapters as string[] | undefined)?.[0] || '';
+  const [tourStep, setTourStep] = useState<number | null>(planIntro ? 0 : null);
+  const tourDayRef = useRef<HTMLDivElement | null>(null);
 
   const commitWeek = (next: PlanDay[]) => {
     setWeek(next);
@@ -305,6 +311,29 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
   const workCount = week.filter(d => d.topicId).length;
   const totalMins = week.reduce((s, d) => s + (d.mins || 0), 0);
 
+  // ── Guided walkthrough ──
+  const TOUR_STEPS = 3;
+  // The day the tour points at: today if it's in the week, else the first weekday.
+  const tourDayIdx = (() => {
+    const todayI = week.findIndex((d) => d.isToday);
+    if (todayI >= 0) return todayI;
+    const wd = week.findIndex((d) => d.weekday);
+    return wd >= 0 ? wd : 0;
+  })();
+  // Make sure the spotlit day is actually on screen.
+  useEffect(() => {
+    if (tourStep === 1) tourDayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [tourStep]);
+  const endTour = () => { setTourStep(null); set && set({ planIntro: undefined }); };
+  const tourKind = planIntro === 'own' ? 'own' : 'auto';
+  const tourCopy = (step: number) => ({
+    title: t(`weekPlan.tour.${tourKind}.title${step + 1}`),
+    body: (step === 0 && tourKind === 'auto')
+      ? (introTopic ? t('weekPlan.tour.auto.body1', { topic: introTopic }) : t('weekPlan.tour.auto.body1Plain'))
+      : t(`weekPlan.tour.${tourKind}.body${step + 1}`),
+    cta: t(`weekPlan.tour.${tourKind}.cta${step + 1}`),
+  });
+
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', position: 'relative' }}>
       <VTopBar transparent showBack onBack={() => go('home')} title="" />
@@ -332,13 +361,21 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
             const filled = !!d.topicId;
             const darkToday = isToday && filled;   // only highlight today once it has a topic
             const info = d.topicId ? topicInfo(d.topicId) : null;
+            const spot = tourStep === 1 && i === tourDayIdx;   // walkthrough target
             return (
-              <div key={i} className="v-tap" onClick={() => setSheetIdx(i)} style={{
+              <div key={i} ref={i === tourDayIdx ? tourDayRef : undefined}
+                className="v-tap" onClick={() => setSheetIdx(i)} style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
                 background: darkToday ? 'var(--ink)' : '#fff',
                 borderRadius: 18,
                 border: darkToday ? '1px solid var(--ink)' : (!filled ? '1px dashed var(--border)' : '1px solid var(--border)'),
-                boxShadow: darkToday ? '0 12px 32px rgba(28,25,23,0.18)' : '0 1px 2px rgba(0,0,0,0.02)',
+                boxShadow: spot
+                  ? '0 0 0 3px var(--saffron), 0 12px 32px rgba(28,25,23,0.22)'
+                  : (darkToday ? '0 12px 32px rgba(28,25,23,0.18)' : '0 1px 2px rgba(0,0,0,0.02)'),
+                // lift above the dim layer so it reads as spotlit (and stays tappable)
+                position: spot ? 'relative' : undefined,
+                zIndex: spot ? 50 : undefined,
+                transition: 'box-shadow .25s ease',
               }}>
                 <div style={{
                   width: 44, minWidth: 44, height: 48, borderRadius: 12, flexShrink: 0,
@@ -376,14 +413,61 @@ export default function WeekPlanScreen({ go, state, set }: ScreenProps) {
 
       {/* sticky save button */}
       <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        zIndex: tourStep === 2 ? 50 : 40,   // above the dim layer when spotlit
         padding: '12px 22px 28px',
         background: 'linear-gradient(to top, var(--bg) 70%, transparent)',
       }}>
-        <button className="v-btn-primary v-tap" onClick={() => { commitWeek(week); go('home'); }}>
-          Save plan
+        <button className="v-btn-primary v-tap"
+          onClick={() => { commitWeek(week); set && set({ planIntro: undefined }); go('home'); }}
+          style={tourStep === 2 ? { boxShadow: '0 0 0 3px var(--saffron)' } : undefined}>
+          {t('weekPlan.save')}
         </button>
       </div>
+
+      {/* Guided walkthrough — dim layer stays click-through so the student can
+          actually tap the spotlit day; card clears the sticky save bar. */}
+      {tourStep !== null && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 49, pointerEvents: 'none', background: 'rgba(28,25,23,0.18)' }} />
+          <div style={{
+            position: 'fixed', bottom: 100, left: 14, right: 14, zIndex: 60,
+            background: 'var(--ink)', borderRadius: 24, padding: '18px 18px 16px',
+            boxShadow: '0 24px 56px rgba(0,0,0,0.45)',
+            animation: 'vSheetUp 0.4s cubic-bezier(.16,1,.3,1) both',
+          }}>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <VidyaAvatar size={44} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'Inter', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--saffron)', marginBottom: 4 }}>
+                  {t('weekPlan.tour.stepOf', { n: tourStep + 1 })}
+                </div>
+                <div style={{ fontFamily: "'Quicksand','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 6 }}>
+                  {tourCopy(tourStep).title}
+                </div>
+                <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, marginBottom: 16 }}>
+                  {tourCopy(tourStep).body}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <button className="v-tap" onClick={endTour} style={{ background: 'transparent', border: 'none', fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.28)', cursor: 'default', padding: 0 }}>
+                    {t('weekPlan.tour.skip')}
+                  </button>
+                  <button className="v-tap"
+                    onClick={() => (tourStep < TOUR_STEPS - 1 ? setTourStep(tourStep + 1) : endTour())}
+                    style={{ background: 'var(--saffron)', border: 'none', borderRadius: 999, padding: '9px 18px', fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'default' }}>
+                    {tourCopy(tourStep).cta}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginTop: 14 }}>
+              {Array.from({ length: TOUR_STEPS }, (_, i) => (
+                <div key={i} style={{ height: 4, borderRadius: 9999, background: i === tourStep ? 'var(--saffron)' : 'rgba(255,255,255,0.18)', width: i === tourStep ? 20 : 6, transition: 'width 0.3s ease' }} />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       {sheetIdx !== null && (
         <TopicPickerSheet
