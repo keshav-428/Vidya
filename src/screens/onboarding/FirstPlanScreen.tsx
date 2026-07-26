@@ -12,7 +12,7 @@ interface PlanTopic {
 }
 
 const ALL_TOPICS: PlanTopic[] = [
-  { id: 'fractions', title: 'Fractions', sub: 'Understanding parts of a whole', reason: 'Suggested from your diagnostic' },
+  { id: 'fractions', title: 'Fractions', sub: 'Understanding parts of a whole', reason: 'Suggested from your warm-up' },
   { id: 'decimals', title: 'Decimals', sub: 'Place value and tenths', reason: 'Builds on what you know' },
   { id: 'integers', title: 'Integers', sub: 'Positives, negatives, and zero', reason: 'You answered most of these right' },
   { id: 'algebra', title: 'Linear equations', sub: 'Finding the unknown', reason: 'A bit of a stretch — challenge mode' },

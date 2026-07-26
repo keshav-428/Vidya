@@ -52,15 +52,15 @@
     "testsSub": "I have a test coming up"
   },
   "diagIntro": {
-    "eyebrow": "Let's find where to begin",
-    "title": "Hi {{name}}.\nLet's find your level.",
-    "subtitle": "A quick check so Vidya knows exactly where to begin.",
+    "eyebrow": "Let's warm up",
+    "title": "Hi {{name}}.\nLet's see where to begin.",
+    "subtitle": "A few quick questions so Vidya knows exactly where to start.",
     "recommended": "RECOMMENDED",
-    "diagnosticTitle": "Take the diagnostic",
-    "diagnosticDesc": "About 10 quick questions across key topics. Vidya pinpoints where you're strong and where to begin.",
+    "diagnosticTitle": "Start with a warm-up",
+    "diagnosticDesc": "About 10 quick questions across key topics. No marks, no pressure — Vidya just finds where you're strong and where to begin.",
     "coversAll": "Key topics",
     "duration": "~5 min",
-    "startDiagnostic": "Start diagnostic",
+    "startDiagnostic": "Start warm-up",
     "ownTitle": "I'll build my own plan",
     "ownSub": "Skip the questions — pick your chapters yourself",
     "footnote": "No marks, no timer. You can change your plan anytime."

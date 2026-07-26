@@ -41,7 +41,7 @@
     "pauseNote": "You can pause anytime. Vidya will remember where you left off.",
     "startLearning": "Start Learning",
     "weekPlanReady": "Your week plan is ready!",
-    "weekPlanBody": "I've mapped out your first week based on your diagnostic. It takes 15 minutes a day.",
+    "weekPlanBody": "I've mapped out your first week based on your warm-up. It takes 15 minutes a day.",
     "seeWeekPlan": "See my week plan",
     "startTodayFirst": "Start today first"
   },
@@ -99,7 +99,7 @@
     "skip": "Skip",
     "questionOf": "Question {{value}} of {{total}}",
     "adapting": "Made for your class",
-    "building": "Vidya is preparing your diagnostic…",
+    "building": "Vidya is getting your warm-up ready…",
     "gotItLast": "Got it. Last one done.",
     "gotItNext": "Got it. Next one coming up.",
     "finish": "Finish",
@@ -134,7 +134,7 @@
     "createAccount": "Create account"
   },
   "diagSummary": {
-    "eyebrow": "Diagnostic Summary",
+    "eyebrow": "What your warm-up showed",
     "title": "Here's what we found",
     "sub": "Based on your answers, we identified some areas to focus on:",
     "weakHeader": "Areas to strengthen",
