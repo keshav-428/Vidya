@@ -45,13 +45,8 @@ export default function GoalScreen({ go, state, set }: ScreenProps) {
   const rawGoal = state.goal as string | string[] | undefined;
   const goals: string[] = Array.isArray(rawGoal) ? rawGoal : rawGoal ? [rawGoal] : [];
   const toggle = (id: string) => {
-    let next: string[];
-    if (id === 'unsure') {
-      next = goals.includes('unsure') ? [] : ['unsure'];
-    } else {
-      const without = goals.filter((g) => g !== 'unsure' && g !== id);
-      next = goals.includes(id) ? without : [...without, id];
-    }
+    const without = goals.filter((g) => g !== id);
+    const next = goals.includes(id) ? without : [...without, id];
     set({ goal: next as unknown as string });
   };
   return (
@@ -69,8 +64,7 @@ export default function GoalScreen({ go, state, set }: ScreenProps) {
         {[
           { id: 'understand', label: t('goal.understand'), sub: t('goal.understandSub') },
           { id: 'practice', label: t('goal.practice'), sub: t('goal.practiceSub') },
-          { id: 'tests', label: t('goal.tests'), sub: t('goal.testsSub') },
-          { id: 'unsure', label: t('goal.unsure'), sub: t('goal.unsureSub') }
+          { id: 'tests', label: t('goal.tests'), sub: t('goal.testsSub') }
         ].map((o) =>
           <VOptionButton key={o.id} label={o.label} sub={o.sub} multi
             selected={goals.includes(o.id)}

@@ -49,9 +49,7 @@
     "practice": "Practice better",
     "practiceSub": "I want more questions to try",
     "tests": "Prepare for tests",
-    "testsSub": "I have a test coming up",
-    "unsure": "I'm not sure",
-    "unsureSub": "Let Vidya decide for me"
+    "testsSub": "I have a test coming up"
   },
   "diagIntro": {
     "eyebrow": "Let's find where to begin",
