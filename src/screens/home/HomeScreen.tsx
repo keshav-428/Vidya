@@ -81,6 +81,31 @@ function buildWeekBannerData(startTopicId: string, savedWeekPlan: unknown, chapt
 
 const COACH_STEP_KEYS = ['coach.step1', 'coach.step2'];
 
+// ── Quick help icon tiles ────────────────────────────────────
+//  One geometry and one weight for every row — only the hue changes — so the
+//  group reads as a set. Tints with a hairline ring rather than saturated fills
+//  with white glyphs: at 38px a solid block of colour shouts, and shouting is
+//  what made these look like stickers.
+const QUICK_HUES = {
+  indigo:     { bg: 'var(--indigo-air)', fg: 'var(--indigo)', ring: 'rgba(56,72,168,0.13)' },
+  terracotta: { bg: '#FBEFE8',           fg: '#C2410C',       ring: 'rgba(194,65,12,0.13)' },
+  clay:       { bg: '#F7EFEC',           fg: '#9F5A4A',       ring: 'rgba(159,90,74,0.15)' },
+  amber:      { bg: '#FCF4E6',           fg: '#B45309',       ring: 'rgba(180,83,9,0.13)' },
+} as const;
+
+function QuickTile({ icon, hue }: { icon: string; hue: keyof typeof QUICK_HUES }) {
+  const h = QUICK_HUES[hue];
+  return (
+    <div style={{
+      width: 38, height: 38, borderRadius: 12, background: h.bg,
+      border: `1px solid ${h.ring}`, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', flexShrink: 0,
+    }}>
+      <VIcon name={icon} size={17} color={h.fg} strokeWidth={1.5} />
+    </div>
+  );
+}
+
 interface CoachBubbleProps {
   step?: number;
   name?: string;
@@ -714,9 +739,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
 
           <div className="v-tap" onClick={() => setNotesOpen(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
-            <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="book" size={17} color="var(--indigo)" />
-            </div>
+            <QuickTile icon="notes" hue="indigo" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('learn:notes.cardTitle')}</div>
               <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('learn:notes.cardSub')}</div>
@@ -726,9 +749,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
 
           <div className="v-tap" onClick={() => go('homework')}
             style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
-            <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <VIcon name="camera" size={17} color="#fff" />
-            </div>
+            <QuickTile icon="scan" hue="terracotta" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('quick.hwTitle')}</div>
               <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('quick.hwSub')}</div>
@@ -739,9 +760,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           {retries.length > 0 && (
             <div className="v-tap" onClick={startRetry}
               style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
-              <div style={{ width: 38, height: 38, borderRadius: 11, background: '#FFF3EA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <VIcon name="target" size={17} color="var(--saffron)" />
-              </div>
+              <QuickTile icon="target" hue="clay" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('quick.retryTitle')}</div>
                 <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)' }}>{t('quick.retrySub', { count: retries.length })}</div>
@@ -753,9 +772,7 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
           <div style={{ marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden' }}>
             <div className="v-tap" onClick={openTrick}
               style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px' }}>
-              <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--indigo-air)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <VIcon name="zap" size={17} color="var(--indigo)" />
-              </div>
+              <QuickTile icon="bulb" hue="amber" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('quick.trickTitle')}</div>
                 <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

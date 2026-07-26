@@ -60,6 +60,14 @@ const VIcon = ({ name, size = 20, color = 'currentColor', strokeWidth = 1.6 }: V
     case 'calendar':    return <svg {...props}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
     case 'mic':         return <svg {...props}><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>;
     case 'trending-up': return <svg {...props}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
+
+    // Quick help marks. Each says the specific thing its card does, rather than
+    // borrowing a generic object: a written-on page, a page being captured, an
+    // idea. Drawn on the same 24 grid and the same stroke weight as the set.
+    case 'notes':       return <svg {...props}><path d="M13.2 3H7.4A2 2 0 0 0 5.4 5v14A2 2 0 0 0 7.4 21h9.2a2 2 0 0 0 2-2V8.4z"/><path d="M13.2 3v5.4h5.4"/><line x1="8.8" y1="12.8" x2="15" y2="12.8"/><line x1="8.8" y1="16.2" x2="13" y2="16.2"/></svg>;
+    case 'scan':        return <svg {...props}><path d="M4 8.6V6.4A2.4 2.4 0 0 1 6.4 4h2.2"/><path d="M15.4 4h2.2A2.4 2.4 0 0 1 20 6.4v2.2"/><path d="M20 15.4v2.2a2.4 2.4 0 0 1-2.4 2.4h-2.2"/><path d="M8.6 20H6.4A2.4 2.4 0 0 1 4 17.6v-2.2"/><line x1="8.6" y1="10.4" x2="15.4" y2="10.4"/><line x1="8.6" y1="13.6" x2="13.2" y2="13.6"/></svg>;
+    case 'bulb':        return <svg {...props}><path d="M12 3.2a5.6 5.6 0 0 0-3.4 10.05c.56.44.92 1.05 1.02 1.75h4.76c.1-.7.46-1.31 1.02-1.75A5.6 5.6 0 0 0 12 3.2z"/><line x1="9.7" y1="18.1" x2="14.3" y2="18.1"/><line x1="10.7" y1="20.7" x2="13.3" y2="20.7"/></svg>;
+
     default: return null;
   }
 };
