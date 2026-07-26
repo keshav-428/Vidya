@@ -206,6 +206,14 @@ export interface AdaptiveLesson {
   spot_mistakes: SpotMistake[];
 }
 
+// ── Chapter cheat sheet (screenshot before the test) ─────────
+export interface CheatSheet {
+  title?: string;
+  rules?: { name: string; rule: string }[];
+  tricks?: { trick: string; why?: string }[];
+  traps?: { mistake: string; fix: string }[];
+}
+
 // ── Homework help (photograph the page, get nudged) ──────────
 export interface HomeworkQuestion {
   number?: string;

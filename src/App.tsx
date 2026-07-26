@@ -41,6 +41,7 @@ import LearnScreen         from './screens/learn/LearnScreen';
 import ConceptScreen       from './screens/learn/ConceptScreen';
 import ChapterTopicsScreen from './screens/learn/ChapterTopicsScreen';
 import HomeworkScreen      from './screens/learn/HomeworkScreen';
+import CheatSheetScreen    from './screens/learn/CheatSheetScreen';
 
 // ─── Screen imports — Quiz ────────────────────────────────────
 import QuizLoadingScreen        from './screens/quiz/QuizLoadingScreen';
@@ -251,6 +252,7 @@ function AppInner() {
           <Route path="/learn/chapter"          element={<ChapterTopicsScreen go={go} state={state} set={set} />} />
           <Route path="/learn/concept"          element={<ConceptScreen       go={go} state={state} set={set} />} />
           <Route path="/homework"               element={<HomeworkScreen      go={go} state={state} set={set} />} />
+          <Route path="/learn/sheet"            element={<CheatSheetScreen    go={go} state={state} set={set} />} />
 
           {/* Quiz */}
           <Route path="/quiz/loading/1"         element={<QuizLoadingScreen   go={go} state={state} set={set} frame={1} />} />

@@ -376,3 +376,53 @@ Strictly return ONLY the JSON object."""
     qs = [q for q in (data.get("questions") or []) if q.get("question")]
     data["questions"] = qs[:8]
     return data
+
+
+def generate_sheet(topic: str, grade: int = 6, language: str = "English",
+                   chapter_id: str = None):
+    """A one-screen cheat sheet for a whole chapter: the rules worth memorising,
+    the shortcuts, and the traps that cost marks. Built to be screenshotted the
+    night before a test, so everything is short and scannable.
+
+    Returns: { title, rules: [{name, rule}], tricks: [{trick, why}], traps: [{mistake, fix}] }
+    """
+    try:
+        context = rag_service.retrieve_context(topic, grade=grade, top_k=8, chapter_id=chapter_id)
+    except Exception:
+        context = []
+    context_text = "\n\n".join([c.get("content", "") for c in context]) if context else ""
+
+    prompt = f"""You are Vidya, a maths teacher for a CBSE Class {grade} student (age 11-14).
+Make a ONE-SCREEN cheat sheet for the chapter "{topic}" — the kind a student screenshots
+the night before a test.
+
+LANGUAGE for every text value: {lang_instruction(language)}
+
+{STYLE_GUIDE}
+
+NCERT context for this chapter (base the sheet on it):
+\"\"\"{context_text}\"\"\"
+
+RULES:
+- Everything must fit on a phone screen, so keep every line SHORT — a phrase, not a sentence.
+- "rules" are the things genuinely worth memorising for this chapter: formulas, definitions,
+  properties. Use plain symbols a student would write by hand.
+- "tricks" are real shortcuts, each with a very short reason it works — never a rule that only
+  works sometimes unless you state the condition.
+- "traps" are the mistakes that actually cost marks in this chapter, each with the fix.
+- Only include what belongs to THIS chapter. Accuracy matters more than completeness.
+
+Return ONLY valid JSON:
+{{
+  "title": "the chapter name",
+  "rules":  [{{"name": "2-5 word label", "rule": "the formula or rule, very short"}}],
+  "tricks": [{{"trick": "the shortcut, one line", "why": "why it works, one short phrase"}}],
+  "traps":  [{{"mistake": "what students get wrong, one line", "fix": "what to do instead, one line"}}]
+}}
+Give 4-6 rules, 2-3 tricks and 3 traps. Strictly return ONLY the JSON object."""
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL, contents=prompt,
+        config={"response_mime_type": "application/json"},
+    )
+    return json.loads(response.text)

@@ -80,5 +80,17 @@
     "stillStuck": "Still stuck? →",
     "showMeHow": "Show me how →",
     "another": "Do another page"
+  },
+  "sheet": {
+    "topbar": "Cheat sheet",
+    "eyebrow": "CHAPTER {{num}} · CHEAT SHEET",
+    "screenshotHint": "Screenshot this before your test",
+    "building": "Putting together your {{chapter}} cheat sheet…",
+    "failed": "Couldn't build the sheet just now. Try again in a bit.",
+    "rules": "MUST-KNOW RULES",
+    "tricks": "SHORTCUTS",
+    "traps": "MARKS TRAPS",
+    "cardTitle": "Cheat sheet",
+    "cardSub": "Rules, shortcuts and traps — on one screen"
   }
 }
