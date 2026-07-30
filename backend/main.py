@@ -471,6 +471,26 @@ async def homework_help_endpoint(request: HomeworkRequest):
         print(f"Error in /homework-help: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+class RevisionRequest(BaseModel):
+    subtopics: list                  # [{num, title}] — drives whole-chapter coverage
+    grade: int = 6
+    language: str = "English"
+    chapter_id: Optional[str] = None
+    per_topic: int = 2
+    exclude: Optional[list] = None   # questions already asked (for the top-up call)
+
+@app.post("/generate-revision")
+async def generate_revision_endpoint(request: RevisionRequest):
+    try:
+        return quiz_service.generate_revision(
+            request.subtopics, request.grade, request.language,
+            chapter_id=request.chapter_id, per_topic=request.per_topic,
+            exclude=request.exclude,
+        )
+    except Exception as e:
+        print(f"Error in /generate-revision: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/generate-notes")
 async def generate_notes_endpoint(request: NotesRequest):
     try:

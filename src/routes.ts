@@ -47,6 +47,7 @@ export const SCREEN_ROUTES = {
   'exam-eval-loading': '/exam/eval-loading',
   'exam-eval-results': '/exam/eval-results',
   'exam-detail': '/exam/detail',
+  'revision-run': '/revise/chapter',
   'session-analysis': '/session-analysis',
   'progress': '/progress',
   'topic-mastery': '/progress/topic-mastery',

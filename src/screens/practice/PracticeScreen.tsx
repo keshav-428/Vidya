@@ -119,7 +119,21 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
   // A single selected subtopic → hard-scoped retrieval (chapterId + section).
   const singleScope = () => (sel.length === 1 ? { chapterId: sel[0].chapterId, section: sel[0].section } : null);
 
+  // Enough subtopics from ONE chapter that a 9-question quiz couldn't cover them:
+  // that's a revision run, which guarantees questions for every one.
+  const revisionScope = () => {
+    if (sel.length < 4) return null;
+    const ids = new Set(sel.map((s) => s.chapterId));
+    return ids.size === 1 && sel.every((s) => s.section) ? sel[0].chapterId : null;
+  };
+
   const startQuiz = () => {
+    const revise = revisionScope();
+    if (revise) {
+      set && set({ chapterId: revise, revisionSel: sel, quizScope: null, practiceTopics: null, skillId: null });
+      go('revision-run');
+      return;
+    }
     const scope = singleScope();
     if (scope) set && set({ quizScope: { ...scope, topic: sel[0].title }, skillId: null });
     // Multi-topic: pass the full selection too, so each question's result can

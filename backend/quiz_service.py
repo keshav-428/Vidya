@@ -1,6 +1,7 @@
 import os
 import random
 import json
+from concurrent.futures import ThreadPoolExecutor
 from google import genai
 from database import get_db
 from dotenv import load_dotenv
@@ -349,6 +350,146 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
             }
             for i in range(5)
         ]
+
+
+# ─────────────────────────────────────────────────────────────
+#  Revision runs — "clear the whole chapter, topic by topic".
+#
+#  A 9-question quiz cannot revise an 11-topic chapter: measured on Number Play
+#  (12 subtopics) the generator left 3 subtopics with no question at all, and the
+#  student only answers 5-9 of the 9. So here coverage is guaranteed per SUBTOPIC
+#  — every one gets its own questions, retrieved under its own section scope —
+#  and the questions are generated in parallel batches so a 12-topic chapter
+#  costs about what a 3-topic one does.
+# ─────────────────────────────────────────────────────────────
+
+_REV_BATCH = 2        # subtopics per LLM call
+_REV_WORKERS = 8      # every batch of a 16-subtopic chapter runs at once
+
+
+def _revision_batch(subs: list, grade: int, language: str, chapter_id: str,
+                    per_topic: int, exclude: list = None, sec_ctx: dict = None):
+    """Questions for one batch of subtopics, `per_topic` each.
+
+    `sec_ctx` is the chapter's text grouped by section, read once for the whole
+    run — retrieving per subtopic here meant one query embedding and one
+    chapter-wide Firestore read per subtopic, which dominated the wall clock.
+    """
+    blocks = []
+    for s in subs:
+        text = (sec_ctx or {}).get(str(s.get('num')), '')
+        if text:
+            blocks.append(f"--- {s.get('num')} {s.get('title')} ---\n{text}")
+    context_text = "\n\n".join(blocks)
+
+    listing = "\n".join([f'- section "{s.get("num")}": {s.get("title")}' for s in subs])
+    avoid = ""
+    if exclude:
+        avoid = ("\nThe student has already been asked these — ask something DIFFERENT:\n"
+                 + "\n".join([f"- {q}" for q in exclude[:8]]) + "\n")
+
+    prompt = f"""You are an expert Maths teacher for NCERT Class {grade}.
+The student is REVISING a chapter one subtopic at a time. Write {per_topic} questions for
+EACH of these subtopics — {len(subs) * per_topic} questions in total:
+{listing}
+
+LANGUAGE for every text value: {lang_instruction(language)}
+
+{STYLE_GUIDE}
+
+NCERT textbook content for these subtopics (base the questions on it):
+\"\"\"{context_text}\"\"\"
+{avoid}
+RULES:
+- Exactly {per_topic} questions for EVERY subtopic listed. Never skip one, never merge two.
+- Set "section" to that subtopic's section number, exactly as quoted above (like "3.4"),
+  and "topic" to its title, verbatim. The student is shown which subtopic they are on, so
+  a question tagged with the wrong subtopic is worse than no question.
+- Each question must test THAT subtopic specifically — not the chapter in general.
+- Give the {per_topic} questions for a subtopic DIFFERENT difficulties: the first should be
+  answerable by anyone who studied it, the later ones a step harder.
+- Vary the formats across subtopics so a run does not feel like one long MCQ.
+
+QUESTION FORMATS — use a spread of these:
+{FORMAT_SPECS}
+
+Every question also needs "topic", "section", "difficulty" (easy/medium/hard),
+"explanation" (one or two short sentences, shown after answering) and "hint"
+(a strategy nudge that never gives the answer away).
+
+Return ONLY a JSON array of question objects.
+"""
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL, contents=prompt,
+        config={'response_mime_type': 'application/json'},
+    )
+    items = json.loads(response.text)
+    if isinstance(items, dict):
+        items = items.get("questions") or []
+    return [it for it in items if isinstance(items, list) and _valid_item(it)]
+
+
+def generate_revision(subtopics: list, grade: int = 6, language: str = "English",
+                      chapter_id: str = None, per_topic: int = 2, exclude: list = None):
+    """Questions for a revision run: `per_topic` for every subtopic given.
+
+    `subtopics` is [{num, title}] straight from the client's syllabus — it is what
+    guarantees the run covers the whole chapter instead of whichever subtopics the
+    model happened to favour.
+
+    Also used for the on-demand top-up when a student misses a topic and needs
+    more questions on it: pass that one subtopic and the questions already asked.
+
+    Returns: {"questions": [...]} each tagged with its "section" and "topic".
+    """
+    subs = [s for s in (subtopics or []) if (s or {}).get("title")][:16]
+    if not subs:
+        return {"questions": []}
+
+    # One chapter-wide read for the whole run, grouped by section.
+    sec_ctx = {}
+    if chapter_id:
+        try:
+            import rag_service
+            sec_ctx = rag_service.chapter_context_by_section(grade, chapter_id, char_cap=4000)
+        except Exception as e:
+            print(f"Warning: revision context read failed for {chapter_id}: {e}")
+
+    batches = [subs[i:i + _REV_BATCH] for i in range(0, len(subs), _REV_BATCH)]
+    out = []
+    with ThreadPoolExecutor(max_workers=_REV_WORKERS) as pool:
+        futures = [pool.submit(_revision_batch, b, grade, language, chapter_id, per_topic, exclude, sec_ctx)
+                   for b in batches]
+        for f in futures:
+            try:
+                out.extend(f.result())
+            except Exception as e:
+                print(f"Warning: revision batch failed for {chapter_id}: {e}")
+
+    # A subtopic with no questions is a hole in the revision, so re-ask for exactly
+    # those. One retry: past that, the client shows the topic as not covered rather
+    # than pretending it was.
+    by_section = {}
+    for it in out:
+        by_section.setdefault(str(it.get("section") or ""), []).append(it)
+    missing = [s for s in subs if len(by_section.get(str(s.get("num")), [])) < per_topic]
+    if missing:
+        print(f"Revision run: repairing {len(missing)} subtopic(s) for {chapter_id}")
+        with ThreadPoolExecutor(max_workers=_REV_WORKERS) as pool:
+            futures = [pool.submit(_revision_batch, [m], grade, language, chapter_id, per_topic, exclude, sec_ctx)
+                       for m in missing]
+            for f in futures:
+                try:
+                    out.extend(f.result())
+                except Exception as e:
+                    print(f"Warning: revision repair failed for {chapter_id}: {e}")
+
+    for i, it in enumerate(out):
+        it["id"] = i + 1
+        it.setdefault("format", "mcq")
+    return {"questions": out}
+
 
 def generate_paper(topics: list, grade: int, total_marks: int = 40, language: str = "English", difficulty: str = "Medium", chapter_id: str = None, section: str = None):
     """

@@ -42,6 +42,7 @@ import ConceptScreen       from './screens/learn/ConceptScreen';
 import ChapterTopicsScreen from './screens/learn/ChapterTopicsScreen';
 import HomeworkScreen      from './screens/learn/HomeworkScreen';
 import ChapterNotesScreen  from './screens/learn/ChapterNotesScreen';
+import RevisionRunScreen   from './screens/quiz/RevisionRunScreen';
 
 // ─── Screen imports — Quiz ────────────────────────────────────
 import QuizLoadingScreen        from './screens/quiz/QuizLoadingScreen';
@@ -81,6 +82,7 @@ const PERSIST_KEYS: (keyof AppState)[] = [
   'name', 'class', 'subject', 'goal', 'language', 'role',
   'diagLevel', 'diagChapters', 'conceptLayout', 'skillId',
   'activityLog', 'mastery', 'masteryMigrated', 'masteryLearnedFixed', 'guestSessions',
+  'revisionRun',
 ];
 
 const DEFAULT_STATE: AppState = { name: 'Arjun', conceptLayout: 'cards' };
@@ -253,6 +255,7 @@ function AppInner() {
           <Route path="/learn/concept"          element={<ConceptScreen       go={go} state={state} set={set} />} />
           <Route path="/homework"               element={<HomeworkScreen      go={go} state={state} set={set} />} />
           <Route path="/notes"                  element={<ChapterNotesScreen  go={go} state={state} set={set} />} />
+          <Route path="/revise/chapter"         element={<RevisionRunScreen   go={go} state={state} set={set} />} />
 
           {/* Quiz */}
           <Route path="/quiz/loading/1"         element={<QuizLoadingScreen   go={go} state={state} set={set} frame={1} />} />

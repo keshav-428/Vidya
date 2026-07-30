@@ -65,6 +65,11 @@ export interface AppState {
   masteryMigrated?: boolean;      // one-time seed from legacy activityLog done
   masteryLearnedFixed?: boolean;  // one-time strip of load-time 'learned' flags done
   lastMasteryDelta?: MasteryDelta;
+  /** An in-progress chapter revision run. Persisted, because clearing a
+   *  12-subtopic chapter is more than one sitting. See src/lib/revisionRun.ts. */
+  revisionRun?: import('./lib/revisionRun').RunState | null;
+  /** Subtopics a revision run should cover (one chapter). Absent ⇒ the whole chapter. */
+  revisionSel?: PracticeSelection[] | null;
   /** Was the last quiz today's session quiz (vs practice / mastery-map)? */
   lastQuizWasSession?: boolean;
   askedConcept?: string | null;
@@ -121,10 +126,11 @@ export type IconName =
   | 'sparkles' | 'flame' | 'book' | 'home' | 'compass' | 'chart'
   | 'user' | 'menu' | 'search' | 'bell' | 'camera' | 'upload'
   | 'clock' | 'edit' | 'play' | 'lock' | 'eye' | 'lightbulb'
-  | 'target' | 'zap' | 'star' | 'plus' | 'pencil' | 'feather'
+  | 'target' | 'zap' | 'star' | 'star-fill' | 'plus' | 'pencil' | 'feather'
   | 'send' | 'heart' | 'heart-fill' | 'more' | 'thumbs-up'
   | 'thumbs-down' | 'skip' | 'help' | 'logout' | 'shield'
-  | 'globe' | 'calendar' | 'mic' | 'trending-up';
+  | 'globe' | 'calendar' | 'mic' | 'trending-up'
+  | 'notes' | 'scan' | 'bulb';
 
 // ═══ 1b. Progress / activity tracking ════════════════════════
 
@@ -295,6 +301,8 @@ export interface QuizQuestion {
   explanation?: string;
   /** Which of the requested topics this question tests (verbatim topic string). */
   topic?: string;
+  /** The subtopic (syllabus section num) this question was written for. */
+  section?: string;
   /** Difficulty tier in the adaptive pool. */
   difficulty?: 'easy' | 'medium' | 'hard';
   /** One strategy nudge (never the answer). */

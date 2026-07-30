@@ -85,6 +85,26 @@ export const generateQuiz = ({
     section,
   }).then((d) => d.quiz || []);
 
+// ── Revision run: questions for EVERY subtopic of a chapter ──
+//  Also used for the top-up when a student misses a topic and needs more
+//  questions on it: pass that one subtopic plus what's already been asked.
+export const generateRevision = ({
+  subtopics,
+  grade = 6,
+  language = 'English',
+  chapterId = null,
+  perTopic = 2,
+  exclude = null,
+}: {
+  subtopics: { num: string; title: string }[];
+  grade?: number; language?: Language; chapterId?: string | null;
+  perTopic?: number; exclude?: string[] | null;
+}): Promise<QuizQuestion[]> =>
+  post<{ questions?: QuizQuestion[] }>('/generate-revision', {
+    subtopics, grade, language, chapter_id: chapterId,
+    per_topic: perTopic, exclude,
+  }).then((d) => d.questions || []);
+
 // ── Onboarding diagnostic (placement, tuned to class + goal) ──
 export interface DiagnosticQ { area: string; prompt: string; options: string[]; correct_index: number; subtopic?: string; }
 export interface GenerateDiagnosticArgs {
@@ -405,6 +425,7 @@ export default {
   getMastery,
   saveMastery,
   generateQuiz,
+  generateRevision,
   generateDiagnostic,
   explainMistake,
   quizFeedback,

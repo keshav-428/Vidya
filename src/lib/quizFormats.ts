@@ -19,6 +19,10 @@ interface Base {
   q: string;
   explanation: string;
   topic?: string;
+  /** Syllabus section number ("3.4") when the question was generated for one
+   *  specific subtopic. A revision run routes questions by this, so dropping it
+   *  here would leave the run unable to find any question for its topic. */
+  section?: string;
   difficulty: 'easy' | 'medium' | 'hard';
   hint?: string;
 }
@@ -227,6 +231,7 @@ export function parseQuestion(raw: Record<string, unknown>, id: number): Questio
     q: isStr(raw.question) ? String(raw.question).trim() : '',
     explanation: isStr(raw.explanation) ? String(raw.explanation).trim() : '',
     topic: isStr(raw.topic) ? String(raw.topic).trim() : undefined,
+    section: isStr(raw.section) ? String(raw.section).trim() : undefined,
     difficulty: (raw.difficulty === 'easy' || raw.difficulty === 'hard' ? raw.difficulty : 'medium') as Base['difficulty'],
     hint: isStr(raw.hint) ? String(raw.hint).trim() : undefined,
   };

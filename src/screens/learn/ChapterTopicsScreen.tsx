@@ -4,6 +4,7 @@ import VIcon from '../../prototype/icons';
 import { VTopBar, VBottomNav, VProfileChip } from '../../prototype/shared';
 import { classChapters, chapterByIdC } from '../../content/syllabus';
 import { chapterMastery, levelFor, skillKey, type MasteryLevel } from '../../lib/mastery';
+import { isRunComplete, type RunState } from '../../lib/revisionRun';
 import api from '../../api/vidya';
 import type { ScreenProps, AppState, MasteryMap } from '../../types';
 
@@ -19,11 +20,17 @@ const LEVEL_COLOR: Record<MasteryLevel, string> = {
 };
 
 export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
-  const { t } = useTranslation(['learn', 'common']);
+  const { t } = useTranslation(['learn', 'common', 'quiz']);
   const cls = api.toGrade(state?.classLevel);
   const chapter = chapterByIdC(cls, state?.chapterId as string) || classChapters(cls)[0];
   const map = (state?.mastery as MasteryMap) || {};
   const cm = chapterMastery(map, chapter);
+  // A revision run left half-finished for THIS chapter — offer to carry on
+  // rather than silently starting it over.
+  const savedRun = state?.revisionRun as RunState | null | undefined;
+  const resumeLeft = savedRun && savedRun.chapterId === chapter.id && !isRunComplete(savedRun)
+    ? savedRun.topics.length - savedRun.index
+    : null;
 
   // Opening a topic scopes the lesson to this chapter+section.
   const openTopic = (subtopicTitle: string, section: string) => {
@@ -73,6 +80,27 @@ export default function ChapterTopicsScreen({ go, set, state }: ScreenProps) {
               {t(`common:levels.${cm.level}`)}
             </div>
           </div>
+        </div>
+
+        {/* Revise the whole chapter — the one place a student can check EVERY
+            subtopic. A 5-question quiz can't cover a chapter this size, so this
+            walks them topic by topic and can be stopped and resumed. */}
+        <div className="v-tap" onClick={() => { set({ chapterId: chapter.id }); go('revision-run'); }}
+          style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 18, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--indigo-air)', border: '1px solid rgba(56,72,168,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <VIcon name="target" size={17} color="var(--indigo)" strokeWidth={1.5} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>
+              {t('quiz:revise.cardTitle')}
+            </div>
+            <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)' }}>
+              {resumeLeft !== null
+                ? t('quiz:revise.resumeSub', { count: resumeLeft })
+                : t('quiz:revise.cardSub', { count: chapter.subtopics.length })}
+            </div>
+          </div>
+          <VIcon name="arrow-right" size={15} color="var(--muted-2)" />
         </div>
 
         {/* The journey: every topic with your level */}
