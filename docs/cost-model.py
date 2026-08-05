@@ -133,6 +133,31 @@ INFRA_USD = {
 }
 infra_total = sum(INFRA_USD.values())
 
+# What a PRODUCTION setup at this scale actually needs: a staging environment,
+# backups, a WAF, error tracking, product analytics, CI and log retention. None
+# of it is optional at 10,000 users; all of it together is still noise next to
+# the model bill.
+INFRA_PROD_USD = {
+    "Cloud Run prod (2 vCPU/4 GiB, min-instance 1 for 14h/day)": 100,
+    "Cloud Run staging environment": 5,
+    "Cloud Run Job — nightly cache warming": 3,
+    "Cloudflare Pro (WAF, bot protection, analytics)": 25,
+    "Sentry Team (error tracking, 50k events)": 26,
+    "PostHog (product analytics, ~1.2M events)": 50,
+    "Cloud Logging retention (~100 GB beyond free)": 25,
+    "Uptime monitoring / alerting": 10,
+    "Transactional + product email": 20,
+    "GitHub Actions (private repo CI minutes)": 20,
+    "Artifact Registry (container images)": 5,
+    "Firestore storage (~5 GB with growth)": 0.90,
+    "Firestore backups: PITR + weekly export to GCS": 3,
+    "Firestore writes (~300k/mo mastery + activity sync)": 0.54,
+    "Secret Manager": 1,
+    "Firebase Auth (email/password, 10k MAU)": 0,   # no SMS OTP in use
+    "Domain, SSL, misc": 15,
+}
+infra_prod_total = sum(INFRA_PROD_USD.values())
+
 # (CO_LOCATED is defined above totals().)
 
 scenarios = [
@@ -143,7 +168,7 @@ scenarios = [
 
 for name, s in scenarios:
     var_user = s["llm_usd"] + s["firestore_usd"]
-    monthly = var_user * active + infra_total
+    monthly = var_user * active + infra_prod_total
     print(f"\n{name}")
     print(f"  variable cost / active user : {money(var_user)}")
     print(f"  variable total ({active:,.0f} users)  : {money(var_user * active)}")
@@ -153,11 +178,24 @@ for name, s in scenarios:
     print(f"  per ACTIVE user             : {money(monthly / active)}")
 
 print("\n" + "=" * 72)
-print("FIXED INFRA DETAIL (USD/month)")
+print("FIXED INFRA — LEAN (USD/month)")
 print("=" * 72)
 for k, v in INFRA_USD.items():
     print(f"  {k:58} ${v:>6.2f}  {money(v):>12}")
 print(f"  {'TOTAL':58} ${infra_total:>6.2f}  {money(infra_total):>12}")
+
+print("\n" + "=" * 72)
+print("FIXED INFRA — PRODUCTION (USD/month)")
+print("=" * 72)
+for k, v in INFRA_PROD_USD.items():
+    print(f"  {k:58} ${v:>6.2f}  {money(v):>12}")
+print(f"  {'TOTAL':58} ${infra_prod_total:>6.2f}  {money(infra_prod_total):>12}")
+print(f"\n  per signup (10,000 )        : {money(infra_prod_total/10_000)}")
+print(f"  per ACTIVE user ({active:,.0f})    : {money(infra_prod_total/active)}")
+print(f"  infra as share of Scenario A: "
+      f"{infra_prod_total/(totals(USAGE,0.0)['llm_usd']*active+infra_prod_total)*100:.1f}%")
+print(f"  infra as share of Scenario C: "
+      f"{infra_prod_total/(totals(USAGE,0.80,LITE_IN,LITE_OUT)['llm_usd']*active+infra_prod_total)*100:.1f}%")
 
 print("\n" + "=" * 72)
 print("SENSITIVITY — what if students are more active?")

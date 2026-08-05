@@ -11,13 +11,13 @@ At **10,000 signups** with **60% monthly active** (6,000 active students):
 
 | Scenario | Per active user / month | Per signup / month | Total / month |
 |---|---:|---:|---:|
-| **A. Today** — no caching, Gemini 3.5 Flash | **₹234** | ₹141 | **₹14.05 lakh** |
-| **B. + cache shared content** (80% hit) | ₹118 | ₹71 | ₹7.11 lakh |
-| **C. + Flash-Lite for routine generation** | **₹33** | ₹20 | **₹1.99 lakh** |
+| **A. Today** — no caching, Gemini 3.5 Flash | **₹238** | ₹143 | **₹14.27 lakh** |
+| **B. + cache shared content** (80% hit) | ₹122 | ₹73 | ₹7.33 lakh |
+| **C. + Flash-Lite for routine generation** | **₹37** | ₹22 | **₹2.21 lakh** |
 
-*(Infra figures assume the hosting in §9. On the previous Render + Vercel assumption, add ₹17,600/month.)*
+These include the **full production stack** in §9 — staging, backups, WAF, error tracking, analytics, CI and log retention — not a minimum viable one. Loading all of that in adds **₹4.91 per active student**: infra is 2.1% of the bill in Scenario A and 13.4% in Scenario C.
 
-**The headline: this is an LLM bill, not an infrastructure bill.** At today's usage the model accounts for **99.9%** of variable cost. Firestore is ₹0.19 per user per month. Every server, CDN and build pipeline together comes to **₹7,174/month** — about **₹0.72 per signup**.
+**The headline: this is an LLM bill, not an infrastructure bill.** The model is **97.9%** of the total in Scenario A. You can buy every upgrade worth having — a staging environment, a WAF, point-in-time backups, Sentry, PostHog, paid CI — and it moves the per-student number by about **₹5**. Under-provisioning infrastructure is not where this product is won.
 
 The gap between A and C is **₹12 lakh a month**, and none of it requires changing what a student experiences.
 
@@ -196,22 +196,37 @@ Cloud Run's economics depend on **concurrency** — one container handling many 
 
 **Fix the blocking first, then migrate.** In the other order you'd conclude Cloud Run is expensive.
 
-### Revised fixed infrastructure
+### Two tiers of infrastructure
 
-| Item | USD/mo | INR/mo |
-|---|---:|---:|
-| Cloud Run (2 vCPU / 4 GiB, ~8 busy h/day) | $45 | ₹4,284 |
-| Cloudflare Pages | $0 | ₹0 |
-| Cloud Logging (beyond free 50 GB) | $10 | ₹952 |
-| Artifact Registry + Cloud Build | $5 | ₹476 |
-| Domain, email, misc | $15 | ₹1,428 |
-| Firestore storage (~2 GB) | $0.36 | ₹34 |
-| Firebase Auth (10k MAU) | $0 | ₹0 |
-| **Total** | **$75** | **₹7,174** |
+**Lean** — what it takes to serve 10,000 users and nothing more: **₹7,174/month** (Cloud Run ₹4,284, Cloudflare Pages ₹0, logging ₹952, registry ₹476, domain ₹1,428, Firestore storage ₹34).
 
-Against the earlier Render + Vercel assumption (₹24,786) plus eliminated egress (₹5,484), that is **₹23,068/month — ₹2.77 lakh a year** — for a stack that also scales itself and is faster for Indian users.
+**Production** — what you should actually run at this scale. Every line is something you would be uncomfortable operating without:
 
-Fixed infra is now **0.5%** of the bill in Scenario A and 3.6% in Scenario C. Hosting is not where this product's money goes, which is precisely why it shouldn't cost ₹24,786 to find that out.
+| Item | USD/mo | INR/mo | Why |
+|---|---:|---:|---|
+| Cloud Run prod (2 vCPU/4 GiB, min-instance 1 for 14h/day) | $100 | ₹9,520 | No cold start during study hours |
+| Cloud Run staging | $5 | ₹476 | Test a prompt change before students see it |
+| Cloud Run Job — nightly cache warming | $3 | ₹286 | Keeps Lever 1 warm |
+| Cloudflare Pro | $25 | ₹2,380 | WAF + bot protection on a public signup form |
+| PostHog (~1.2M events) | $50 | ₹4,760 | The analytics that replace §5's assumptions |
+| Sentry Team | $26 | ₹2,475 | A silent generation failure is invisible otherwise |
+| Cloud Logging retention (~100 GB) | $25 | ₹2,380 | Debugging LLM output needs the logs |
+| Transactional + product email | $20 | ₹1,904 | Password resets, parent digests |
+| GitHub Actions (private CI) | $20 | ₹1,904 | |
+| Uptime monitoring / alerting | $10 | ₹952 | |
+| Artifact Registry | $5 | ₹476 | |
+| Firestore backups (PITR + weekly export) | $3 | ₹286 | Mastery data is not regenerable |
+| Firestore storage (~5 GB) + writes (~300k/mo) | $1.44 | ₹137 | |
+| Secret Manager | $1 | ₹95 | |
+| Domain, SSL, misc | $15 | ₹1,428 | |
+| Firebase Auth (email/password, 10k MAU) | $0 | ₹0 | Free below 50k MAU |
+| **Total** | **$309** | **₹29,459** | |
+
+**₹29,459/month is ₹2.95 per signup, ₹4.91 per active student.** Going from lean to fully-loaded production costs **₹3.71 per active student per month** — about 1.6% of today's bill.
+
+> **No SMS cost today.** Auth is email/password only (`src/auth/AuthContext.tsx`). If you add phone-OTP signup — common for Indian consumer apps — budget SMS per verification plus retries; at 10,000 signups that becomes a real line item, and it is charged on *signups*, including the ones that never become students.
+
+Against the earlier Render + Vercel assumption (₹24,786 + ₹5,484 egress), the lean stack saves **₹23,068/month**; even the full production stack saves **₹800/month** while adding staging, WAF, backups and observability.
 
 ## 10. Sensitivity
 
