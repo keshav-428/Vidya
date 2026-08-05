@@ -54,6 +54,8 @@ ACTIVE_RATIO = 0.60      # of 10,000 signups, how many are active in a month
 USERS = 10_000
 
 
+CO_LOCATED = True
+
 def totals(usage, cache_hit=0.0, in_rate=FLASH_IN, out_rate=FLASH_OUT, cached_rate=FLASH_CACHED_IN):
     """USD per active user per month. `cache_hit` is the share of SHARED content
     (notes, quiz pools, revision questions) served from a cache instead of the model."""
@@ -73,9 +75,10 @@ def totals(usage, cache_hit=0.0, in_rate=FLASH_IN, out_rate=FLASH_OUT, cached_ra
         llm += n_eff * (ti * in_rate + to * out_rate)
         fs_reads += reads * n_eff
         egress_gb += reads * n_eff * DOC_KB / 1e6
+    egress_cost = 0.0 if CO_LOCATED else egress_gb * EGRESS_GB
     return {
         "llm_usd": llm,
-        "firestore_usd": fs_reads * FS_READ + egress_gb * EGRESS_GB,
+        "firestore_usd": fs_reads * FS_READ + egress_cost,
         "fs_reads": fs_reads,
         "egress_gb": egress_gb,
         "calls": calls,
@@ -117,16 +120,20 @@ print("=" * 72)
 active = USERS * ACTIVE_RATIO
 
 # Fixed infra, independent of the model choice.
+# Recommended stack: Cloud Run co-located with Firestore + Vertex (kills egress
+# and cross-cloud latency) and Cloudflare Pages for the static SPA.
 INFRA_USD = {
-    "Render Pro web service (2 vCPU / 4 GB) x2 for redundancy": 85 * 2,
-    "Render workspace (Pro plan)": 25,
-    "Vercel Pro (frontend hosting + bandwidth)": 20,
+    "Cloud Run 2 vCPU/4 GiB, asia-south1, ~8 busy h/day": 45,
+    "Cloudflare Pages (static SPA, unlimited bandwidth)": 0,
+    "Cloud Logging (beyond the free 50 GB)": 10,
+    "Artifact Registry + Cloud Build": 5,
     "Firestore storage (KB 2.6k docs + 10k user states, ~2 GB)": 2 * FS_STORAGE_GB,
-    "Firebase Auth (10k MAU, beyond free tier)": 0,     # free below 50k MAU
-    "Logging / monitoring / error tracking": 30,
+    "Firebase Auth (10k MAU)": 0,          # free below 50k MAU
     "Domain, email, misc": 15,
 }
 infra_total = sum(INFRA_USD.values())
+
+# (CO_LOCATED is defined above totals().)
 
 scenarios = [
     ("A. Today — no caching, Flash", totals(USAGE, 0.0)),
