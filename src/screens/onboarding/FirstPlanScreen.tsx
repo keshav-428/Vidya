@@ -149,7 +149,7 @@ export default function FirstPlanScreen({ go, state, set }: ScreenProps) {
         </p>
 
         <div style={{ flex: 1, minHeight: 24 }} />
-        <button className="v-btn-primary v-tap" onClick={() => { if (state?.userId) { go('home-post-diag'); } else { set({ afterAuth: 'home-post-diag' }); go('save-progress'); } }}>
+        <button className="v-btn-primary v-tap" onClick={() => go('home-post-diag')}>
           {t('firstPlan.startLearning')} <VIcon name="arrow-right" size={14} color="#fff" />
         </button>
       </div>

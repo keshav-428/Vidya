@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar, VSoftBackdrop } from '../../prototype/shared';
+import { ONB_TOTAL_STEPS, onbStep } from '../../lib/features';
 import type { ScreenProps } from '../../types';
 
 interface OnbShellProps {
@@ -55,7 +56,7 @@ export default function NameScreen({ go, state, set }: ScreenProps) {
   };
   return (
     <OnbShell variant="warm" back={() => go('onb-goal')}
-      progress={{ value: 4, total: 4 }}
+      progress={{ value: onbStep(4), total: ONB_TOTAL_STEPS }}
       onPrimary={onContinue}
       primaryDisabled={!name.trim()}>
       <h1 className="v-h1 v-enter" style={{ fontSize: 30, marginBottom: 8, whiteSpace: 'pre-line' }}>

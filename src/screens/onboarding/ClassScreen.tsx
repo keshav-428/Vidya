@@ -4,6 +4,7 @@ import VIcon from '../../prototype/icons';
 import { VTopBar, VSoftBackdrop } from '../../prototype/shared';
 import { classChapters } from '../../content/syllabus';
 import api from '../../api/vidya';
+import { LANGUAGE_PICKER_ENABLED, ONB_TOTAL_STEPS, onbStep } from '../../lib/features';
 import type { ScreenProps } from '../../types';
 
 interface TileItem {
@@ -100,8 +101,10 @@ export default function ClassScreen({ go, state, set }: ScreenProps) {
   const topicCount = chapters.reduce((n, c) => n + c.subtopics.length, 0);
 
   return (
-    <OnbShell variant="cool" back={() => go('onb-language')}
-      progress={{ value: 2, total: 4 }}
+    // With the language step hidden this is the first onboarding screen, so
+    // there is nothing to go back to.
+    <OnbShell variant="cool" back={LANGUAGE_PICKER_ENABLED ? () => go('onb-language') : undefined}
+      progress={{ value: onbStep(2), total: ONB_TOTAL_STEPS }}
       onPrimary={() => { set({ subject: 'maths' }); go('onb-goal'); }}
       primaryDisabled={!state.classLevel}>
       <h1 className="v-h1 v-enter" style={{ fontSize: 30, marginBottom: 8, whiteSpace: 'pre-line' }}>

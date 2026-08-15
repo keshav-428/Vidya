@@ -54,13 +54,6 @@
     "startHere": "Start here",
     "upNext": "Up next for you"
   },
-  "photoCard": {
-    "title": "Take a photo",
-    "sub": "Snap your classwork and I'll teach it",
-    "reading": "Reading your notes and finding the concept…",
-    "errNoTopic": "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.",
-    "errGeneric": "Something went wrong reading that photo. Please try again."
-  },
   "homework": {
     "topbar": "Homework help",
     "title": "Stuck on your homework?",
@@ -103,5 +96,60 @@
     "cardSub": "Revise a whole chapter, topic by topic",
     "pickTitle": "Notes for which chapter?",
     "pickDesc": "Pick a chapter and I'll write up notes for every topic in it."
+  },
+  "photoOptions": {
+    "topbar": "YOUR PAGE",
+    "eyebrow": "I read your page",
+    "fallbackTopic": "Your page",
+    "subtitle": "What would you like me to do with it?",
+    "suggested": "Suggested",
+    "retake": "Take a different photo",
+    "teach": {
+      "title": "Teach me this",
+      "sub": "A full lesson on what's on the page"
+    },
+    "quiz": {
+      "title": "Quiz me on this",
+      "sub": "Practice questions on the same topic"
+    },
+    "check": {
+      "marked": {
+        "title": "Check my answers",
+        "sub": "I'll mark your working and show where it slipped"
+      },
+      "blank": {
+        "title": "Help me solve these",
+        "sub": "Hints first, so you still get to work it out"
+      }
+    }
+  },
+  "checkWork": {
+    "topbar": "HOW YOU DID",
+    "reading": "Reading your working, line by line…",
+    "eyebrowMarked": "Checked",
+    "eyebrowHints": "Let's get you started",
+    "score": "{{correct}} out of {{total}} correct",
+    "found": "I found {{count}} question to work through",
+    "found_other": "I found {{count}} questions to work through",
+    "brokeAt": "Where it slipped",
+    "improve": "Next time",
+    "working": "The full working",
+    "slowBadge": "Longer route",
+    "nextEyebrow": "Worth a second look",
+    "nextTitle": "Want to fix {{count}} topic?",
+    "nextTitle_other": "Want to fix these {{count}} topics?",
+    "learnThese": "Teach me these",
+    "quizThese": "Just quiz me on them",
+    "tryAnother": "Photograph another page",
+    "errNoPhoto": "That photo didn't come through. Please take it again.",
+    "errNone": "I couldn't find any maths questions on that page. Try a clearer photo.",
+    "errGeneric": "Something went wrong checking that page. Please try again.",
+    "verdict": {
+      "correct": "Correct",
+      "right_method_wrong_answer": "Method right",
+      "wrong": "Not right yet",
+      "incomplete": "Unfinished",
+      "unreadable": "Couldn't read"
+    }
   }
 }

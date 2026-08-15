@@ -6,12 +6,9 @@ import i18n, { normalizeLang } from './i18n';
 import { SCREEN_ROUTES, type ScreenId } from './routes';
 import { AppContext, type AppContextValue } from './app-context';
 import { storageKeyFor } from './lib/storage';
-import { guestLimitReached } from './lib/guest';
 import { migrateFromActivityLog, mergeMastery, stripStaleLearned } from './lib/mastery';
+import { useAndroidBackButton } from './lib/useAndroidBackButton';
 import type { AppState, SetFn, GoFn } from './types';
-
-// Screens that begin a "learning session" — gated once a guest is out of free runs.
-const SESSION_ENTRY_SCREENS = new Set<ScreenId>(['learn-concept', 'navigable-quiz']);
 
 // ─── Screen imports — Onboarding ─────────────────────────────
 import SplashScreen        from './screens/onboarding/SplashScreen';
@@ -27,7 +24,6 @@ import DiagSummaryScreen   from './screens/onboarding/DiagSummaryScreen';
 import DiagBuildingScreen  from './screens/onboarding/DiagBuildingScreen';
 import DiagResultScreen    from './screens/onboarding/DiagResultScreen';
 import FirstPlanScreen     from './screens/onboarding/FirstPlanScreen';
-import SaveProgressScreen  from './screens/onboarding/SaveProgressScreen';
 import SignUpScreen        from './screens/onboarding/SignUpScreen';
 import PasswordScreen      from './screens/onboarding/PasswordScreen';
 
@@ -40,7 +36,8 @@ import WeekPlanScreen      from './screens/home/WeekPlanScreen';
 import LearnScreen         from './screens/learn/LearnScreen';
 import ConceptScreen       from './screens/learn/ConceptScreen';
 import ChapterTopicsScreen from './screens/learn/ChapterTopicsScreen';
-import HomeworkScreen      from './screens/learn/HomeworkScreen';
+import PhotoOptionsScreen  from './screens/learn/PhotoOptionsScreen';
+import CheckWorkScreen     from './screens/learn/CheckWorkScreen';
 import ChapterNotesScreen  from './screens/learn/ChapterNotesScreen';
 import RevisionRunScreen   from './screens/quiz/RevisionRunScreen';
 
@@ -81,11 +78,14 @@ const PERSIST_KEYS: (keyof AppState)[] = [
   'sessionDuration', 'planMascotSeen', 'buildPlanCoachSeen', 'ownPlan',
   'name', 'class', 'subject', 'goal', 'language', 'role',
   'diagLevel', 'diagChapters', 'conceptLayout', 'skillId',
-  'activityLog', 'mastery', 'masteryMigrated', 'masteryLearnedFixed', 'guestSessions',
+  'activityLog', 'mastery', 'masteryMigrated', 'masteryLearnedFixed',
   'revisionRun',
 ];
 
-const DEFAULT_STATE: AppState = { name: 'Arjun', conceptLayout: 'cards' };
+// No default name — the student types their own on the onboarding step, and
+// every screen that shows it already falls back ('there' / initial letter).
+// Language is fixed to English while the picker is hidden (see lib/features).
+const DEFAULT_STATE: AppState = { language: 'English', conceptLayout: 'cards' };
 
 function loadState(key: string): AppState {
   try {
@@ -203,14 +203,10 @@ function AppInner() {
   // Derive current screen id from URL
   const currentScreen: ScreenId = PATH_TO_SCREEN[location.pathname] || 'splash';
 
+  // Android's back button — browser no-op.
+  useAndroidBackButton(currentScreen);
+
   const go: GoFn = (screenId) => {
-    // Guest gate: once free sessions are used up, starting a new learning
-    // session sends the guest to a mandatory signup wall instead.
-    if (SESSION_ENTRY_SCREENS.has(screenId) && guestLimitReached(state)) {
-      setState((s) => ({ ...s, signupRequired: true, afterAuth: screenId }));
-      navigate(SCREEN_ROUTES['save-progress']);
-      return;
-    }
     // NOTE: session progress is NOT inferred here. Guessing it from which
     // screen you left ticked the daily checklist for unrelated work — a
     // Learn-tab lesson, a practice quiz, or a mastery-map quiz all pass
@@ -240,7 +236,6 @@ function AppInner() {
           <Route path="/onb/diag-building"      element={<DiagBuildingScreen  go={go} state={state} set={set} />} />
           <Route path="/onb/diag-result"        element={<DiagResultScreen    go={go} state={state} set={set} />} />
           <Route path="/onb/first-plan"         element={<FirstPlanScreen     go={go} state={state} set={set} />} />
-          <Route path="/save-progress"          element={<SaveProgressScreen  go={go} state={state} set={set} />} />
           <Route path="/signup"                 element={<SignUpScreen        go={go} state={state} set={set} />} />
           <Route path="/password"               element={<PasswordScreen      go={go} state={state} set={set} />} />
 
@@ -253,7 +248,8 @@ function AppInner() {
           <Route path="/learn"                  element={<LearnScreen         go={go} state={state} set={set} />} />
           <Route path="/learn/chapter"          element={<ChapterTopicsScreen go={go} state={state} set={set} />} />
           <Route path="/learn/concept"          element={<ConceptScreen       go={go} state={state} set={set} />} />
-          <Route path="/homework"               element={<HomeworkScreen      go={go} state={state} set={set} />} />
+          <Route path="/photo"                  element={<PhotoOptionsScreen  go={go} state={state} set={set} />} />
+          <Route path="/photo/check"            element={<CheckWorkScreen     go={go} state={state} set={set} />} />
           <Route path="/notes"                  element={<ChapterNotesScreen  go={go} state={state} set={set} />} />
           <Route path="/revise/chapter"         element={<RevisionRunScreen   go={go} state={state} set={set} />} />
 

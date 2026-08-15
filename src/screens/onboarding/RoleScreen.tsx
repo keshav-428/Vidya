@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar, VSoftBackdrop } from '../../prototype/shared';
+import { LANGUAGE_PICKER_ENABLED } from '../../lib/features';
 import type { ScreenProps, IconName } from '../../types';
 
 interface RoleCardProps {
@@ -91,7 +92,7 @@ export default function RoleScreen({ go, state, set }: ScreenProps) {
   return (
     <OnbShell variant="warm" back={() => go('splash')}
       eyebrow={t('role.eyebrow')}
-      onPrimary={() => go(role === 'tutor' ? 'role' : 'onb-language')}
+      onPrimary={() => go(role === 'tutor' ? 'role' : (LANGUAGE_PICKER_ENABLED ? 'onb-language' : 'onb-class'))}
       primaryDisabled={!role}>
       <h1 className="v-h1 v-enter" style={{ fontSize: 32, marginBottom: 8, lineHeight: 1.1, whiteSpace: 'pre-line' }}>
         {t('role.title')}

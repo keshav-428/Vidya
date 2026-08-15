@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint'
 import { globalIgnores } from 'eslint/config'
 
 export default tseslint.config([
-  globalIgnores(['dist']),
+  // `android` holds the generated native project — Capacitor copies the built
+  // web bundle and its own bridge script in there, none of which is ours to lint.
+  globalIgnores(['dist', 'android']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

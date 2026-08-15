@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from './icons';
+import api from '../api/vidya';
 import type { AskResponse, GoFn, IconName, ScreenId } from '../types';
 
 // ─── TopBar ──────────────────────────────────────────────────
@@ -100,14 +101,9 @@ function VAskVidyaFAB({ context = 'general', grade = 6, language = 'English', ch
     if (!q || loading) return;
     setLoading(true); setError(null); setAnswer(null); setQuery(q);
     try {
-      const res = await fetch('/api/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, grade: Number(grade) || 6, language, chapter_id: chapterId, section }),
-      });
-      if (!res.ok) throw new Error(`Server error (${res.status})`);
-      const data = (await res.json()) as AskResponse;
-      setAnswer(data);
+      // Goes through the shared client so it honours VITE_API_BASE — a bare
+      // '/api' path has no backend to reach once this runs inside the app shell.
+      setAnswer(await api.ask(q, Number(grade) || 6, language, chapterId, section));
     } catch {
       setError(t('ask.error'));
     } finally {

@@ -153,6 +153,13 @@ class IdentifyConceptRequest(BaseModel):
     mime_types: Optional[list] = None   # per-image, as reported by the browser
     syllabus: Optional[list] = None     # the student's class catalog, to pin chapter_id/section
 
+class CheckWorkRequest(BaseModel):
+    images: list          # base64-encoded image bytes
+    grade: int = 6
+    language: str = "English"
+    mime_types: Optional[list] = None
+    syllabus: Optional[list] = None     # so weak_sections come back as real NCERT ids
+
 class LessonRequest(BaseModel):
     topic: str
     grade: int = 6
@@ -527,6 +534,25 @@ async def identify_concept_endpoint(request: IdentifyConceptRequest):
         raise
     except Exception as e:
         print(f"Error in /identify-concept: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/check-work")
+async def check_work_endpoint(request: CheckWorkRequest):
+    """Marks the student's own working — or nudges them through the questions
+    when the page is still blank. One call handles both; only the photo can say
+    which case it is."""
+    try:
+        if not request.images:
+            raise HTTPException(status_code=400, detail="No images provided")
+        data = concept_service.check_work_from_images(
+            request.images, request.grade, request.language,
+            mime_types=request.mime_types, syllabus=request.syllabus,
+        )
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /check-work: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/real-world")

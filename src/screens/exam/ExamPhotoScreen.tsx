@@ -1,41 +1,23 @@
-import React, { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
+import { capturePhotos, type CapturedImage } from '../../lib/camera';
 import type { ScreenProps } from '../../types';
 
-interface ExamPage {
-  b64: string;
-  url: string;
-}
-
-// Reads a File → { b64 (raw, no prefix), url (data URL for preview) }
-function readImage(file: File): Promise<ExamPage> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = reader.result;
-      const b64 = String(url).split(',')[1] || '';
-      resolve({ b64, url: String(url) });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+type ExamPage = CapturedImage;
 
 export default function ExamPhotoScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation(['exam', 'common']);
-  // pages: [{ b64, url }]
+  // pages: [{ b64, mime, url }]
   const [pages, setPages] = useState<ExamPage[]>((state?.examPages as ExamPage[] | undefined) || []);
-  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const onFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const read = await Promise.all(files.map(readImage));
-    const next = [...pages, ...read];
+  const addPages = async () => {
+    const shots = await capturePhotos({ multiple: true });
+    if (!shots.length) return;   // backed out of the camera
+    const next = [...pages, ...shots];
     setPages(next);
     set && set({ examPages: next, examImages: next.map((p) => p.b64) });
-    e.target.value = '';   // allow re-selecting the same file
   };
 
   const removeAt = (i: number) => {
@@ -47,8 +29,6 @@ export default function ExamPhotoScreen({ go, state, set }: ScreenProps) {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
       <VTopBar transparent showBack onBack={() => go('exam-paper')} />
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" multiple
-        onChange={onFiles} style={{ display: 'none' }} />
       <div style={{ padding: '72px 24px 32px' }}>
         <div className="v-eyebrow" style={{ marginBottom: 8 }}>{t('common:stepOf', { value: 1, total: 2 })}</div>
         <h1 className="v-h1" style={{ fontSize: 30, marginBottom: 8 }}>{t('photo.title')}</h1>
@@ -63,7 +43,7 @@ export default function ExamPhotoScreen({ go, state, set }: ScreenProps) {
             <VIcon name="camera" size={36} color="var(--ink)" />
           </div>
           <div style={{ fontFamily: "'Baloo 2','Quicksand','Nunito',system-ui,sans-serif", fontSize: 18, marginBottom: 14 }}>{t('photo.capturePage')}</div>
-          <button className="v-btn-secondary v-tap" onClick={() => inputRef.current?.click()}>
+          <button className="v-btn-secondary v-tap" onClick={addPages}>
             <VIcon name="camera" size={14} /> {t('photo.openCamera')}
           </button>
         </div>
@@ -79,7 +59,7 @@ export default function ExamPhotoScreen({ go, state, set }: ScreenProps) {
               </div>
             </div>
           ))}
-          <div className="v-tap" onClick={() => inputRef.current?.click()} style={{
+          <div className="v-tap" onClick={addPages} style={{
             aspectRatio: '3/4', borderRadius: 18, border: '1.5px dashed var(--border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-2)',
           }}>

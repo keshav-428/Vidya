@@ -313,6 +313,10 @@ export interface IdentifyConceptResult {
   /** Matched NCERT entry, so retrieval is scoped and mastery gets credited. */
   chapter_id?: string;
   section?: string;
+  /** Whether the student has written working of their own — ranks the offers. */
+  has_work?: 'none' | 'partial' | 'complete';
+  /** How many questions are on the page (0 when it isn't a question page). */
+  question_count?: number;
 }
 /** One chapter as sent to the vision call, so it can pin an exact section. */
 export interface SyllabusForMatch {
@@ -328,6 +332,22 @@ export const identifyConcept = ({
   language = 'English',
 }: { images: string[]; mimeTypes?: string[] | null; syllabus?: SyllabusForMatch[] | null; grade?: number; language?: Language }): Promise<IdentifyConceptResult> =>
   post<IdentifyConceptResult>('/identify-concept', { images, mime_types: mimeTypes, syllabus, grade, language });
+
+// ── Check the student's own working ──────────────────────────
+//  Marks what they wrote; falls back to hints when the page is blank.
+export const checkWork = ({
+  images,
+  mimeTypes = null,
+  syllabus = null,
+  grade = 6,
+  language = 'English',
+}: {
+  images: string[]; mimeTypes?: string[] | null;
+  syllabus?: SyllabusForMatch[] | null; grade?: number; language?: Language;
+}): Promise<import('../types').CheckWorkResult> =>
+  post<import('../types').CheckWorkResult>('/check-work', {
+    images, mime_types: mimeTypes, syllabus, grade, language,
+  });
 
 // ── Exam paper generation ────────────────────────────────────
 export interface GeneratePaperArgs {
@@ -439,6 +459,7 @@ export default {
   homeworkHelp,
   generateNotes,
   identifyConcept,
+  checkWork,
   generatePaper,
   gradePaper,
   dailyGreeting,

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
-import { VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
+import { VTopBar, VBottomNav, VProfileChip, VContextChip } from '../../prototype/shared';
 import { classChapters } from '../../content/syllabus';
 import type { Subtopic, SyllabusChapter } from '../../content/syllabus';
 import api from '../../api/vidya';
@@ -19,29 +19,11 @@ interface SelectedSubtopic {
   title: string;
 }
 
-// Reads a File → raw base64 + its real mime type, for the vision endpoint.
-// (Sending a mislabelled HEIC/PNG as image/jpeg makes Gemini reject the image.)
-function readImageB64(file: File): Promise<{ b64: string; mime: string }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = String(reader.result);
-      const mime = url.slice(5, url.indexOf(';')) || file.type || 'image/jpeg';
-      resolve({ b64: url.split(',')[1] || '', mime });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 export default function PracticeScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation('practice');
   const [practiceTab, setPracticeTab] = useState('quiz');
   const [sel, setSel] = useState<SelectedSubtopic[]>([]);   // selected subtopics: [{ chapterId, section, title }]
   const [expanded, setExpanded] = useState<string[]>([]);   // chapter ids expanded
-  const [uploading, setUploading] = useState(false);
-  const [uploadErr, setUploadErr] = useState<string | null>(null);
-  const photoRef = useRef<HTMLInputElement>(null);
 
   const cls = api.toGrade(state?.classLevel);
   const chapters = classChapters(cls);
@@ -50,52 +32,6 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
     if (state?.askedTopic && set) set({ askedTopic: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- clear-once on mount; `set` is a stable parent closure
   }, []);
-
-  // Photo → identify the concept via vision → start practice on that topic,
-  // respecting the current Quiz/Exam tab.
-  const onPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = '';   // allow re-selecting the same file
-    if (files.length === 0) return;
-    setUploadErr(null);
-    setUploading(true);
-    try {
-      const read = await Promise.all(files.map(readImageB64));
-      const res = await api.identifyConcept({
-        images: read.map((r) => r.b64),
-        mimeTypes: read.map((r) => r.mime),
-        // Send the class catalog so the match is a real NCERT section, which
-        // scopes retrieval and lets the result count toward mastery.
-        syllabus: chapters.map((c) => ({
-          chapter_id: c.id,
-          chapter_title: c.title,
-          subtopics: c.subtopics.map((sb) => ({ section: sb.num, title: sb.title })),
-        })),
-        grade: cls, language: state?.language || 'English',
-      });
-      if (!res.detected || !res.topic.trim()) {
-        setUploading(false);
-        setUploadErr(res.summary || t('photoCard.errNoTopic'));
-        return;
-      }
-      const topic = res.topic.trim();
-      // A matched section scopes the questions AND earns the skill mastery credit.
-      const scope = res.chapter_id ? { chapterId: res.chapter_id, section: res.section || null } : null;
-      if (practiceTab === 'exam') {
-        set && set({ examTopics: [topic], examScope: scope });
-        go('exam-config');
-      } else if (scope) {
-        set && set({ quizScope: { ...scope, topic }, skillId: null });
-        go('navigable-quiz');
-      } else {
-        set && set({ practiceTopics: [topic], skillId: null });
-        go('navigable-quiz');
-      }
-    } catch {
-      setUploading(false);
-      setUploadErr(t('photoCard.errGeneric'));
-    }
-  };
 
   // Subtopic-level multi-select for both quiz and exam.
   const keyOf = (chId: string, section: string) => `${chId}::${section}`;
@@ -147,53 +83,17 @@ export default function PracticeScreen({ go, state, set }: ScreenProps) {
     go('exam-config');
   };
 
-  if (uploading) {
-    return (
-      <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <VTopBar transparent />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 32, minHeight: '70vh' }}>
-          <VidyaAvatar size={64} animated />
-          <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-            {t('photoCard.reading')}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', position: 'relative' }}>
       <VTopBar transparent left={<VContextChip go={go} classLevel={state?.classLevel || 6} />} right={<VProfileChip go={go} name={state?.name} />} />
-      <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple
-        onChange={onPhotos} style={{ display: 'none' }} />
       <div style={{ padding: `72px 22px ${sel.length ? 210 : 140}px` }}>
 
         <h1 className="v-h1" style={{ fontSize: 26, marginBottom: 14, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
           {t('practice.heading')}
         </h1>
 
-        {/* Take a photo of classwork → instant practice on that topic */}
-        <div
-          className="v-tap"
-          onClick={() => { setUploadErr(null); photoRef.current?.click(); }}
-          style={{ background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '16px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 18px rgba(28,25,23,0.05)' }}>
-          <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <VIcon name="camera" size={21} color="#fff" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>{t('photoCard.title')}</div>
-            <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>{t('photoCard.sub')}</div>
-          </div>
-          <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
-        </div>
-
-        {uploadErr && (
-          <div style={{ marginBottom: 14, borderRadius: 14, padding: '12px 14px', background: 'var(--bg-warm)', border: '1px solid var(--saffron)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <VIcon name="camera" size={15} color="var(--saffron)" />
-            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.45 }}>{uploadErr}</div>
-            <div className="v-tap" onClick={() => setUploadErr(null)} style={{ flexShrink: 0 }}><VIcon name="x" size={14} color="var(--muted-2)" /></div>
-          </div>
-        )}
+        {/* The photo card used to live here too. There is now one camera, on
+            Home, which asks what to do with the page after reading it. */}
 
         <div>
           <div style={{

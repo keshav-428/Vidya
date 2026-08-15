@@ -292,8 +292,6 @@ export default function NavigableQuizScreen({ go, state, set }: ScreenProps) {
       activityLog: appendActivity(state?.activityLog, entry),
       mastery: newMap,
       lastMasteryDelta: delta || undefined,
-      // Guests get a limited number of free sessions before signing up.
-      ...(state?.userId ? {} : { guestSessions: (Number(state?.guestSessions) || 0) + 1 }),
     });
     go('session-analysis');
   };

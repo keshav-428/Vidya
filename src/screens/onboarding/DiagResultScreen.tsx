@@ -6,6 +6,7 @@ import { scoreFromSet, classAwareWeakChapters, chapterIdForArea, STATIC_FALLBACK
 import { buildWeekPlan, planSlots } from '../../content/weekPlan';
 import { classChapters } from '../../content/syllabus';
 import { seedDiagnostic } from '../../lib/mastery';
+import { OWN_PLAN_ENABLED } from '../../lib/features';
 import type { MasteryMap } from '../../types';
 import api from '../../api/vidya';
 import type { ScreenProps } from '../../types';
@@ -66,7 +67,10 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
       planSessionSel: undefined,
       mastery: seededMastery(),
       ownPlan: false,
-      coachStep: 1,          // after saving, Home nudges "let's study"
+      // Start of the tutorial. coachStep indexes COACH_STEP_KEYS, so 0 is the
+      // "Step 1 of 2" card — starting at 1 opened on "Step 2 of 2" and the
+      // student never saw step 1. Runs 0 → 1 → 2 (Concept) → 3 (Quiz) → 99.
+      coachStep: 0,
       planIntro: 'auto',
       // A new plan starts today's session from scratch — otherwise earlier
       // progress would leave Concept pre-ticked on a plan never started.
@@ -75,12 +79,11 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
     go('week-plan');
   };
   // Option B — student picks their own topics, on the same week-plan screen
-  // (with build-your-own guidance). coachStep 1 so Home's next nudge is
-  // "start your first lesson", not "set up the week" they just set up.
+  // (with build-your-own guidance). Same tutorial, from the top.
   const buildOwn = () => {
     set && set({
       diagLevel: level, diagChapters: outcome.weak,
-      ownPlan: true, coachStep: 1,
+      ownPlan: true, coachStep: 0,
       weekPlan: undefined, planTopicId: undefined,
       planSection: undefined, planSubtopicTitle: undefined, planSessionSel: undefined,
       mastery: seededMastery(),
@@ -166,9 +169,11 @@ export default function DiagResultScreen({ go, state, set }: ScreenProps) {
         <button className="v-btn-primary v-tap" onClick={buildForMe} style={{ marginBottom: 8 }}>
           <VIcon name="sparkles" size={14} color="#fff" /> {t('diagResult.buildForMe')}
         </button>
-        <button className="v-btn-secondary v-tap" onClick={buildOwn}>
-          {t('diagResult.buildOwn')} <VIcon name="arrow-right" size={14} color="var(--ink)" />
-        </button>
+        {OWN_PLAN_ENABLED && (
+          <button className="v-btn-secondary v-tap" onClick={buildOwn}>
+            {t('diagResult.buildOwn')} <VIcon name="arrow-right" size={14} color="var(--ink)" />
+          </button>
+        )}
       </div>
     </VSoftBackdrop>
   );

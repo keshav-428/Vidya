@@ -125,12 +125,5 @@
     "micDenied": "I couldn't reach your microphone. Please allow mic access and try again.",
     "micSilent": "I couldn't hear anything — tap the mic and try answering again.",
     "evalFail": "Something went wrong while listening. Try answering once more."
-  },
-  "photoCard": {
-    "title": "Take a photo",
-    "sub": "Snap your classwork and I'll make practice for it",
-    "reading": "Reading your notes and finding the topic…",
-    "errNoTopic": "Couldn't spot a maths topic in that photo. Try a clearer shot of your notes.",
-    "errGeneric": "Something went wrong reading that photo. Please try again."
   }
 }

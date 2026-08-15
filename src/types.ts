@@ -83,6 +83,13 @@ export interface AppState {
   /** Where to go when that ad-hoc lesson finishes. */
   lessonNext?: ScreenId | null;
 
+  // photo flow — one camera on Home feeds teach / quiz / check-my-answers.
+  // The images are held so the chosen option doesn't make the student reshoot.
+  photoImages?: string[] | null;
+  photoMimes?: string[] | null;
+  photoAnalysis?: import('./api/vidya').IdentifyConceptResult | null;
+  checkResult?: CheckWorkResult | null;
+
   // viva
   vivaSel?: PracticeSelection[];
   vivaMode?: 'learn' | 'practice' | 'both';
@@ -92,13 +99,6 @@ export interface AppState {
   quizLevel?: 'easy' | 'normal' | 'hard' | null;
   /** Past mistakes to aim the next quiz at (the retry card). */
   quizFocusPoints?: string[] | null;
-
-  // auth flow
-  afterAuth?: ScreenId;
-  /** Completed learning sessions used while a guest (gates free access). */
-  guestSessions?: number;
-  /** When true, the save-progress screen becomes a mandatory signup wall. */
-  signupRequired?: boolean;
 
   // migration seam — see doc comment above
   [key: string]: unknown;
@@ -246,6 +246,45 @@ export interface HomeworkResult {
   detected: boolean;
   summary?: string;
   questions: HomeworkQuestion[];
+}
+
+/** How one question on a photographed page was assessed. */
+export type Verdict =
+  | 'correct'
+  | 'right_method_wrong_answer'
+  | 'wrong'
+  | 'incomplete'
+  | 'unreadable'
+  | '';
+
+export interface CheckedQuestion extends HomeworkQuestion {
+  student_answer?: string;
+  verdict?: Verdict;
+  /** Right answer, fragile method — the one school marks correct and misses. */
+  correct_but_slow?: boolean;
+  /** The first step that went wrong, quoting their own working. */
+  broke_at?: string;
+  /** One concrete thing to do differently next time. */
+  improve?: string;
+  correct_answer?: string;
+}
+
+/** One syllabus subtopic behind a wrong answer — what we offer to teach next. */
+export interface WeakSection {
+  chapter_id: string;
+  section: string;
+  title: string;
+}
+
+export interface CheckWorkResult {
+  detected: boolean;
+  /** 'marked' when they had written working; 'hints' when the page was blank. */
+  mode: 'marked' | 'hints';
+  summary?: string;
+  total: number;
+  correct: number;
+  questions: CheckedQuestion[];
+  weak_sections?: WeakSection[];
 }
 
 /** Before→after mastery change for one skill, shown after a quiz/exam. */

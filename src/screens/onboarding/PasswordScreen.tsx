@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar } from '../../prototype/shared';
 import { useAuth } from '../../auth/auth-context';
-import { migrateGuestState } from '../../lib/storage';
-import type { ScreenProps, ScreenId } from '../../types';
+import { LANGUAGE_PICKER_ENABLED } from '../../lib/features';
+import type { ScreenProps } from '../../types';
 
 export default function PasswordScreen({ go, state }: ScreenProps) {
   const { t } = useTranslation(['onboarding2', 'common']);
@@ -23,11 +23,10 @@ export default function PasswordScreen({ go, state }: ScreenProps) {
     setBusy(true); setError(null);
     try {
       if (isSignup) {
-        const res = await signUp(email, pw);
-        // Carry any guest progress into the new account.
-        migrateGuestState(res.uid);
-        // Signed up up front (no onboarding yet) → onboard; otherwise resume.
-        go(state?.classLevel ? ((state?.afterAuth as ScreenId) || 'home') : 'onb-language');
+        await signUp(email, pw);
+        // Signing up is now the first thing anyone does, so a brand-new account
+        // has no class yet → onboard. A re-signup that somehow has one resumes.
+        go(state?.classLevel ? 'home' : (LANGUAGE_PICKER_ENABLED ? 'onb-language' : 'onb-class'));
       } else {
         await logIn(email, pw);
         // Returning user → their state restores by uid. Straight to home.

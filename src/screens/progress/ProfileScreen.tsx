@@ -5,6 +5,7 @@ import { VTopBar } from '../../prototype/shared';
 import { useAuth } from '../../auth/auth-context';
 import { LANGUAGES, normalizeLang } from '../../i18n';
 import { getLog, overallStats } from '../../lib/progress';
+import { LANGUAGE_PICKER_ENABLED } from '../../lib/features';
 import type { ScreenProps } from '../../types';
 
 interface ProfileMenuItem {
@@ -41,8 +42,11 @@ export default function ProfileScreen({ go, state, set }: ScreenProps) {
   const items: ProfileMenuItem[] = [
     { key: 'classSubject', icon: 'book', onClick: () => setClassSheet(true),
       value: t('common:classBoard', { n: currentClass, board: 'CBSE' }) },
-    { key: 'language', icon: 'globe', onClick: () => setLangSheet(true),
-      value: (LANGUAGES.find((l) => l.code === current) || LANGUAGES[0]).native },
+    // The picker and its sheet below stay wired up — only the way in is hidden.
+    ...(LANGUAGE_PICKER_ENABLED ? [{
+      key: 'language', icon: 'globe', onClick: () => setLangSheet(true),
+      value: (LANGUAGES.find((l) => l.code === current) || LANGUAGES[0]).native,
+    }] : []),
   ];
 
   const pickLang = (code: string) => { set && set({ language: code }); setLangSheet(false); };

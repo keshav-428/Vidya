@@ -211,7 +211,13 @@ def identify_concept_from_images(images_b64: list, grade: int = 6, language: str
                 syllabus (passed in), so retrieval can be scoped to it and the
                 result can be credited to that skill's mastery
 
-    Returns: { detected, topic, focus, chapter_id, section, summary }
+    Also reports whether the student has WORKED on the page. One photo now feeds
+    three different offers (teach it / quiz me / check my answers), and only the
+    picture can say whether there is any working to check — so the app asks once
+    and lets that rank the options instead of making the student guess.
+
+    Returns: { detected, topic, focus, chapter_id, section, summary,
+               has_work, question_count }
     """
     catalog = ""
     if syllabus:
@@ -236,6 +242,9 @@ Your job:
    common denominator?", the focus is that reasoning. This is what the lesson will answer, so
    it must be narrower than the whole chapter.
 3. Match it to the syllabus above: give the exact chapter_id and the section number.
+4. Say whether the STUDENT has written any working of their own on the page, and how many
+   questions are on it. Printed/textbook text and copied-out question statements are NOT
+   working — only the student's own attempts at solving count.
 
 Return ONLY valid JSON with EXACTLY this structure:
 {{
@@ -244,7 +253,9 @@ Return ONLY valid JSON with EXACTLY this structure:
   "focus": "one or two sentences in English naming exactly what the student is asking about, including any specific numbers or wording from the page. Empty string if detected is false.",
   "chapter_id": "the matching chapter_id from the syllabus above, or empty string if none fits",
   "section": "the matching section number (e.g. '7.2'), or empty string if unsure",
-  "summary": "one friendly sentence telling the student what you spotted, in the LANGUAGE above. If not detected, briefly say you couldn't find a maths topic."
+  "summary": "one friendly sentence telling the student what you spotted, in the LANGUAGE above. If not detected, briefly say you couldn't find a maths topic.",
+  "has_work": "one of: 'none' (no working by the student), 'partial' (started but some questions unfinished or abandoned mid-way), 'complete' (every question attempted)",
+  "question_count": integer — how many separate questions you can see on the page, 0 if it is not a question page
 }}
 
 Strictly return ONLY the JSON object."""
@@ -376,6 +387,119 @@ Strictly return ONLY the JSON object."""
     data = json.loads(response.text)
     qs = [q for q in (data.get("questions") or []) if q.get("question")]
     data["questions"] = qs[:8]
+    return data
+
+
+def check_work_from_images(images_b64: list, grade: int = 6, language: str = "English",
+                           mime_types: list = None, syllabus: list = None):
+    """Marks the student's OWN working on a page — and, when there is no working
+    to mark, falls back to nudging them through the questions instead.
+
+    The two cases are one call because only the photo can tell them apart, and
+    making the student declare up front which one they meant ("check me" vs
+    "help me") gets it wrong for the very common half-finished page.
+
+    What matters here is not the tick or the cross — school already gives them
+    that. It is WHICH LINE went wrong, and the case where the answer is right
+    but the method is not, because that is the student who quietly fails later.
+
+    Returns: { detected, mode, summary, total, correct, questions: [...],
+               weak_sections: [{chapter_id, section, title}] }
+    """
+    catalog = ""
+    if syllabus:
+        lines = []
+        for ch in syllabus:
+            subs = "; ".join(f"{s.get('section')} {s.get('title')}" for s in (ch.get("subtopics") or []))
+            lines.append(f"- chapter_id \"{ch.get('chapter_id')}\" | {ch.get('chapter_title')} | subtopics: {subs}")
+        catalog = ("\nTHE STUDENT'S CLASS SYLLABUS (choose chapter_id and section from THIS list only):\n"
+                   + "\n".join(lines) + "\n")
+
+    prompt = f"""You are Vidya, a warm maths teacher for a CBSE Class {grade} student (age 11-14).
+The student has photographed a maths page and wants to know how they did.
+
+LANGUAGE for every text value: {lang_instruction(language)}
+{catalog}
+{STYLE_GUIDE}
+
+FIRST decide the mode:
+- "marked"  — the student has written their own working or answers on the page.
+- "hints"   — the page has questions but NO working of their own (blank attempt).
+Copied-out question statements are NOT working. If even one question has an attempt, use "marked".
+
+IF mode is "marked", for EVERY question on the page (in page order, at most 8):
+- Read their actual working, not just the final answer.
+- "verdict" is one of:
+    "correct"        — right answer, sound method.
+    "right_method_wrong_answer" — method fine, slipped on arithmetic.
+    "wrong"          — the method itself is wrong.
+    "incomplete"     — they started and stopped part-way.
+    "unreadable"     — you genuinely cannot make out their working.
+- "correct_but_slow" — true ONLY when the answer is right and the method works but is
+  needlessly long. Right answer by a fragile method is the most important thing to catch:
+  school marks it correct and the student fails on it two years later.
+- "broke_at": name the FIRST line or step where it went wrong, quoting what they wrote,
+  e.g. "line 3 — you wrote 3/4 + 2/5 = 5/9, adding the denominators". Empty if correct.
+- "improve": what to do differently next time. One concrete sentence, not "be careful".
+
+IF mode is "hints", fill "hint", "next_step", "steps" and "answer" for each question
+(nudge first — do NOT lead with the solution) and leave the marking fields empty.
+
+RULES:
+- Never invent a question that is not on the page.
+- Do the maths carefully and check it. Telling a student they are wrong when they are right
+  is far worse than saying nothing.
+- Be kind and specific. Never open with the word "wrong". Name what worked first.
+- Ignore headings, names, dates, page numbers and doodles.
+
+Return ONLY valid JSON:
+{{
+  "detected": true if you found at least one maths question, else false,
+  "mode": "marked" or "hints",
+  "summary": "one warm sentence on how it went overall, in the LANGUAGE above. If nothing was found, say so kindly.",
+  "total": integer — how many questions you assessed,
+  "correct": integer — how many were fully correct (0 when mode is "hints"),
+  "questions": [
+    {{
+      "number": "the question number as written, e.g. '3' or '(b)'",
+      "question": "the question text",
+      "student_answer": "what they gave as their answer, or empty if none",
+      "verdict": "correct | right_method_wrong_answer | wrong | incomplete | unreadable | ''",
+      "correct_but_slow": true or false,
+      "broke_at": "the first step that went wrong, quoting their working. Empty if correct.",
+      "improve": "one concrete thing to do differently next time. Empty if correct.",
+      "correct_answer": "the right answer",
+      "steps": [{{"label": "Step name", "detail": "what to do and why"}}],
+      "hint": "hints mode only — a nudge that does not solve it",
+      "next_step": "hints mode only — the concrete first step"
+    }}
+  ],
+  "weak_sections": [
+    {{"chapter_id": "from the syllabus above", "section": "e.g. '7.2'", "title": "the subtopic title"}}
+  ]
+}}
+"weak_sections" lists ONLY the syllabus subtopics behind the questions they got wrong —
+that is what the app offers to teach next. Empty when everything was correct.
+
+Strictly return ONLY the JSON object."""
+
+    parts = [types.Part.from_text(text=prompt)]
+    for i, img_b64 in enumerate(images_b64):
+        mt = (mime_types[i] if mime_types and i < len(mime_types) and mime_types[i] else "image/jpeg")
+        parts.append(types.Part(inline_data=types.Blob(mime_type=mt, data=base64.b64decode(img_b64))))
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL,
+        contents=types.Content(role="user", parts=parts),
+        config={"response_mime_type": "application/json"},
+    )
+    data = json.loads(response.text)
+    qs = [q for q in (data.get("questions") or []) if q.get("question")][:8]
+    data["questions"] = qs
+    # Trust the page, not the model's own tally — they drift apart on long pages.
+    data["total"] = len(qs)
+    data["correct"] = sum(1 for q in qs if q.get("verdict") == "correct")
+    data["weak_sections"] = [w for w in (data.get("weak_sections") or []) if w.get("chapter_id")]
     return data
 
 

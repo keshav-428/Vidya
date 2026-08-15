@@ -76,9 +76,6 @@ export default function SplashScreen({ go, set }: ScreenProps) {
         <button className="v-btn-primary v-tap" onClick={() => { set && set({ authMode: 'signup' }); go('signup'); }}>
           {t('common:getStarted')} <VIcon name="arrow-right" size={14} color="#fff" />
         </button>
-        <button className="v-btn-secondary v-tap" onClick={() => { set && set({ role: 'student' }); go('onb-language'); }} style={{ marginTop: 10 }}>
-          Continue as guest
-        </button>
         <div className="v-tap" onClick={() => { set && set({ authMode: 'login' }); go('signup'); }} style={{
           textAlign: 'center', marginTop: 18,
           fontFamily: 'Inter', fontSize: 13, color: 'var(--muted)', letterSpacing: '0.02em'

@@ -5,6 +5,7 @@ import { VSoftBackdrop, VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAv
 import api, { type TrickResult } from '../../api/vidya';
 import { classChapters, chapterInfo, chapterTitleById, type SyllabusChapter } from '../../content/syllabus';
 import { levelFor, skillKey, weakestSkills, type MasteryLevel } from '../../lib/mastery';
+import { capturePhotos } from '../../lib/camera';
 import type { ScreenProps, GoFn, ScreenId, MasteryMap, PracticeSelection } from '../../types';
 
 // Level → dot color on topic rows ('new' stays neutral).
@@ -543,6 +544,42 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   };
   const handleCoachDismiss = () => set({ coachStep: 99, ownPlan: false });
 
+  // One vision call serves all three offers, so it runs here, once, before the
+  // student picks — that's what lets the next screen rank the options.
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoErr, setPhotoErr] = useState<string | null>(null);
+  const takePhoto = async () => {
+    setPhotoErr(null);
+    const shots = await capturePhotos({ multiple: true });
+    if (!shots.length) return;      // backed out of the camera
+    setPhotoBusy(true);
+    try {
+      const res = await api.identifyConcept({
+        images: shots.map((s) => s.b64),
+        mimeTypes: shots.map((s) => s.mime),
+        syllabus: chapters.map((c) => ({
+          chapter_id: c.id,
+          chapter_title: c.title,
+          subtopics: c.subtopics.map((sb) => ({ section: sb.num, title: sb.title })),
+        })),
+        grade,
+        language: state?.language || 'English',
+      });
+      setPhotoBusy(false);
+      if (!res.detected) { setPhotoErr(res.summary || t('photoEntry.errNoTopic')); return; }
+      set({
+        photoImages: shots.map((s) => s.b64),
+        photoMimes: shots.map((s) => s.mime),
+        photoAnalysis: res,
+        checkResult: null,     // a new page, so any previous marking is stale
+      });
+      go('photo-options');
+    } catch {
+      setPhotoBusy(false);
+      setPhotoErr(t('photoEntry.errGeneric'));
+    }
+  };
+
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [vivaOpen, setVivaOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -600,6 +637,22 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   ];
   const allDone = sessionStep >= STEPS.length;
 
+  // Reading the page takes a few seconds — hold the whole screen rather than
+  // leaving a dead card, so it's obvious something is happening.
+  if (photoBusy) {
+    return (
+      <VSoftBackdrop variant="warm">
+        <VTopBar transparent />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 32, minHeight: '80vh' }}>
+          <VidyaAvatar size={64} animated />
+          <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
+            {t('photoEntry.reading')}
+          </div>
+        </div>
+      </VSoftBackdrop>
+    );
+  }
+
   return (
     <VSoftBackdrop variant="warm">
       <VTopBar transparent left={<VContextChip go={go} classLevel={state?.classLevel || 6} />} right={<VProfileChip go={go} name={state.name} />} />
@@ -613,6 +666,38 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
             {allDone ? t('sessionComplete') : t('ready')}
           </div>
         </div>
+
+        {/* The one camera in the app. Learn and Practice each used to carry
+            their own near-identical photo card, so the same gesture sat behind
+            three doors with three different outcomes — this asks what to do
+            with the page AFTER reading it instead. */}
+        <div className="v-tap v-enter" onClick={takePhoto}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 14, padding: '16px 16px',
+            background: '#fff', borderRadius: 20, border: '1px solid var(--border)',
+            boxShadow: '0 4px 18px rgba(28,25,23,0.05)',
+          }}>
+          <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--saffron)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <VIcon name="camera" size={21} color="#fff" />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>
+              {t('photoEntry.title')}
+            </div>
+            <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.35 }}>
+              {t('photoEntry.sub')}
+            </div>
+          </div>
+          <VIcon name="chevron-right" size={18} color="var(--muted-2)" />
+        </div>
+
+        {photoErr && (
+          <div style={{ borderRadius: 14, padding: '12px 14px', background: 'var(--bg-warm)', border: '1px solid var(--saffron)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <VIcon name="camera" size={15} color="var(--saffron)" />
+            <div style={{ flex: 1, fontFamily: 'Inter', fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.45 }}>{photoErr}</div>
+            <div className="v-tap" onClick={() => setPhotoErr(null)} style={{ flexShrink: 0 }}><VIcon name="x" size={14} color="var(--muted-2)" /></div>
+          </div>
+        )}
 
         {!hasPlan && (
           <div className="v-enter" style={{ marginTop: 8, background: '#fff', borderRadius: 20, border: '1px solid var(--border)', padding: '28px 22px', textAlign: 'center' }}>
@@ -743,16 +828,6 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('learn:notes.cardTitle')}</div>
               <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('learn:notes.cardSub')}</div>
-            </div>
-            <VIcon name="arrow-right" size={15} color="var(--muted-2)" />
-          </div>
-
-          <div className="v-tap" onClick={() => go('homework')}
-            style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', marginBottom: 8, background: '#fff', borderRadius: 16, border: '1px solid var(--border)' }}>
-            <QuickTile icon="scan" hue="terracotta" />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{t('quick.hwTitle')}</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('quick.hwSub')}</div>
             </div>
             <VIcon name="arrow-right" size={15} color="var(--muted-2)" />
           </div>

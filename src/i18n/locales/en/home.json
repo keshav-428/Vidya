@@ -98,8 +98,13 @@
     "trickErr": "Couldn't load a trick — try again in a bit.",
     "whyItWorks": "WHY IT WORKS",
     "tryIt": "Try it:",
-    "showAnswer": "Tap to see the answer",
-    "hwTitle": "Homework help",
-    "hwSub": "Stuck on tonight's homework? I'll walk you through it"
+    "showAnswer": "Tap to see the answer"
+  },
+  "photoEntry": {
+    "title": "Photo help",
+    "sub": "Snap any maths page — I'll teach it, quiz you, or check your answers",
+    "reading": "Reading your page…",
+    "errNoTopic": "Couldn't spot a maths topic in that photo. Try a clearer shot.",
+    "errGeneric": "Something went wrong reading that photo. Please try again."
   }
 }
