@@ -186,7 +186,11 @@ export interface LessonHook {
   best_index?: number;
   reveal: string;    // teasing line shown after the guess (no spoiler)
 }
-export interface LessonConceptCard { heading: string; body: string; }
+export interface LessonConceptCard {
+  heading: string;
+  body: string;          // one short lead sentence carrying the idea
+  bullets?: string[];    // up to 3 short sentences breaking it into pieces
+}
 export interface LessonExample {
   part: string;      // the sub-skill this example covers
   q: string;

@@ -138,9 +138,13 @@ Return ONLY valid JSON with EXACTLY this structure:
     "reveal": "one teasing line that does NOT give the answer away, e.g. 'Hold that thought — let's learn the trick first!'"
   }},
   "concept_cards": [
-    {{"heading": "short friendly heading", "body": "the core idea explained in Vidya's talking voice, 2-4 short sentences per paragraph, separate paragraphs with \\n\\n"}}
+    {{"heading": "short friendly heading",
+      "body": "ONE short lead sentence (max 20 words) in Vidya's talking voice that states the core idea",
+      "bullets": ["at most 3 short full sentences, each under 10 words, breaking the idea into steps or pieces"]}}
   ],
-  "alt_explanation": {{"heading": "Another way to see it", "body": "the SAME core idea explained through a COMPLETELY DIFFERENT representation (if the cards used numbers, use a picture-in-words / money / food analogy). Shown only to students who missed the check."}},
+  "alt_explanation": {{"heading": "Another way to see it",
+    "body": "ONE short lead sentence (max 20 words) giving the SAME core idea through a COMPLETELY DIFFERENT representation (if the cards used numbers, use a picture-in-words / money / food analogy). Shown only to students who missed the check.",
+    "bullets": ["at most 3 short full sentences, each under 10 words, carrying that analogy through"]}},
   "check": {{
     "prompt": "resolve the hook: re-ask the hook question (or its direct application) now that the idea is taught",
     "options": ["...", "...", "..."],
@@ -184,6 +188,11 @@ Return ONLY valid JSON with EXACTLY this structure:
 {focus_rule}{coverage_rule}
 STRUCTURE RULES:
 - exactly {n_cards} concept_cards and exactly {n_examples} examples.
+- Every concept card (and alt_explanation) is a LEAD SENTENCE + AT MOST 3 bullets. Never more than 3.
+  The lead sentence carries the idea; the bullets carry the pieces. A Class {grade} student reads
+  1-2 lines at a time, so a card must never look like a paragraph.
+- Each bullet is a SHORT FULL SENTENCE a child would say out loud ("Cut the half into two quarters."),
+  never a fragment or a label ("common denominator needed" is forbidden — that is jargon in disguise).
 - exactly 2 spot_mistakes, each showing a DIFFERENT common misconception for {topic}.
 - The examples together must cover the distinct parts/cases of {topic} (label each via "part").
 - Every options array has exactly 3 options; correct_index must be accurate — double-check the maths.

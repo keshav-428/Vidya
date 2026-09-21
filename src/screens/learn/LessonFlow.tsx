@@ -133,6 +133,18 @@ export default function LessonFlow({ lesson, videos, topicTitle, doneLabel, onDo
           {card.body.split('\n\n').map((p, i) => (
             <p key={i} style={{ fontFamily: 'Inter', fontSize: 15, lineHeight: 1.65, color: 'var(--ink)', marginBottom: 14 }}>{p}</p>
           ))}
+          {/* Lead sentence carries the idea; the bullets carry the pieces —
+              a Class 6 reader takes 1-2 lines at a time, not a paragraph. */}
+          {card.bullets && card.bullets.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+              {card.bullets.slice(0, 3).map((b, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ width: 7, height: 7, borderRadius: 9999, background: 'var(--indigo)', flexShrink: 0, marginTop: 7 }} />
+                  <span style={{ flex: 1, minWidth: 0, fontFamily: 'Inter', fontSize: 15, lineHeight: 1.55, color: 'var(--ink)' }}>{b}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       );
     }
