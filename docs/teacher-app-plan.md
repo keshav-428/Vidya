@@ -1,6 +1,7 @@
 # Teacher App — Plan
 
-Status: **phases 0-3 built** (class + join code + the one screen); not yet deployed
+Status: **phases 0-3 built and deployed** (class + join code + the one screen).
+Stage two (§8-11: invites, per-student tracking, setting practice) is agreed, not built.
 Decided: phone-first web page, **read-only**, aimed at the school classroom teacher.
 
 ## 1. What it is for
@@ -101,3 +102,104 @@ until a teacher asks for it.
   teacher need verifying, and who can create a class?
 - **Validate first.** Show the one screen to one real teacher with one real
   class before building phases 2–4. The risk here is not technical.
+
+---
+
+# Stage two — 30 students, tracked without drowning
+
+Agreed 2026-09-26, after phases 0-4 were built. Two halves: getting a real
+class in, and making 30 students legible to one teacher in a few seconds.
+
+**This supersedes the read-only decision in §6.** Nothing made students
+practise, so the dashboard had no way to fill. A teacher can now set practice.
+Marks and due dates stay out — both turn this into school administration, which
+is the direction that kills it.
+
+## 8. Getting a class in
+
+Three doors, all **consent-based**. A student is never added to a class without
+an act of their own.
+
+| Door | Who starts it | For |
+|---|---|---|
+| Class code (built) | Student types the code | A whole class at once, code on the board |
+| Invite by Vidya ID | Teacher enters an ID, student accepts | Adding 30 students in one sitting |
+| Invite link | Teacher shares a link, student opens and accepts | One student, over WhatsApp |
+
+**Why not search by username.** A teacher looking students up means any account
+that calls itself a teacher can search a directory of children. That is the most
+dangerous thing this product could contain, and no feature is worth it.
+
+So the direction is reversed: every student has a **Vidya ID** shown in their own
+profile — short, from the same unambiguous alphabet as class codes. The student
+reads it out; the teacher types it; the student gets "Mishra Sir invited you to
+6B" and accepts. The teacher's experience is the same as a lookup. Nothing is
+searchable, and the child agrees.
+
+```
+user_profiles/{uid}.vidya_id       # generated on first view, unique
+invites/{id}  { class_id, student_id, status: pending|accepted|declined, created_at }
+```
+
+## 9. Thirty students, made legible
+
+The answer to "not overwhelming" is **depth, not density**. Three levels, one
+tap apart.
+
+1. **The class** (built) — what to reteach tomorrow, three lines.
+2. **The students** — one row each: a *state*, not a number.
+   `on track` / `slipping` / `needs you`, sorted so the teacher reads the top
+   and stops.
+3. **One student** — their weak subtopics, what they last practised, and the
+   button that matters: set practice for them.
+
+**Why no scores on the list.** Thirty numbers is precisely the overwhelming
+thing. A teacher cannot act on thirty numbers; they can act on "these four need
+you". Numbers belong one level down, where they are about one child and a
+decision. This is also what keeps §2's rule intact — states and a short
+attention list, never a worst-to-best league table.
+
+## 10. Setting practice
+
+The loop this product is: **dashboard says what is weak → teacher taps it →
+it lands in those students' app → they do it → dashboard updates.**
+
+So the primary way to set practice is not a syllabus browser. It is a button
+directly under the thing the dashboard just reported: "19 of 24 shaky on common
+denominators" → **Set as practice**. One tap, no decisions.
+
+A plain chapter picker exists as the second door, because in week one the
+dashboard is empty and the teacher's first visit must still be able to do
+something. Its chapter list comes from the ingested knowledge base, so there is
+no second copy of the syllabus.
+
+```
+assignments/{id}  { class_id, chapter_id, section, title,
+                    student_ids: [] | null,      # null = the whole class
+                    created_by, created_at }
+```
+
+**On the student's side it must not hijack their plan.** A card at the top of
+Home — "Mishra Sir set this" — starts that session when tapped. Their own daily
+plan stays exactly where it was, underneath. A child who ignores it loses
+nothing; the teacher simply sees it was not done.
+
+**Completion needs no new tracking.** A student has done it when they have
+practised that subtopic since the assignment was set, which mastery's
+`lastSeen` already records. The teacher sees "12 of 18 done" — without that,
+setting practice feels like shouting into a void and no one does it twice.
+
+## 11. Build order
+
+| Phase | What | Why this order |
+|---|---|---|
+| 5 | Student list (states) + one-student page | Read-only, touches nothing in the student app, and makes the existing dashboard useful for a real class |
+| 6 | Assignments: set from the reteach list, then per student; Home card in the student app | The lever that fills the dashboard. First thing that changes what a student sees, so it goes in on its own |
+| 7 | Vidya ID + invites + invite link | Least blocking: with the class code, a class can already be assembled |
+
+## 12. Still open
+
+- Parent consent (§7) is now more pressing, not less: a teacher setting work for
+  a named child is a bigger claim on that child's time than a dashboard.
+- The teacher app is English only; the student app is fully Hindi.
+- Teachers cannot remove a student, rename a class, or close one.
