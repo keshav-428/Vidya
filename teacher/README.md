@@ -63,3 +63,23 @@ Two things that are easy to forget and both fail loudly:
 - **Parent consent.** Children's data becoming visible to a teacher needs
   answering before this is used with a real class.
 - Teacher identity is unverified: anyone can sign up and create a class.
+
+## As a phone app
+
+The teacher app also builds as a native app (Capacitor), the same way the
+student app does — a separate app id (`com.vidya.teacher`), so a teacher and a
+student can have both installed on one phone.
+
+```bash
+cd teacher
+npm run android          # build + sync
+npm run android:open     # ...and open Android Studio
+```
+
+A phone cannot reach the dev proxy, so native builds read `VITE_API_BASE` from
+`.env.production` — the same Render backend the student app uses. If the
+backend's `ALLOWED_ORIGINS` is pinned to web domains, the native app's origin
+has to be allowed too or every call fails CORS.
+
+iOS needs Xcode installed (`npm run ios:open`), and a paid Apple Developer
+account to reach anyone else's iPhone. The web page is the free route there.
