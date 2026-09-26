@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Union, List
 from database import get_db
 import rag_service
 import quiz_service
@@ -40,7 +40,7 @@ class QuizRequest(BaseModel):
     topics: Optional[list] = None  # multi-topic
     grade: int
     language: str = "English"
-    focus_points: Optional[str] = None
+    focus_points: Optional[Union[str, List[str]]] = None
     difficulty: str = "Medium"
     chapter_id: Optional[str] = None
     section: Optional[str] = None
@@ -252,7 +252,10 @@ async def generate_quiz_endpoint(request: QuizRequest):
         topic_list = request.topics or ([request.topic] if request.topic else [])
         if not topic_list:
             raise HTTPException(status_code=400, detail="No topics provided")
-        quiz = quiz_service.generate_quiz(topic_list, request.grade, request.language, request.focus_points, request.difficulty, chapter_id=request.chapter_id, section=request.section)
+        focus = request.focus_points
+        if isinstance(focus, list):
+            focus = "\n".join(f"- {f}" for f in focus if f)
+        quiz = quiz_service.generate_quiz(topic_list, request.grade, request.language, focus, request.difficulty, chapter_id=request.chapter_id, section=request.section)
         return {"quiz": quiz}
     except HTTPException:
         raise

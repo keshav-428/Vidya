@@ -103,6 +103,10 @@ def generate_lesson(topic: str, grade: int = 6, language: str = "English",
         "particular wording, use them. Do NOT survey the rest of the chapter or teach adjacent\n"
         "sub-skills the student did not ask about. Stay inside the NCERT context above, and keep\n"
         "it to the smallest complete explanation that genuinely answers the question.\n"
+        "START WHERE THE STUDENT IS, THEN WIDEN. The hook and the FIRST example must use the\n"
+        "student's own question — their numbers, their wording — so it feels like we carried on\n"
+        "from their page rather than started a new topic. Teach the idea behind it, and only in\n"
+        "the LAST example step out to the general rule. Never open on the general rule.\n"
         if focus else ""
     )
     coverage_rule = (

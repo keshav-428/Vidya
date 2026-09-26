@@ -239,7 +239,14 @@ def generate_quiz(topics: list, grade: int, language: str = "English", focus_poi
 
         focus_instruction = ""
         if focus_points:
-            focus_instruction = f"\nPERSONALIZED FOCUS: {focus_points}\nEnsure roughly 40-50% of questions target these struggle areas."
+            focus_instruction = (
+                f"\nPERSONALIZED FOCUS: {focus_points}\n"
+                "Ensure roughly 40-50% of questions target these struggle areas.\n"
+                "START WHERE THE STUDENT IS: the FIRST 2-3 questions must be close TWINS of the "
+                "questions above — the same shape and the same steps, only the numbers changed — so "
+                "the student recognises them as the ones they just got wrong. Only after those may "
+                "the questions widen to the rest of the topic. Never open with an unrelated question."
+            )
 
         difficulty_instruction = DIFFICULTY_INSTRUCTIONS.get(difficulty, DIFFICULTY_INSTRUCTIONS["Medium"])
 

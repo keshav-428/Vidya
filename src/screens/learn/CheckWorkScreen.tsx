@@ -26,7 +26,31 @@ const VERDICT_TONE: Record<Exclude<Verdict, ''>, { bg: string; fg: string; borde
   unreadable:                { bg: 'var(--bg-warm)', fg: 'var(--muted)', border: 'var(--border)', icon: 'camera' },
 };
 
-function QuestionCard({ q, idx, mode }: { q: CheckedQuestion; idx: number; mode: 'marked' | 'hints' }) {
+// The verdicts that mean "this one needs more work". 'unreadable' is left out
+// on purpose: we could not read it, so we do not know that they got it wrong.
+const MISSED: Verdict[] = ['wrong', 'right_method_wrong_answer', 'incomplete'];
+
+function isMissed(q: CheckedQuestion): boolean {
+  return MISSED.includes((q.verdict || '') as Verdict);
+}
+
+// Turns ONE wrong question back into a brief the lesson/quiz can aim at.
+// Without this the follow-up only ever knew the subtopic name, so "teach me
+// these" taught fractions in general instead of the sum they actually missed.
+function describeMiss(q: CheckedQuestion): string {
+  const bits = [`Question: ${q.question}`];
+  if (q.student_answer) bits.push(`The student answered: ${q.student_answer}`);
+  if (q.correct_answer || q.answer) bits.push(`Correct answer: ${q.correct_answer || q.answer}`);
+  if (q.broke_at) bits.push(`Where their working went wrong: ${q.broke_at}`);
+  if (q.improve) bits.push(`What they need to do differently: ${q.improve}`);
+  return bits.join('. ');
+}
+
+function QuestionCard({ q, idx, mode, onPractice }: {
+  q: CheckedQuestion; idx: number; mode: 'marked' | 'hints';
+  /** Present only for a question they missed — practise twins of THIS one. */
+  onPractice?: () => void;
+}) {
   const { t } = useTranslation(['learn', 'common']);
   const [open, setOpen] = useState(false);
   const verdict = (q.verdict || '') as Verdict;
@@ -122,6 +146,15 @@ function QuestionCard({ q, idx, mode }: { q: CheckedQuestion; idx: number; mode:
               <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: '#1A7A4A' }}>{q.correct_answer || q.answer}</span>
             </div>
           )}
+
+          {/* Sits under the question it practises, so it is obvious WHICH
+              question the practice is about. */}
+          {onPractice && (
+            <button className="v-btn-secondary v-tap" style={{ width: '100%', marginTop: 12 }}
+              onClick={(e) => { e.stopPropagation(); onPractice(); }}>
+              {t('checkWork.practiceLikeThis')} <VIcon name="arrow-right" size={13} color="var(--ink)" />
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -174,10 +207,22 @@ export default function CheckWorkScreen({ go, set, state }: ScreenProps) {
 
   // The follow-up that makes marking worth doing: teach exactly the subtopics
   // behind the wrong answers, then quiz those same ones.
+  // The questions they actually missed — what the lesson and the quiz should
+  // start from, so the follow-up continues THEIR page instead of restarting
+  // the topic from scratch.
+  const missed = (result?.questions || []).filter(isMissed);
+
   const learnWeak = () => {
     const sel: PracticeSelection[] = weak.map((w) => ({ chapterId: w.chapter_id, section: w.section, title: w.title }));
     if (!sel.length) return;
-    set && set({ lessonSel: sel, lessonNext: 'navigable-quiz', revisionSel: sel });
+    const first = weak[0];
+    set && set({
+      lessonSel: sel, lessonNext: 'navigable-quiz', revisionSel: sel,
+      // Aim the lesson at their own sums; ConceptScreen passes this through as `focus`.
+      askedFocus: missed.length ? missed.map(describeMiss).join('\n\n') : null,
+      askedChapterId: first.chapter_id || null,
+      askedSection: first.section || null,
+    });
     go('learn-concept');
   };
 
@@ -185,7 +230,23 @@ export default function CheckWorkScreen({ go, set, state }: ScreenProps) {
     const sel: PracticeSelection[] = weak.map((w) => ({ chapterId: w.chapter_id, section: w.section, title: w.title }));
     if (!sel.length) return;
     const first = weak[0];
-    set && set({ quizScope: { chapterId: first.chapter_id, section: first.section, topic: first.title }, skillId: null });
+    set && set({
+      quizScope: { chapterId: first.chapter_id, section: first.section, topic: first.title },
+      skillId: null,
+      quizFocusPoints: missed.length ? missed.map(describeMiss) : null,
+    });
+    go('navigable-quiz');
+  };
+
+  // "Give me questions like this one" — same pipe as quizWeak, aimed at a
+  // single question rather than every subtopic that went wrong.
+  const practiceLike = (q: CheckedQuestion) => {
+    const w = weak[0];
+    set && set({
+      quizScope: w ? { chapterId: w.chapter_id, section: w.section, topic: w.title } : null,
+      skillId: null,
+      quizFocusPoints: [describeMiss(q)],
+    });
     go('navigable-quiz');
   };
 
@@ -237,7 +298,10 @@ export default function CheckWorkScreen({ go, set, state }: ScreenProps) {
         <p className="v-body" style={{ marginBottom: 20 }}>{result.summary}</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-          {result.questions.map((q, i) => <QuestionCard key={i} q={q} idx={i} mode={result.mode} />)}
+          {result.questions.map((q, i) => (
+            <QuestionCard key={i} q={q} idx={i} mode={result.mode}
+              onPractice={marked && isMissed(q) ? () => practiceLike(q) : undefined} />
+          ))}
         </div>
 
         {/* "These went wrong — want to fix them?" The offer only exists when
