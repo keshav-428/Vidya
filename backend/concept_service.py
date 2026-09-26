@@ -752,6 +752,56 @@ def generate_notes(topic: str, grade: int = 6, language: str = "English",
     return data
 
 
+
+def _guide_text(v) -> str:
+    """One string out of whatever the model produced for a text field."""
+    if isinstance(v, str):
+        return v.strip()
+    if isinstance(v, dict):
+        # e.g. {"wrong_answer": "...", "correction": "..."} → "... — ..."
+        parts = [str(x).strip() for x in v.values() if isinstance(x, (str, int, float)) and str(x).strip()]
+        return " — ".join(parts)
+    if isinstance(v, list):
+        return " ".join(_guide_text(x) for x in v).strip()
+    return "" if v is None else str(v)
+
+
+def _normalise_guide(g: dict) -> dict:
+    """Force a teaching guide into the shape the apps render.
+
+    The model is asked for strings and mostly gives them, but on some topics
+    "watch_for" came back as a list of {wrong_answer, correction} objects, and
+    a React client renders an object child by crashing. Shape is not something
+    to take on trust from a generated response.
+    """
+    g = g if isinstance(g, dict) else {}
+    board = []
+    for b in (g.get("board") or []):
+        if isinstance(b, dict):
+            board.append({
+                "title": _guide_text(b.get("title")),
+                "write": _guide_text(b.get("write")),
+                "say": _guide_text(b.get("say")),
+            })
+        elif b:
+            board.append({"title": "", "write": _guide_text(b), "say": ""})
+
+    check = g.get("check")
+    check = check if isinstance(check, dict) else {}
+
+    return {
+        "misconception": _guide_text(g.get("misconception")),
+        "opening": _guide_text(g.get("opening")),
+        "board": board,
+        "check": {
+            "ask": _guide_text(check.get("ask")),
+            "answer": _guide_text(check.get("answer")),
+            "wrong_if": _guide_text(check.get("wrong_if")),
+        },
+        "watch_for": [t for t in (_guide_text(w) for w in (g.get("watch_for") or [])) if t],
+    }
+
+
 def generate_teaching_guide(topic: str, grade: int = 6, language: str = "English",
                             chapter_id: str = None, section: str = None,
                             shaky: int = 0, of: int = 0, mistakes: list = None):
@@ -821,4 +871,4 @@ Strictly return ONLY the JSON object."""
         contents=prompt,
         config={"response_mime_type": "application/json"},
     )
-    return json.loads(response.text)
+    return _normalise_guide(json.loads(response.text))

@@ -13,6 +13,16 @@ import { useEffect, useState } from 'react';
 import { getTeachingGuide, type TeachingGuide, type TeacherClass } from '../api';
 import { TopBar } from '../ui/Chrome';
 
+/** Renders whatever came back as text. A generated response is data, not a
+ *  promise about shape — an object child crashes React outright, which is
+ *  exactly how this screen went blank the first time. */
+const text = (v: unknown): string =>
+  typeof v === 'string' ? v
+    : v == null ? ''
+    : Array.isArray(v) ? v.map(text).join(' ')
+    : typeof v === 'object' ? Object.values(v as Record<string, unknown>).map(text).filter(Boolean).join(' — ')
+    : String(v);
+
 export default function HowToTeach({ klass, topic, chapterId, section, shaky, of, onBack, onProfile, teacherName }: {
   klass: TeacherClass;
   topic: string;
@@ -55,45 +65,45 @@ export default function HowToTeach({ klass, topic, chapterId, section, shaky, of
           <>
             <div className="v-card" style={{ marginBottom: 12 }}>
               <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>What they believe that is wrong</div>
-              <div style={{ fontSize: 15, lineHeight: 1.55 }}>{g.misconception}</div>
+              <div style={{ fontSize: 15, lineHeight: 1.55 }}>{text(g.misconception)}</div>
             </div>
 
             <div className="v-card" style={{ marginBottom: 12 }}>
               <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>Open with this</div>
-              <div style={{ fontSize: 15, lineHeight: 1.6, fontStyle: 'italic' }}>“{g.opening}”</div>
+              <div style={{ fontSize: 15, lineHeight: 1.6, fontStyle: 'italic' }}>“{text(g.opening)}”</div>
             </div>
 
-            {g.board.map((b, i) => (
+            {(g.board || []).map((b, i) => (
               <div key={i} className="v-card" style={{ marginBottom: 12 }}>
                 <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>On the board · {i + 1}</div>
-                <div className="v-h2" style={{ marginBottom: 10 }}>{b.title}</div>
+                <div className="v-h2" style={{ marginBottom: 10 }}>{text(b.title)}</div>
                 {/* What to write, set apart so it can be copied at a glance. */}
                 <div style={{
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                   fontSize: 15, lineHeight: 1.5, color: 'var(--indigo-ink)',
                   background: 'var(--indigo-air)', borderRadius: 14, padding: '14px 16px',
                   marginBottom: 12,
-                }}>{b.write}</div>
-                <div style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--muted)' }}>{b.say}</div>
+                }}>{text(b.write)}</div>
+                <div style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--muted)' }}>{text(b.say)}</div>
               </div>
             ))}
 
             <div className="v-card" style={{ marginBottom: 12 }}>
               <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>Then ask the room</div>
-              <div style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 10 }}>{g.check.ask}</div>
+              <div style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 10 }}>{text(g.check?.ask)}</div>
               <div className="row" style={{ marginBottom: 8 }}>
                 <span className="note grow">Answer</span>
-                <span style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700 }}>{g.check.answer}</span>
+                <span style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700 }}>{text(g.check?.answer)}</span>
               </div>
-              <div className="note">{g.check.wrong_if}</div>
+              <div className="note">{text(g.check?.wrong_if)}</div>
             </div>
 
             <div className="v-card-soft" style={{ marginBottom: 16 }}>
               <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>Watch for</div>
-              {g.watch_for.map((w, i) => (
+              {(g.watch_for || []).map((w, i) => (
                 <div key={i} className="row" style={{ alignItems: 'flex-start', marginBottom: 10 }}>
                   <span style={{ width: 6, height: 6, borderRadius: 9999, background: 'var(--saffron)', flexShrink: 0, marginTop: 7 }} />
-                  <span className="grow" style={{ fontSize: 14, lineHeight: 1.55 }}>{w}</span>
+                  <span className="grow" style={{ fontSize: 14, lineHeight: 1.55 }}>{text(w)}</span>
                 </div>
               ))}
             </div>
