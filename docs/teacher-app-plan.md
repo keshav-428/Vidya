@@ -1,6 +1,6 @@
 # Teacher App — Plan
 
-Status: **direction agreed, nothing built**
+Status: **phases 0-3 built** (class + join code + the one screen); not yet deployed
 Decided: phone-first web page, **read-only**, aimed at the school classroom teacher.
 
 ## 1. What it is for
@@ -80,7 +80,7 @@ scroll.
 |---|---|---|
 | 0 | `classes` collection, join code generation, `classIds` on the student profile | a code can be made and redeemed via the API |
 | 1 | Teacher sign-up + create class; join-code entry in the student app (Profile → Join a class) | 5 real students join one class |
-| 2 | `GET /class-summary/{classId}` — aggregation **on the server** | returns the three blocks with evidence counts |
+| 2 | `GET /classes/{classId}/summary` — aggregation **on the server** | returns the three blocks with evidence counts |
 | 3 | The one screen, mobile-first web, same repo, deployed alongside | a teacher reads it in 30 seconds |
 | 4 | Per-student drill-down (one tap from "sit with these") | — |
 

@@ -67,3 +67,23 @@ export const getClass = (classId: string) =>
 
 export const getRoster = (classId: string) =>
   request<{ students: RosterStudent[] }>(`/classes/${classId}/roster`).then((d) => d.students || []);
+
+export interface ReteachItem { key: string; title: string; shaky: number; of: number }
+export interface SafeItem { key: string; title: string; of: number }
+export interface AttentionItem { student_id: string; name: string; reason: string }
+
+/** What the class needs tomorrow. Aggregated on the server — the browser
+ *  never sees a child's record, only counts. */
+export interface ClassSummary {
+  class_id: string;
+  name: string;
+  grade: number;
+  students: number;
+  students_with_data: number;
+  reteach: ReteachItem[];
+  attention: AttentionItem[];
+  safe: SafeItem[];
+}
+
+export const getSummary = (classId: string) =>
+  request<ClassSummary>(`/classes/${classId}/summary`);

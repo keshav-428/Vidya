@@ -154,3 +154,201 @@ def leave_class(class_id: str, student_uid: str) -> dict:
     class_ids = [c for c in (profile.get("class_ids") or []) if c != class_id]
     ref.set({"class_ids": class_ids}, merge=True)
     return {"class_id": class_id, "left": True}
+
+
+# ─────────────────────────────────────────────────────────────
+#  Class summary — "what should I reteach tomorrow, and who should
+#  I sit with?", which is the only question the teacher app answers.
+#
+#  Aggregated HERE rather than in the browser: a teacher's phone should
+#  never download 38 children's full records, and those records should
+#  not sit in a browser at all.
+# ─────────────────────────────────────────────────────────────
+
+# Mirrors src/lib/mastery.ts and src/lib/progress.ts. If a threshold moves
+# there it has to move here, or a teacher and a student will be told two
+# different things about the same number.
+MIN_EVIDENCE = int(os.getenv("CLASS_MIN_EVIDENCE", "5"))      # scored questions before a level means anything
+STALE_DAYS = int(os.getenv("CLASS_STALE_DAYS", "7"))          # silence that is worth a teacher's attention
+MAX_RETEACH = int(os.getenv("CLASS_MAX_RETEACH", "3"))        # a teacher has one period, not ten
+MAX_ATTENTION = int(os.getenv("CLASS_MAX_ATTENTION", "4"))    # four names, never a league table
+SAFE_RATIO = float(os.getenv("CLASS_SAFE_RATIO", "0.8"))      # "safe to move on" needs to be genuinely safe
+
+WEAK = ("needshelp", "improving")
+
+
+def _bucket(ewma: float) -> str:
+    """Same thresholds the student sees on their own progress screen."""
+    if ewma >= 0.9:
+        return "strong"
+    if ewma >= 0.75:
+        return "confident"
+    if ewma >= 0.5:
+        return "improving"
+    return "needshelp"
+
+
+def _parse_key(key: str):
+    chapter_id, _, section = key.partition("::")
+    return chapter_id, (section or None)
+
+
+_TITLE_CACHE: dict = {}
+
+
+def _section_titles(chapter_id: str) -> dict:
+    """section number → NCERT section title, read from the ingested KB.
+
+    The teacher app has no copy of the syllabus, and duplicating one would
+    be a second thing to keep in step. The knowledge base already carries
+    the real titles, so they come from there and are cached per process.
+    """
+    if chapter_id in _TITLE_CACHE:
+        return _TITLE_CACHE[chapter_id]
+    titles = {}
+    try:
+        db = _db()
+        docs = db.collection("ncert_knowledge_base").where(
+            "metadata.chapter_id", "==", chapter_id).stream()
+        for d in docs:
+            meta = (d.to_dict() or {}).get("metadata") or {}
+            sec, title = meta.get("section"), meta.get("section_title")
+            if sec and title and sec not in titles:
+                titles[sec] = title
+    except Exception:
+        titles = {}
+    _TITLE_CACHE[chapter_id] = titles
+    return titles
+
+
+def _chapter_name(chapter_id: str) -> str:
+    """'g6-fractions' → 'Fractions'. A fallback for display only."""
+    slug = chapter_id.split("-", 1)[1] if "-" in chapter_id else chapter_id
+    return slug.replace("-", " ").strip().title()
+
+
+def _title_for(key: str) -> str:
+    chapter_id, section = _parse_key(key)
+    if section:
+        found = _section_titles(chapter_id).get(section)
+        if found:
+            return found
+        return f"{_chapter_name(chapter_id)} {section}"
+    return _chapter_name(chapter_id)
+
+
+def _days_since(iso: str) -> int:
+    try:
+        seen = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        if seen.tzinfo is None:
+            seen = seen.replace(tzinfo=timezone.utc)
+        return max(0, (datetime.now(timezone.utc) - seen).days)
+    except Exception:
+        return -1   # unknown, not "today" — never invent recency
+
+
+def class_summary(class_id: str, teacher_uid: str) -> dict:
+    """The three blocks, each carrying the evidence it rests on.
+
+    Every count says how many students it is based on. A dashboard that
+    speaks confidently from 15 of 38 children will be wrong in front of a
+    teacher once, and then never be trusted again.
+    """
+    klass = get_class(class_id, teacher_uid)
+    db = _db()
+    docs = db.collection(PROFILES).where("class_ids", "array_contains", class_id).stream()
+
+    total = 0
+    with_data = 0
+    # skill key → {"shaky": n, "seen": n}
+    skills: dict = {}
+    students = []
+
+    for d in docs:
+        total += 1
+        p = d.to_dict() or {}
+        mastery = p.get("mastery") or {}
+        name = p.get("name") or p.get("student_name") or ""
+        weak_count = 0
+        evidence = 0
+        last_seen_days = -1
+
+        for key, m in mastery.items():
+            if not isinstance(m, dict):
+                continue
+            days = _days_since(m.get("lastSeen"))
+            if days >= 0 and (last_seen_days < 0 or days < last_seen_days):
+                last_seen_days = days
+            if int(m.get("attempts") or 0) < MIN_EVIDENCE:
+                continue          # not enough evidence — counted nowhere
+            evidence += 1
+            bucket = _bucket(float(m.get("ewma") or 0))
+            row = skills.setdefault(key, {"shaky": 0, "seen": 0})
+            row["seen"] += 1
+            if bucket in WEAK:
+                row["shaky"] += 1
+                weak_count += 1
+
+        if evidence:
+            with_data += 1
+        students.append({
+            "student_id": d.id, "name": name,
+            "weak": weak_count, "evidence": evidence, "idle_days": last_seen_days,
+            # Started but below the evidence gate is not the same as never
+            # opened it, and a teacher acts on those two differently.
+            "started": bool(mastery),
+        })
+
+    # Reteach: the subtopics the most students are shaky on.
+    reteach = [
+        {"key": k, "title": _title_for(k), "shaky": v["shaky"], "of": v["seen"]}
+        for k, v in skills.items() if v["shaky"]
+    ]
+    reteach.sort(key=lambda r: (r["shaky"], r["shaky"] / max(r["of"], 1)), reverse=True)
+
+    # Safe to move on: nearly everyone with evidence is past it.
+    safe = [
+        {"key": k, "title": _title_for(k), "of": v["seen"]}
+        for k, v in skills.items()
+        if v["seen"] and (v["seen"] - v["shaky"]) / v["seen"] >= SAFE_RATIO
+    ]
+    safe.sort(key=lambda r: r["of"], reverse=True)
+
+    # Sit with these: who needs a teacher's five minutes. Deliberately NOT a
+    # ranking — no scores, capped at four names, and a plain reason each.
+    #
+    # Ordered in tiers rather than by weak-topic count alone. A child who has
+    # never practised has no weak topics BY DEFINITION, so counting alone
+    # buried the one student the teacher most needs to know about beneath
+    # classmates who are merely shaky on one thing.
+    def attention_rank(s):
+        if not s["evidence"]:
+            tier = 3            # invisible: we know nothing about them at all
+        elif s["idle_days"] >= STALE_DAYS:
+            tier = 2            # was here, has gone quiet
+        else:
+            tier = 1            # practising, and struggling
+        return (tier, s["weak"], max(s["idle_days"], 0))
+
+    candidates = [s for s in students if s["weak"] or (s["idle_days"] >= STALE_DAYS) or not s["evidence"]]
+    candidates.sort(key=attention_rank, reverse=True)
+    attention = []
+    for s in candidates[:MAX_ATTENTION]:
+        if not s["evidence"]:
+            reason = "only just started" if s["started"] else "has not practised yet"
+        elif s["idle_days"] >= STALE_DAYS:
+            reason = f"nothing for {s['idle_days']} days"
+        else:
+            reason = f"shaky on {s['weak']} topic{'s' if s['weak'] != 1 else ''}"
+        attention.append({"student_id": s["student_id"], "name": s["name"], "reason": reason})
+
+    return {
+        "class_id": class_id,
+        "name": klass.get("name"),
+        "grade": klass.get("grade"),
+        "students": total,
+        "students_with_data": with_data,
+        "reteach": reteach[:MAX_RETEACH],
+        "attention": attention,
+        "safe": safe[:MAX_RETEACH],
+    }
