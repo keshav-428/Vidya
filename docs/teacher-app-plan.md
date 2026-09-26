@@ -1,6 +1,7 @@
 # Teacher App — Plan
 
-Status: **phases 0-7 built**, stage three (§13-18, tracking over time) planned — class, join code, the one screen, per-student
+Status: **phases 0-11 built** — through tracking over time and the parent
+summary. Never yet run with a real class. — class, join code, the one screen, per-student
 tracking, setting practice, Vidya IDs and invitations. Never yet run with a
 real class.
 Decided: phone-first web page, **read-only**, aimed at the school classroom teacher.

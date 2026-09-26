@@ -860,8 +860,10 @@ def student_report(class_id: str, student_id: str, teacher_uid: str) -> dict:
         })
     assignments.sort(key=lambda r: r.get("created_at") or "", reverse=True)
 
+    stats = _student_stats(profile)
     return {
         **base,
+        "trajectory": _trajectory(class_id, student_id, profile, stats),
         "chapters_touched": len(chapters),
         "chapters_practised": len(practised),
         "quizzes_completed": quizzes,
@@ -904,3 +906,281 @@ def class_mistakes(class_id: str, teacher_uid: str, topic: str, limit: int = 8) 
             if len(out) >= limit:
                 return out[:limit]
     return out[:limit]
+
+
+# ─────────────────────────────────────────────────────────────
+#  Stage three — performance over time (docs/teacher-app-plan.md §13).
+#
+#  Mastery is a rolling average: it knows today and has forgotten
+#  yesterday. Every question a teacher actually asks is about change, so
+#  something has to be kept. One small document per class per week.
+# ─────────────────────────────────────────────────────────────
+
+SNAPSHOTS = "snapshots"
+SOLID = ("confident", "strong")
+# How far back a trend may reach for its "before". Older than this and the
+# comparison stops being about anything the teacher did.
+TREND_WEEKS = int(os.getenv("CLASS_TREND_WEEKS", "4"))
+
+
+def _week_id(dt: datetime = None) -> str:
+    d = dt or datetime.now(timezone.utc)
+    y, w, _ = d.isocalendar()
+    return f"{y}-W{w:02d}"
+
+
+def _snapshot_of(members: dict) -> dict:
+    """This week's state of a class, small enough to keep forever."""
+    out = {}
+    for sid, p in members.items():
+        mastery = p.get("mastery") or {}
+        skills, solid, shaky = {}, 0, 0
+        for key, m in mastery.items():
+            if not isinstance(m, dict) or int(m.get("attempts") or 0) < MIN_EVIDENCE:
+                continue
+            level = _bucket(float(m.get("ewma") or 0))
+            skills[key] = level
+            if level in SOLID:
+                solid += 1
+            elif level in WEAK:
+                shaky += 1
+        out[sid] = {"solid": solid, "shaky": shaky, "evidence": len(skills), "skills": skills}
+    return out
+
+
+def take_snapshot(class_id: str, members: dict = None) -> str:
+    """Records this week's state, once. Lazy — called when a class is read,
+    so there is no scheduler to run, break, or pay for.
+
+    A class nobody opens for three weeks simply has no rows for those weeks.
+    That gap is shown as a gap: a straight line through missing data is a lie.
+    """
+    db = _db()
+    week = _week_id()
+    ref = db.collection(CLASSES).document(class_id).collection(SNAPSHOTS).document(week)
+    try:
+        if ref.get().exists:
+            return week
+        ref.set({"taken_at": _now(), "students": _snapshot_of(members if members is not None else _members(class_id))})
+    except Exception as e:
+        print(f"snapshot for {class_id} failed: {e}")   # never fail a read over history
+    return week
+
+
+def _snapshots(class_id: str, limit: int = 12) -> list:
+    db = _db()
+    try:
+        docs = db.collection(CLASSES).document(class_id).collection(SNAPSHOTS).stream()
+    except Exception:
+        return []
+    rows = [{"week": d.id, **(d.to_dict() or {})} for d in docs]
+    rows.sort(key=lambda r: r.get("week") or "")
+    return rows[-limit:]
+
+
+def _weeks_between(week_a: str, week_b: str) -> int:
+    """Rough distance in weeks between two ISO week ids."""
+    try:
+        ya, wa = int(week_a[:4]), int(week_a[6:])
+        yb, wb = int(week_b[:4]), int(week_b[6:])
+        return (yb - ya) * 52 + (wb - wa)
+    except Exception:
+        return 0
+
+
+def _baseline(class_id: str):
+    """The oldest snapshot still recent enough to compare against, or None."""
+    rows = [r for r in _snapshots(class_id) if r.get("week") != _week_id()]
+    if not rows:
+        return None
+    now = _week_id()
+    in_range = [r for r in rows if _weeks_between(r["week"], now) <= TREND_WEEKS]
+    return (in_range or rows)[0]
+
+
+# ── Phase 9: is the class moving, and did what I did work? ──
+
+def class_movement(class_id: str, teacher_uid: str) -> dict:
+    """Change since the last comparable week, per subtopic.
+
+    Reads as a sentence a teacher could say out loud: "5 of 24 solid a
+    fortnight ago, 14 now." Returns nothing at all rather than a shrug when
+    there is no earlier week to compare with — a first week has no trend, and
+    saying so is better than drawing one.
+    """
+    get_class(class_id, teacher_uid)
+    members = _members(class_id)
+    take_snapshot(class_id, members)
+
+    base = _baseline(class_id)
+    if not base:
+        return {"has_history": False, "weeks_ago": 0, "topics": [], "students_then": 0}
+
+    then = base.get("students") or {}
+    now = _snapshot_of(members)
+    weeks_ago = max(_weeks_between(base["week"], _week_id()), 1)
+
+    # Every skill either week knows about.
+    keys = {k for s in then.values() for k in (s.get("skills") or {})}
+    keys |= {k for s in now.values() for k in (s.get("skills") or {})}
+
+    topics = []
+    for key in keys:
+        def count(snap):
+            got = [s.get("skills", {}).get(key) for s in snap.values()]
+            seen = [g for g in got if g]
+            return sum(1 for g in seen if g in SOLID), len(seen)
+        solid_then, of_then = count(then)
+        solid_now, of_now = count(now)
+        if not of_now and not of_then:
+            continue
+        topics.append({
+            "key": key, "title": _title_for(key),
+            "solid_then": solid_then, "of_then": of_then,
+            "solid_now": solid_now, "of_now": of_now,
+            "gained": solid_now - solid_then,
+        })
+
+    # Biggest real movement first, either direction — a class going backwards
+    # is at least as worth a teacher's attention as one going forwards.
+    topics.sort(key=lambda t: abs(t["gained"]), reverse=True)
+    return {
+        "has_history": True,
+        "weeks_ago": weeks_ago,
+        "students_then": len(then),
+        "topics": topics[:MAX_RETEACH],
+    }
+
+
+def _level_at(snapshots: list, before_iso: str, student_id: str, skill_key: str):
+    """A student's level for one skill in the last snapshot taken before a date."""
+    best = None
+    for r in snapshots:
+        taken = r.get("taken_at") or ""
+        if taken and before_iso and taken > before_iso:
+            continue
+        lvl = ((r.get("students") or {}).get(student_id) or {}).get("skills", {}).get(skill_key)
+        if lvl:
+            best = lvl
+    return best
+
+
+def assignment_outcomes(class_id: str, teacher_uid: str) -> list:
+    """What was set, who did it, and whether it moved anyone.
+
+    "9 of 18 have done it, and 6 have moved up a level" is the sentence that
+    tells a teacher their time was not wasted — the one thing that makes them
+    set practice a second time.
+    """
+    rows = class_assignments(class_id, teacher_uid)
+    if not rows:
+        return []
+    members = _members(class_id)
+    snaps = _snapshots(class_id)
+    db = _db()
+
+    by_id = {}
+    for d in db.collection(ASSIGNMENTS).where("class_id", "==", class_id).stream():
+        by_id[d.id] = d.to_dict() or {}
+
+    out = []
+    for r in rows:
+        a = by_id.get(r["assignment_id"], {})
+        key, created = a.get("skill_key") or "", a.get("created_at") or ""
+        targets = a.get("student_ids") or list(members.keys())
+        moved = 0
+        for sid in targets:
+            p = members.get(sid)
+            if not p:
+                continue
+            before = _level_at(snaps, created, sid, key)
+            m = (p.get("mastery") or {}).get(key)
+            after = _bucket(float(m.get("ewma") or 0)) if isinstance(m, dict) and int(m.get("attempts") or 0) >= MIN_EVIDENCE else None
+            if after and (not before or LEVEL_RANK.get(after, 0) > LEVEL_RANK.get(before, 0)):
+                moved += 1
+        out.append({**r, "moved_up": moved, "has_before": bool(snaps)})
+    return out
+
+
+# Mirrors src/lib/mastery.ts. Kept here so a level can be compared, not just read.
+LEVEL_RANK = {"needshelp": 1, "improving": 2, "confident": 3, "strong": 4}
+
+
+# ── Phase 10: one student's trajectory ──
+
+def _trajectory(class_id: str, student_id: str, profile: dict, stats: dict) -> dict:
+    """A word, and the facts behind it.
+
+    'not_practising' is a state of its own on purpose. A child who stops using
+    the app has an unchanging average, so a naive trend calls them steady —
+    exactly backwards, and the failure most likely to cost a teacher's trust.
+    """
+    if not stats["evidence"]:
+        return {"word": "not_practising", "since": None,
+                "facts": ["They have not practised enough for us to say anything yet."]}
+    if stats["idle_days"] >= STALE_DAYS:
+        return {"word": "not_practising", "since": None,
+                "facts": [f"Nothing practised for {stats['idle_days']} days.",
+                          "Their level has not changed because they have stopped, not because they are steady."]}
+
+    base = _baseline(class_id)
+    then = ((base or {}).get("students") or {}).get(student_id) if base else None
+    if not then:
+        return {"word": "steady", "since": None,
+                "facts": ["No earlier week to compare with yet — this is their first."]}
+
+    now_solid, now_shaky = 0, 0
+    for key, m in (profile.get("mastery") or {}).items():
+        if not isinstance(m, dict) or int(m.get("attempts") or 0) < MIN_EVIDENCE:
+            continue
+        level = _bucket(float(m.get("ewma") or 0))
+        if level in SOLID:
+            now_solid += 1
+        elif level in WEAK:
+            now_shaky += 1
+
+    was_solid, was_shaky = int(then.get("solid") or 0), int(then.get("shaky") or 0)
+    weeks = max(_weeks_between(base["week"], _week_id()), 1)
+    ago = "last week" if weeks == 1 else f"{weeks} weeks ago"
+
+    facts = [f"{was_solid} topic{'s' if was_solid != 1 else ''} solid {ago}, {now_solid} now."]
+    if was_shaky != now_shaky:
+        facts.append(f"Shaky on {was_shaky} topic{'s' if was_shaky != 1 else ''} {ago}, {now_shaky} now.")
+
+    gained, fixed = now_solid - was_solid, was_shaky - now_shaky
+    if gained > 0 or fixed > 0:
+        word = "improving"
+    elif gained < 0 or fixed < 0:
+        word = "slipping"
+    else:
+        word = "steady"
+    return {"word": word, "since": base["week"], "facts": facts}
+
+
+def parent_note_inputs(class_id: str, student_id: str, teacher_uid: str) -> dict:
+    """The real facts a parent note must be built from — never invented."""
+    rep = student_report(class_id, student_id, teacher_uid)
+    db = _db()
+    profile = (db.collection(PROFILES).document(student_id).get().to_dict() or {})
+
+    strong = []
+    for key, m in (profile.get("mastery") or {}).items():
+        if not isinstance(m, dict) or int(m.get("attempts") or 0) < MIN_EVIDENCE:
+            continue
+        if _bucket(float(m.get("ewma") or 0)) in SOLID:
+            strong.append(_title_for(key))
+
+    questions = sum(int((m or {}).get("attempts") or 0)
+                    for m in (profile.get("mastery") or {}).values() if isinstance(m, dict))
+    base = _baseline(class_id)
+    weeks = _weeks_between(base["week"], _week_id()) if base else 0
+
+    return {
+        "name": rep.get("name") or "",
+        "grade": profile.get("grade") or profile.get("class_level") or 6,
+        "strong": strong[:3],
+        "weak": [w["title"] for w in rep.get("weak", [])][:3],
+        "questions": questions,
+        "weeks": max(weeks, 0),
+        "trajectory": (rep.get("trajectory") or {}).get("word") or "",
+    }

@@ -8,11 +8,20 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import {
-  getStudentReport, setPractice, splitKey,
-  type StudentReport, type TeacherClass,
+  getStudentReport, setPractice, splitKey, getParentNote,
+  type ParentNote, type StudentReport, type TeacherClass, type TrajectoryWord,
 } from '../api';
 import { TopBar } from '../ui/Chrome';
 import { STATE_STYLE } from './StudentList';
+
+// "Not practising" is its own word on purpose: a child who has stopped has an
+// unchanging average, and calling that "steady" is exactly backwards.
+const TRAJECTORY: Record<TrajectoryWord, { label: string; dot: string }> = {
+  improving:      { label: 'Improving',      dot: 'var(--accent-success)' },
+  steady:         { label: 'Steady',         dot: 'var(--muted-2)' },
+  slipping:       { label: 'Slipping',       dot: '#D97706' },
+  not_practising: { label: 'Not practising', dot: '#C2410C' },
+};
 
 export default function StudentDetail({ klass, studentId, name, onBack, onProfile, teacherName }: {
   klass: TeacherClass;
@@ -26,6 +35,32 @@ export default function StudentDetail({ klass, studentId, name, onBack, onProfil
   const [err, setErr] = useState<string | null>(null);
   const [setting, setSetting] = useState<string | null>(null);
   const [justSet, setJustSet] = useState<string[]>([]);
+  const [note, setNote] = useState<ParentNote | null>(null);
+  const [noteBusy, setNoteBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // For a parent-teacher meeting: three sentences, ready to read out.
+  const parentNote = async () => {
+    setNoteBusy(true);
+    setErr(null);
+    try {
+      setNote(await getParentNote(klass.class_id, studentId));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setNoteBusy(false);
+    }
+  };
+
+  const copyNote = async () => {
+    if (!note) return;
+    const text = `${note.doing_well}\n\n${note.needs_work}\n\n${note.at_home}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* a teacher can still read it off the screen */ }
+  };
 
   useEffect(() => {
     let live = true;
@@ -79,6 +114,23 @@ export default function StudentDetail({ klass, studentId, name, onBack, onProfil
 
         {err && <div className="error">{err}</div>}
         {!d && !err && <div className="empty">Loading…</div>}
+
+        {/* A word and the facts behind it. No chart: a teacher between
+            periods reads a sentence, not an axis. */}
+        {d?.trajectory && (
+          <div className="v-card" style={{ marginBottom: 12 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>Since they started</div>
+            <div className="row" style={{ marginBottom: 8 }}>
+              <span style={{ width: 9, height: 9, borderRadius: 9999, background: TRAJECTORY[d.trajectory.word].dot, flexShrink: 0 }} />
+              <span style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 19 }}>
+                {TRAJECTORY[d.trajectory.word].label}
+              </span>
+            </div>
+            {d.trajectory.facts.map((f, i) => (
+              <div key={i} className="note" style={{ marginBottom: 4 }}>{f}</div>
+            ))}
+          </div>
+        )}
 
         {/* What to do about them today — the reason the teacher opened this. */}
         {d && d.teach_today && (
@@ -157,6 +209,34 @@ export default function StudentDetail({ klass, studentId, name, onBack, onProfil
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {d && (
+          <div className="v-card" style={{ marginBottom: 12 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>For a parent meeting</div>
+            {!note && (
+              <>
+                <p className="note" style={{ marginBottom: 12 }}>
+                  Three sentences about {name || 'this student'} you can read out — what
+                  they are good at, what is hard, and one thing to do at home.
+                </p>
+                <button className="v-btn-secondary v-tap" disabled={noteBusy} onClick={parentNote}>
+                  {noteBusy ? 'Writing…' : 'Write it'}
+                </button>
+              </>
+            )}
+            {note && (
+              <div className="v-enter-fade">
+                <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 10 }}>{note.doing_well}</p>
+                <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 10 }}>{note.needs_work}</p>
+                <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 12 }}>{note.at_home}</p>
+                {note.basis && <div className="note" style={{ marginBottom: 12 }}>{note.basis}.</div>}
+                <button className="v-btn-secondary v-tap" onClick={copyNote}>
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

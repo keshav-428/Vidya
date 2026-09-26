@@ -872,3 +872,68 @@ Strictly return ONLY the JSON object."""
         config={"response_mime_type": "application/json"},
     )
     return _normalise_guide(json.loads(response.text))
+
+
+def generate_parent_note(student_name: str, grade: int = 6, language: str = "English",
+                         strong: list = None, weak: list = None,
+                         questions: int = 0, weeks: int = 0, trajectory: str = ""):
+    """Three sentences a teacher can read out at a parent-teacher meeting.
+
+    This is the one thing here that LEAVES the building, so it is written
+    tightly: about this child only, no comparison with classmates, no rank, no
+    score out of context, and it states what it is based on. A parent should be
+    able to act on it that evening.
+    """
+    strong_list = ", ".join([s for s in (strong or []) if s][:3]) or "nothing clearly yet"
+    weak_list = ", ".join([w for w in (weak or []) if w][:3]) or "nothing in particular"
+    basis = (f"Based on {questions} questions" + (f" over {weeks} weeks" if weeks else "")) if questions else ""
+    trend = {
+        "improving": "They have been getting better recently.",
+        "slipping": "They have gone backwards a little recently.",
+        "not_practising": "They have not been practising lately.",
+    }.get(trajectory, "")
+
+    prompt = f"""You are a Class {grade} Mathematics teacher writing what you will SAY to a
+parent at a parent-teacher meeting about {student_name or "this student"}.
+
+LANGUAGE: {lang_instruction(language)}
+
+{STYLE_GUIDE}
+
+WHAT YOU KNOW ABOUT THIS CHILD:
+- Doing well at: {strong_list}
+- Struggling with: {weak_list}
+- {trend or "No clear trend yet."}
+- {basis or "Not much practice data yet."}
+
+Write for a PARENT, not a teacher: no jargon, no percentages, no mastery levels,
+no mention of an app or of data. Many parents will have limited schooling, so use
+plain words and everyday examples.
+
+Return ONLY valid JSON with EXACTLY this structure:
+{{
+  "doing_well": "one warm, specific sentence about what the child can do — name the actual topic",
+  "needs_work": "one honest, kind sentence about what they are finding hard — name the actual topic, never call the child weak or slow",
+  "at_home": "one concrete thing the parent can do this week, needing nothing but a notebook and ten minutes — no printing, no internet, no buying anything"
+}}
+
+RULES:
+- Never compare this child to other children, to the class, or to any average.
+- Never give a rank, a score, or a percentage.
+- Never blame the child or the parent.
+- Three sentences, each short enough to say out loud in one breath.
+Strictly return ONLY the JSON object."""
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL,
+        contents=prompt,
+        config={"response_mime_type": "application/json"},
+    )
+    data = json.loads(response.text)
+    data = data if isinstance(data, dict) else {}
+    return {
+        "doing_well": _guide_text(data.get("doing_well")),
+        "needs_work": _guide_text(data.get("needs_work")),
+        "at_home": _guide_text(data.get("at_home")),
+        "basis": basis,
+    }

@@ -636,6 +636,9 @@ class InviteStudentRequest(BaseModel):
 class InviteResponseRequest(BaseModel):
     accept: bool
 
+class ParentNoteRequest(BaseModel):
+    language: str = "English"
+
 class TeachingGuideRequest(BaseModel):
     topic: str
     grade: int = 6
@@ -856,6 +859,49 @@ async def teaching_guide_endpoint(request: TeachingGuideRequest, uid: str = Depe
         raise
     except Exception as e:
         print(f"Error in POST /teaching-guide: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}/movement")
+async def class_movement_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return class_service.class_movement(class_id, uid)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}/movement: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}/outcomes")
+async def assignment_outcomes_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return {"assignments": class_service.assignment_outcomes(class_id, uid)}
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}/outcomes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/classes/{class_id}/students/{student_id}/parent-note")
+async def parent_note_endpoint(class_id: str, student_id: str, request: ParentNoteRequest,
+                               uid: str = Depends(require_uid)):
+    """Three sentences for a parent-teacher meeting, from that child's own data."""
+    try:
+        facts = class_service.parent_note_inputs(class_id, student_id, uid)
+        note = concept_service.generate_parent_note(
+            facts["name"], int(facts["grade"] or 6), request.language,
+            facts["strong"], facts["weak"], facts["questions"], facts["weeks"],
+            facts["trajectory"])
+        return {**note, "name": facts["name"]}
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your student")
+    except Exception as e:
+        print(f"Error in parent note: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/classes-overview")

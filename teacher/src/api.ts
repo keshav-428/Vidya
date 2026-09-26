@@ -176,6 +176,7 @@ export interface StudentAssignment {
 export interface RecentQuiz { topic: string; score: number; total: number; when: string }
 
 export interface StudentReport extends StudentDetail {
+  trajectory?: Trajectory;
   chapters_touched: number;
   chapters_practised: number;
   quizzes_completed: number;
@@ -212,4 +213,40 @@ export const getTeachingGuide = (args: {
       shaky: args.shaky || 0,
       of: args.of || 0,
     }),
+  });
+
+// ── Performance over time ────────────────────────────────────
+export interface MovedTopic {
+  key: string; title: string;
+  solid_then: number; of_then: number;
+  solid_now: number; of_now: number;
+  gained: number;
+}
+export interface Movement {
+  has_history: boolean;
+  weeks_ago: number;
+  students_then: number;
+  topics: MovedTopic[];
+}
+export const getMovement = (classId: string) =>
+  request<Movement>(`/classes/${classId}/movement`);
+
+export interface Outcome extends Assignment { moved_up: number; has_before: boolean }
+export const getOutcomes = (classId: string) =>
+  request<{ assignments: Outcome[] }>(`/classes/${classId}/outcomes`).then((d) => d.assignments || []);
+
+export type TrajectoryWord = 'improving' | 'steady' | 'slipping' | 'not_practising';
+export interface Trajectory { word: TrajectoryWord; since: string | null; facts: string[] }
+
+export interface ParentNote {
+  name: string;
+  doing_well: string;
+  needs_work: string;
+  at_home: string;
+  basis: string;
+}
+export const getParentNote = (classId: string, studentId: string, language = 'English') =>
+  request<ParentNote>(`/classes/${classId}/students/${studentId}/parent-note`, {
+    method: 'POST',
+    body: JSON.stringify({ language }),
   });

@@ -5,7 +5,7 @@
 //  shouting into a void, and nobody does it twice.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
-import { getAssignments, type Assignment, type TeacherClass } from '../api';
+import { getOutcomes, type Outcome, type TeacherClass } from '../api';
 import { TopBar } from '../ui/Chrome';
 
 function when(iso: string): string {
@@ -20,12 +20,12 @@ export default function Assignments({ klass, onBack, onProfile, teacherName }: {
   onProfile: () => void;
   teacherName: string;
 }) {
-  const [rows, setRows] = useState<Assignment[] | null>(null);
+  const [rows, setRows] = useState<Outcome[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
-    getAssignments(klass.class_id)
+    getOutcomes(klass.class_id)
       .then((a) => { if (live) setRows(a); })
       .catch((e) => { if (live) { setErr(e.message); setRows([]); } });
     return () => { live = false; };
@@ -56,7 +56,15 @@ export default function Assignments({ klass, onBack, onProfile, teacherName }: {
               <div style={{ height: 6, borderRadius: 9999, background: 'var(--border)', overflow: 'hidden', marginBottom: 8 }}>
                 <div style={{ width: `${share}%`, height: '100%', background: 'var(--accent-success)' }} />
               </div>
-              <div className="note">{a.done} of {a.of} done</div>
+              <div className="note">
+                {a.done} of {a.of} done
+                {/* The half that tells a teacher their time was not wasted. */}
+                {a.moved_up > 0 && (
+                  <span style={{ color: 'var(--accent-success)', fontWeight: 700 }}>
+                    {' '}· {a.moved_up} moved up a level
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}

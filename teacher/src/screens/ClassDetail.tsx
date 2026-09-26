@@ -13,8 +13,8 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import {
-  getSummary, getAssignments, setPractice, splitKey,
-  type Assignment, type ClassSummary, type TeacherClass,
+  getSummary, getAssignments, setPractice, splitKey, getMovement,
+  type Assignment, type ClassSummary, type Movement, type TeacherClass,
 } from '../api';
 import { TopBar } from '../ui/Chrome';
 
@@ -32,16 +32,19 @@ export default function ClassDetail({ klass, onBack, onProfile, teacherName, onS
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [setting, setSetting] = useState(false);
+  const [movement, setMovement] = useState<Movement | null>(null);
 
   useEffect(() => {
     let live = true;
     Promise.all([
       getSummary(klass.class_id).catch((e) => { if (live) setErr(e.message); return null; }),
       getAssignments(klass.class_id).catch(() => [] as Assignment[]),
-    ]).then(([s, a]) => {
+      getMovement(klass.class_id).catch(() => null),
+    ]).then(([s, a, m]) => {
       if (!live) return;
       setSummary(s);
       setAssignments(a);
+      setMovement(m);
     });
     return () => { live = false; };
   }, [klass.class_id]);
@@ -113,6 +116,27 @@ export default function ClassDetail({ klass, onBack, onProfile, teacherName, onS
                 ? 'Nothing is standing out. The class is keeping up with what they have practised.'
                 : 'Once your students have answered a few questions each, this will name what to reteach.'}
             </div>
+          </div>
+        )}
+
+        {/* Is the class moving? One sentence a teacher could say out loud.
+            Shown only where there is an earlier week to compare with — a
+            first week has no trend, and inventing one is worse than silence. */}
+        {movement?.has_history && movement.topics.length > 0 && (
+          <div className="v-card-soft" style={{ marginBottom: 10 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>
+              Since {movement.weeks_ago === 1 ? 'last week' : `${movement.weeks_ago} weeks ago`}
+            </div>
+            {movement.topics.map((t) => (
+              <div key={t.key} style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 6 }}>
+                <b>{t.title}:</b> {t.solid_then} of {t.of_then} solid then, {t.solid_now} of {t.of_now} now
+                {t.gained !== 0 && (
+                  <span style={{ color: t.gained > 0 ? 'var(--accent-success)' : 'var(--accent-warn)', fontWeight: 700 }}>
+                    {' '}{t.gained > 0 ? '↑' : '↓'}{Math.abs(t.gained)}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
