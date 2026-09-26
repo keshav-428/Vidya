@@ -1,6 +1,6 @@
 # Teacher App — Plan
 
-Status: **phases 0-7 built** — class, join code, the one screen, per-student
+Status: **phases 0-7 built**, stage three (§13-18, tracking over time) planned — class, join code, the one screen, per-student
 tracking, setting practice, Vidya IDs and invitations. Never yet run with a
 real class.
 Decided: phone-first web page, **read-only**, aimed at the school classroom teacher.
@@ -204,3 +204,90 @@ setting practice feels like shouting into a void and no one does it twice.
   a named child is a bigger claim on that child's time than a dashboard.
 - The teacher app is English only; the student app is fully Hindi.
 - Teachers cannot remove a student, rename a class, or close one.
+
+---
+
+# Stage three — performance over time
+
+Agreed 2026-09-26. This is the app's reason to exist: a teacher can see
+today's state anywhere, but nobody can tell them whether their class is
+*moving*.
+
+## 13. The foundation: nothing stores history
+
+Mastery is an EWMA — one number per student per subtopic, overwritten on every
+result. It knows today and has forgotten yesterday. Every question below is
+about change, so none of them are answerable until something is kept.
+
+**Weekly snapshots.** One document per class per ISO week:
+
+```
+classes/{classId}/snapshots/{YYYY-Www}
+  taken_at
+  students: { uid: { solid: n, shaky: n, evidence: n, skills: { key: level } } }
+```
+
+Written **lazily**: when a class is read and this week has no snapshot, take one.
+No cron, no scheduler, self-healing. A class nobody opens for three weeks has
+gaps, and gaps are shown rather than interpolated — a straight line through
+missing weeks is a lie.
+
+Small: ~30 students × a dozen skills × one doc a week.
+
+## 14. The four questions a teacher actually asks
+
+Not a dashboard. Four questions, each answered in one sentence, in the place
+the teacher already is.
+
+| Question | Where | Answer looks like |
+|---|---|---|
+| Is my class moving? | Today | "Common denominators: 5 of 24 solid a fortnight ago, 14 now." |
+| Did what I did work? | Practice you set | "You set this Monday. 9 of 18 have done it, and 6 have moved up a level." |
+| Who slipped? | Students | A student who *dropped* sorts above one who has always been weak. |
+| What do I tell the parent? | One student | Three sentences, ready to read out. |
+
+## 15. A student's trajectory
+
+A word, then the evidence: **improving · steady · slipping · not practising**.
+
+"Not practising" is its own state on purpose. A child who stops using the app
+has an unchanging average, so a naive trend reads them as *steady* — which is
+exactly backwards, and is the failure most likely to cost a teacher's trust.
+
+Underneath: the two or three facts behind the word, and the date it changed.
+No chart. A line chart at 390px is decoration, and a teacher between periods
+reads a sentence; they do not read axes.
+
+## 16. The parent summary
+
+One tap on a student produces three sentences for a parent-teacher meeting:
+what the child is good at, what they are struggling with, and one thing to do
+at home. Grounded in that child's real subtopics — never generic advice, never
+a comparison with classmates, never a rank.
+
+This is the moment a teacher most needs evidence and has the least time to
+prepare it, and it is the one thing here a teacher would tell another teacher
+about.
+
+Rules: it leaves the building, so it names no other child, carries no score out
+of context, and says what it is based on ("from 40 questions over three
+weeks"). Parent consent (§7) has to be settled before this ships.
+
+## 17. Rules this stage adds
+
+1. **Inactivity is not stability.** Any trend must distinguish "not moving"
+   from "not playing".
+2. **Small samples are jumpy.** Weekly is about as fast as this can honestly
+   report; a daily trend would cry wolf every Tuesday.
+3. **No ranking, still.** Trajectory is per child against their own past, never
+   against classmates. "Most improved" is a league table wearing a nicer hat.
+4. **Gaps stay visible.** A missing week is shown as missing.
+
+## 18. Build order
+
+| Phase | What | Done when |
+|---|---|---|
+| 8 | Weekly snapshots, written lazily on class read | two weeks of a class produce two documents |
+| 9 | Class movement on Today + "did it work" on Practice | both read from snapshots, with gaps honest |
+| 10 | Student trajectory: the word, the evidence, the date | "not practising" never reads as "steady" |
+| 11 | Parent summary, shareable as text | a teacher can read it aloud without editing |
