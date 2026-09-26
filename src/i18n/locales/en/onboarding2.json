@@ -130,7 +130,10 @@
     "authError": "Could not authenticate.",
     "forgotPassword": "Forgot password?",
     "pleaseWait": "Please wait…",
-    "createAccount": "Create account"
+    "createAccount": "Create account",
+    "resetSending": "Sending…",
+    "resetSent": "Password reset link sent to {{email}}. Check your inbox, and your spam folder.",
+    "resetNoEmail": "Please go back and enter your email first."
   },
   "diagSummary": {
     "eyebrow": "What your warm-up showed",

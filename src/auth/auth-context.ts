@@ -23,6 +23,9 @@ export interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<AuthResult>;
   logIn: (email: string, password: string) => Promise<AuthResult>;
   logOut: () => Promise<void>;
+  /** Emails a password reset link. Added later than the rest — the
+   *  "Forgot password?" link had never been wired to anything. */
+  resetPassword: (email: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

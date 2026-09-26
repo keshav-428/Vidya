@@ -8,7 +8,7 @@ import type { ScreenProps } from '../../types';
 
 export default function PasswordScreen({ go, state }: ScreenProps) {
   const { t } = useTranslation(['onboarding2', 'common']);
-  const { signUp, logIn } = useAuth();
+  const { signUp, logIn, resetPassword } = useAuth();
   const mode = state?.authMode === 'signup' ? 'signup' : 'login';
   const email = (state?.authEmail as string) || '';
   const isSignup = mode === 'signup';
@@ -17,6 +17,23 @@ export default function PasswordScreen({ go, state }: ScreenProps) {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The reset link had never been wired to anything — it was a bare span.
+  const [resetting, setResetting] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const forgot = async () => {
+    if (resetting) return;
+    if (!email) { setError(t('password.resetNoEmail')); return; }
+    setResetting(true); setError(null);
+    try {
+      await resetPassword(email);
+      setResetSent(true);
+    } catch (e) {
+      setError((e instanceof Error ? e.message : null) || t('password.authError'));
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const submit = async () => {
     if (!pw || busy) return;
@@ -63,9 +80,17 @@ export default function PasswordScreen({ go, state }: ScreenProps) {
         {error && (
           <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--accent-warn)', marginBottom: 20, lineHeight: 1.5 }}>{error}</div>
         )}
+        {resetSent && (
+          <div style={{ fontFamily: 'Inter', fontSize: 12.5, color: 'var(--accent-success)', marginBottom: 20, lineHeight: 1.5 }}>
+            {t('password.resetSent', { email })}
+          </div>
+        )}
         {!error && !isSignup && (
           <div style={{ textAlign: 'right', marginBottom: 32 }}>
-            <span className="v-link">{t('password.forgotPassword')}</span>
+            <button className="v-link v-tap" onClick={forgot} disabled={resetting}
+              style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
+              {resetting ? t('password.resetSending') : t('password.forgotPassword')}
+            </button>
           </div>
         )}
         {!error && isSignup && <div style={{ marginBottom: 32 }} />}

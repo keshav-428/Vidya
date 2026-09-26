@@ -10,6 +10,7 @@ import {
   signInWithEmailAndPassword,
   signOut as fbSignOut,
   onAuthStateChanged,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from '../firebase';
 import { AuthContext, type AuthUser, type AuthResult } from './auth-context';
@@ -23,6 +24,7 @@ function friendly(err: unknown): string {
   if (code.includes('weak-password')) return 'Password should be at least 6 characters.';
   if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found'))
     return 'Email or password is incorrect.';
+  if (code.includes('too-many-requests')) return 'Too many tries. Please wait a few minutes.';
   if (code.includes('network')) return 'Network error — check your connection.';
   return e?.message || 'Something went wrong. Try again.';
 }
@@ -58,11 +60,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) { throw new Error(friendly(err), { cause: err }); }
   };
 
+  const resetPassword = async (email: string): Promise<void> => {
+    if (!configured || !auth) throw new Error('Auth is not configured yet (fill in .env.local).');
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+    } catch (err) { throw new Error(friendly(err), { cause: err }); }
+  };
+
   const logOut = async (): Promise<void> => {
     if (configured && auth) await fbSignOut(auth);
     setUser(null);
   };
 
-  const value = { user, loading, configured, signUp, logIn, logOut };
+  const value = { user, loading, configured, signUp, logIn, logOut, resetPassword };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
