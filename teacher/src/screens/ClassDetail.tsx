@@ -1,14 +1,15 @@
 // ─────────────────────────────────────────────────────────────
-//  One class, in the thirty seconds before the period starts.
+//  One class — ONE answer, then ways out.
 //
-//  This screen answers "what do I teach today" and nothing else. The
-//  code, the invitations, the roster and the list of practice each moved
-//  to their own screen — they used to sit here, and a teacher had to
-//  scroll past joining instructions to find out what the class needs.
+//  This screen used to carry six blocks: what to reteach, who to sit
+//  with, what is safe, the code, the roster, what had been set. Splitting
+//  the app into screens was not enough while every screen still held
+//  everything — a teacher in the thirty seconds before a period should
+//  see one thing to do, not a report.
 //
-//  Every number says what it is based on. A class number with no
-//  denominator will be wrong in front of a teacher once, and then the
-//  whole screen stops being believed.
+//  So: the single most urgent topic, and three doors. Who needs you is a
+//  count on the Students door rather than a second list of the same
+//  names; the other topics live behind the card.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import {
@@ -16,20 +17,18 @@ import {
   type Assignment, type ClassSummary, type TeacherClass,
 } from '../api';
 
-export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssignments }: {
+export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssignments, onTopics }: {
   klass: TeacherClass;
   onBack: () => void;
-  /** Into the student list — where "who needs me" is answered per child. */
   onStudents: () => void;
-  /** Into joining: the code, and inviting by Vidya ID. */
   onAdd: () => void;
-  /** Into what has been set, and who has done it. */
   onAssignments: () => void;
+  onTopics: () => void;
 }) {
   const [summary, setSummary] = useState<ClassSummary | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [err, setErr] = useState<string | null>(null);
-  const [setting, setSetting] = useState<string | null>(null);
+  const [setting, setSetting] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -44,22 +43,28 @@ export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssign
     return () => { live = false; };
   }, [klass.class_id]);
 
-  const assign = async (key: string, title: string) => {
-    const { chapterId, section } = splitKey(key);
-    setSetting(key);
+  const top = summary?.reteach?.[0] || null;
+  const alreadySet = !!top && assignments.some((a) => a.title === top.title);
+
+  const assign = async () => {
+    if (!top) return;
+    const { chapterId, section } = splitKey(top.key);
+    setSetting(true);
     setErr(null);
     try {
-      await setPractice(klass.class_id, chapterId, section, title);
+      await setPractice(klass.class_id, chapterId, section, top.title);
       setAssignments(await getAssignments(klass.class_id));
     } catch (e) {
       setErr((e as Error).message);
     } finally {
-      setSetting(null);
+      setSetting(false);
     }
   };
 
   const joined = summary?.students ?? 0;
   const heard = summary?.students_with_data ?? 0;
+  const needing = summary?.attention?.length ?? 0;
+  const more = Math.max((summary?.reteach?.length ?? 0) - 1, 0);
 
   return (
     <>
@@ -72,7 +77,7 @@ export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssign
         <h1 className="v-h1">{klass.name}</h1>
 
         {/* The denominator, before anything that rests on it. */}
-        <p className="v-body" style={{ marginBottom: 20 }}>
+        <p className="v-body" style={{ marginBottom: 22 }}>
           {summary === null ? 'Reading your class…'
             : heard > 0 ? `Based on ${heard} of ${joined} student${joined === 1 ? '' : 's'} who have been practising.`
             : joined > 0 ? `${joined} student${joined === 1 ? '' : 's'} joined. Nobody has practised enough yet for this to say anything.`
@@ -81,61 +86,40 @@ export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssign
 
         {err && <div className="error">{err}</div>}
 
-        {summary && summary.reteach.length > 0 && (
-          <div className="v-card" style={{ marginBottom: 12 }}>
-            <div className="v-eyebrow-sm" style={{ marginBottom: 14 }}>Teach this today</div>
-            {summary.reteach.map((r) => {
-              const already = assignments.some((a) => a.title === r.title);
-              return (
-                <div key={r.key} style={{ marginBottom: 16 }}>
-                  <div className="v-h2" style={{ marginBottom: 6 }}>{r.title}</div>
-                  <div className="note" style={{ marginBottom: 8 }}>{r.shaky} of {r.of} still shaky</div>
-                  <div style={{ height: 6, borderRadius: 9999, background: 'var(--border)', overflow: 'hidden', marginBottom: 10 }}>
-                    <div style={{ width: `${Math.round((r.shaky / Math.max(r.of, 1)) * 100)}%`, height: '100%', background: 'var(--saffron)' }} />
-                  </div>
-                  {/* The loop closes here: what we just reported, set as work. */}
-                  <button className="v-btn-secondary v-tap"
-                    disabled={setting === r.key || already}
-                    onClick={() => assign(r.key, r.title)}>
-                    {already ? 'Practice set' : setting === r.key ? 'Setting…' : 'Set as practice'}
-                  </button>
-                </div>
-              );
-            })}
+        {/* The one answer this screen exists to give. */}
+        {top && (
+          <div className="v-card" style={{ marginBottom: 14 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>Teach this today</div>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 21, lineHeight: 1.2, marginBottom: 6 }}>
+              {top.title}
+            </div>
+            <div className="note" style={{ marginBottom: 12 }}>{top.shaky} of {top.of} still shaky</div>
+            <button className="v-btn-primary v-tap" disabled={setting || alreadySet} onClick={assign}>
+              {alreadySet ? 'Practice set' : setting ? 'Setting…' : 'Set as practice'}
+            </button>
           </div>
         )}
 
-        {summary && summary.attention.length > 0 && (
-          <div className="v-card v-tap" style={{ marginBottom: 12 }} onClick={onStudents}>
-            <div className="v-eyebrow-sm" style={{ marginBottom: 12 }}>Sit with these</div>
-            {summary.attention.map((a) => (
-              <div key={a.student_id} className="student">
-                <div className="avatar">{(a.name || '?').slice(0, 1).toUpperCase()}</div>
-                <div className="grow">
-                  <div style={{ fontSize: 14.5, fontWeight: 600 }}>{a.name || 'Unnamed student'}</div>
-                  <div className="note">{a.reason}</div>
-                </div>
-              </div>
-            ))}
+        {summary && !top && joined > 0 && (
+          <div className="v-card" style={{ marginBottom: 14 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>Teach this today</div>
+            <div className="empty" style={{ padding: 0 }}>
+              {heard > 0
+                ? 'Nothing is standing out. The class is keeping up with what they have practised.'
+                : 'Once your students have answered a few questions each, this will name what to reteach.'}
+            </div>
           </div>
         )}
 
-        {summary && summary.safe.length > 0 && (
-          <div className="v-card" style={{ marginBottom: 16 }}>
-            <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>Safe to move on</div>
-            {summary.safe.map((sf) => (
-              <div key={sf.key} className="row" style={{ marginBottom: 8 }}>
-                <span className="grow" style={{ fontSize: 14.5 }}>{sf.title}</span>
-                <span className="note">{sf.of} checked</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* The three doors out of here, each its own screen. */}
+        {/* Ways out. Each is a screen, and each says what it holds. */}
         <Door title="Students"
-          sub={joined ? `${joined} in this class · who needs you` : 'Nobody has joined yet'}
+          sub={joined === 0 ? 'Nobody has joined yet'
+            : needing > 0 ? `${needing} of ${joined} could use your time`
+            : `${joined} in this class · all keeping up`}
           onClick={onStudents} />
+        <Door title="Topics"
+          sub={more > 0 ? `${more} more topic${more === 1 ? '' : 's'} to look at` : 'Where the class stands, topic by topic'}
+          onClick={onTopics} />
         <Door title="Practice you set"
           sub={assignments.length ? `${assignments.length} set · who has done it` : 'Nothing set yet'}
           onClick={onAssignments} />

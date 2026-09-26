@@ -18,9 +18,10 @@ import StudentList from './screens/StudentList';
 import StudentDetail from './screens/StudentDetail';
 import AddStudents from './screens/AddStudents';
 import Assignments from './screens/Assignments';
+import Topics from './screens/Topics';
 import type { StudentRow, TeacherClass } from './api';
 
-type View = 'class' | 'students' | 'add' | 'assignments';
+type View = 'class' | 'students' | 'add' | 'assignments' | 'topics';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -59,13 +60,17 @@ export default function App() {
   if (open && view === 'assignments') {
     return <Assignments klass={open} onBack={() => setView('class')} />;
   }
+  if (open && view === 'topics') {
+    return <Topics klass={open} onBack={() => setView('class')} />;
+  }
   if (open) {
     return (
       <ClassDetail klass={open}
         onBack={closeClass}
         onStudents={() => setView('students')}
         onAdd={() => setView('add')}
-        onAssignments={() => setView('assignments')} />
+        onAssignments={() => setView('assignments')}
+        onTopics={() => setView('topics')} />
     );
   }
 
