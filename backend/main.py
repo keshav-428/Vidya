@@ -9,6 +9,9 @@ import vidya_service
 import exam_service
 import concept_service
 import viva_service
+import class_service
+from auth_guard import require_uid
+from fastapi import Depends
 from dotenv import load_dotenv
 import os
 
@@ -606,4 +609,80 @@ async def grade_paper_endpoint(request: GradePaperRequest):
         raise
     except Exception as e:
         print(f"Error in /grade-paper: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Classes: the teacher ↔ student link (see docs/teacher-app-plan.md) ──
+#  Separate from every student route above in one important way: these read
+#  OTHER people's children, so the caller is verified from their Firebase token
+#  instead of naming themselves in the body.
+
+class CreateClassRequest(BaseModel):
+    name: str                 # what the teacher calls it, e.g. "6B"
+    grade: int = 6
+
+class JoinClassRequest(BaseModel):
+    code: str
+
+@app.post("/classes")
+async def create_class_endpoint(request: CreateClassRequest, uid: str = Depends(require_uid)):
+    try:
+        name = (request.name or "").strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="A class needs a name")
+        return class_service.create_class(uid, name, request.grade)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in POST /classes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes")
+async def list_classes_endpoint(uid: str = Depends(require_uid)):
+    try:
+        return {"classes": class_service.list_classes(uid)}
+    except Exception as e:
+        print(f"Error in GET /classes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}")
+async def get_class_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return class_service.get_class(class_id, uid)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}/roster")
+async def class_roster_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return {"students": class_service.roster(class_id, uid)}
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}/roster: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/classes/join")
+async def join_class_endpoint(request: JoinClassRequest, uid: str = Depends(require_uid)):
+    try:
+        return class_service.join_class(request.code, uid)
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        print(f"Error in POST /classes/join: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/classes/{class_id}/leave")
+async def leave_class_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return class_service.leave_class(class_id, uid)
+    except Exception as e:
+        print(f"Error in POST /classes/{class_id}/leave: {e}")
         raise HTTPException(status_code=500, detail=str(e))
