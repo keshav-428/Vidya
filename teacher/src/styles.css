@@ -1,0 +1,162 @@
+/* ─────────────────────────────────────────────────────────────
+   Phone-first. A classroom teacher reads this standing up, between
+   periods, on a phone — so one column, big tap targets, no hover-only
+   affordances. It widens to a comfortable column on a laptop and stops.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --indigo: #3D5AFE;
+  --indigo-air: #EEF1FF;
+  --saffron: #F5821F;
+  --ink: #1A1A2E;
+  --muted: #5A5A72;
+  --muted-2: #8A8AA3;
+  --bg: #FAF9F7;
+  --card: #FFFFFF;
+  --border: #E8E6E1;
+  --border-soft: #F0EEEA;
+  --ok: #1A7A4A;
+  --ok-bg: #EDFAF3;
+  --danger: #C2410C;
+  --danger-bg: #FBEFE8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;   /* 16px side gutter on a phone */
+}
+
+h1 {
+  font-family: Quicksand, Inter, system-ui, sans-serif;
+  font-size: 26px;
+  line-height: 1.2;
+  margin: 0 0 6px;
+}
+
+h2 {
+  font-family: Quicksand, Inter, system-ui, sans-serif;
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin-bottom: 6px;
+}
+
+.sub { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0 0 20px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.row { display: flex; align-items: center; gap: 12px; }
+.grow { flex: 1; min-width: 0; }
+
+label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+input, select {
+  width: 100%;
+  padding: 13px 14px;
+  font-size: 16px;            /* 16px stops iOS zooming the page on focus */
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+input:focus, select:focus { outline: 2px solid var(--indigo); outline-offset: -1px; }
+
+button {
+  width: 100%;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--indigo);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 48px;           /* thumb-sized */
+}
+
+button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--border); }
+button.link { background: none; color: var(--indigo); border: 0; width: auto; padding: 8px 0; min-height: 0; font-weight: 600; }
+button:disabled { opacity: 0.55; cursor: default; }
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--indigo);
+  background: var(--indigo-air);
+  border-radius: 14px;
+  padding: 18px 12px;
+  text-align: center;
+  margin: 4px 0 10px;
+}
+
+.note { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+.error {
+  background: var(--danger-bg);
+  border: 1px solid #EFC6AE;
+  color: var(--danger);
+  border-radius: 12px;
+  padding: 11px 13px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.empty { color: var(--muted); font-size: 14px; line-height: 1.6; padding: 8px 0 16px; }
+
+.student {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.student:last-child { border-bottom: 0; }
+
+.avatar {
+  width: 34px; height: 34px; border-radius: 9999px; flex-shrink: 0;
+  background: var(--indigo-air); color: var(--indigo);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+
+.top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #F4F3F1; --muted: #B8B6C4; --muted-2: #8E8CA0;
+    --bg: #15151C; --card: #1E1E27; --border: #2C2C38; --border-soft: #26262F;
+    --indigo-air: #23273F; --ok-bg: #16281F; --danger-bg: #2B1C16;
+  }
+}

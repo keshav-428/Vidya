@@ -8,7 +8,10 @@ import { globalIgnores } from 'eslint/config'
 export default tseslint.config([
   // `android` holds the generated native project — Capacitor copies the built
   // web bundle and its own bridge script in there, none of which is ours to lint.
-  globalIgnores(['dist', 'android']),
+  // `teacher` is a separate app with its own build and its own dependencies —
+  // this config belongs to the student app, and `npm run lint` here should keep
+  // reporting on the student app alone.
+  globalIgnores(['dist', 'android', 'teacher']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
