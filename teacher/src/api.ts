@@ -186,3 +186,30 @@ export interface StudentReport extends StudentDetail {
 
 export const getStudentReport = (classId: string, studentId: string) =>
   request<StudentReport>(`/classes/${classId}/students/${studentId}/report`);
+
+// ── How to teach it ──────────────────────────────────────────
+export interface BoardStep { title: string; write: string; say: string }
+export interface TeachingGuide {
+  misconception: string;
+  opening: string;
+  board: BoardStep[];
+  check: { ask: string; answer: string; wrong_if: string };
+  watch_for: string[];
+}
+
+export const getTeachingGuide = (args: {
+  topic: string; grade: number; chapterId?: string | null; section?: string | null;
+  classId?: string; shaky?: number; of?: number;
+}) =>
+  request<TeachingGuide>('/teaching-guide', {
+    method: 'POST',
+    body: JSON.stringify({
+      topic: args.topic,
+      grade: args.grade,
+      chapter_id: args.chapterId || null,
+      section: args.section || null,
+      class_id: args.classId || null,
+      shaky: args.shaky || 0,
+      of: args.of || 0,
+    }),
+  });

@@ -636,6 +636,16 @@ class InviteStudentRequest(BaseModel):
 class InviteResponseRequest(BaseModel):
     accept: bool
 
+class TeachingGuideRequest(BaseModel):
+    topic: str
+    grade: int = 6
+    language: str = "English"
+    chapter_id: Optional[str] = None
+    section: Optional[str] = None
+    class_id: Optional[str] = None      # for "x of y shaky" and their real mistakes
+    shaky: int = 0
+    of: int = 0
+
 @app.post("/classes")
 async def create_class_endpoint(request: CreateClassRequest, uid: str = Depends(require_uid)):
     try:
@@ -824,6 +834,28 @@ async def student_detail_endpoint(class_id: str, student_id: str, uid: str = Dep
         raise HTTPException(status_code=403, detail="Not your student")
     except Exception as e:
         print(f"Error in GET /classes/{class_id}/students/{student_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/teaching-guide")
+async def teaching_guide_endpoint(request: TeachingGuideRequest, uid: str = Depends(require_uid)):
+    """How to teach it — for the teacher, in front of a class, today."""
+    try:
+        mistakes = []
+        if request.class_id:
+            try:
+                mistakes = class_service.class_mistakes(request.class_id, uid, request.topic)
+            except PermissionError:
+                raise HTTPException(status_code=403, detail="Not your class")
+            except Exception:
+                mistakes = []   # the guide is still worth having without them
+        return concept_service.generate_teaching_guide(
+            request.topic, request.grade, request.language,
+            request.chapter_id, request.section,
+            request.shaky, request.of, mistakes)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in POST /teaching-guide: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/classes-overview")

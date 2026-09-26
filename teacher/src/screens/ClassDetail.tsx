@@ -18,13 +18,15 @@ import {
 } from '../api';
 import { TopBar } from '../ui/Chrome';
 
-export default function ClassDetail({ klass, onBack, onProfile, teacherName, onStudents, onTopics }: {
+export default function ClassDetail({ klass, onBack, onProfile, teacherName, onStudents, onTopics, onTeach }: {
   klass: TeacherClass;
   onBack: () => void;
   onProfile: () => void;
   teacherName: string;
   onStudents: () => void;
   onTopics: () => void;
+  /** Into the lesson plan for a topic — what to say, what to write. */
+  onTeach: (t: { title: string; key: string; shaky: number; of: number }) => void;
 }) {
   const [summary, setSummary] = useState<ClassSummary | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -92,7 +94,12 @@ export default function ClassDetail({ klass, onBack, onProfile, teacherName, onS
               {top.title}
             </div>
             <div className="note" style={{ marginBottom: 12 }}>{top.shaky} of {top.of} still shaky</div>
-            <button className="v-btn-primary v-tap" disabled={setting || alreadySet} onClick={assign}>
+            {/* Naming the topic is only half the job; this is the other half. */}
+            <button className="v-btn-primary v-tap" style={{ marginBottom: 8 }}
+              onClick={() => onTeach({ title: top.title, key: top.key, shaky: top.shaky, of: top.of })}>
+              How to teach it
+            </button>
+            <button className="v-btn-secondary v-tap" disabled={setting || alreadySet} onClick={assign}>
               {alreadySet ? 'Practice set' : setting ? 'Setting…' : 'Set as practice'}
             </button>
           </div>

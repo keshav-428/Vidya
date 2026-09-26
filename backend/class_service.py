@@ -869,3 +869,38 @@ def student_report(class_id: str, student_id: str, teacher_uid: str) -> dict:
         "teach_today": teach_today,
         "assignments": assignments,
     }
+
+
+def class_mistakes(class_id: str, teacher_uid: str, topic: str, limit: int = 8) -> list:
+    """Real wrong answers this class gave on a topic, for the teaching guide.
+
+    The student app already stores each quiz attempt with its mistakes. Matching
+    is by the attempt's topic text, which is the only link we have — so this is
+    best-effort by design, and returns nothing rather than guessing when the
+    topic does not clearly match.
+    """
+    get_class(class_id, teacher_uid)
+    db = _db()
+    needle = (topic or "").strip().lower()
+    if not needle:
+        return []
+    out = []
+    for sid in _members(class_id).keys():
+        try:
+            attempts = db.collection(PROFILES).document(sid).collection("quiz_attempts").stream()
+        except Exception:
+            continue
+        for d in attempts:
+            a = d.to_dict() or {}
+            at_topic = str(a.get("topic") or "").lower()
+            if not at_topic or (needle not in at_topic and at_topic not in needle):
+                continue
+            for m in (a.get("mistakes") or []):
+                text = m if isinstance(m, str) else (m.get("question") or m.get("q") or "")
+                if isinstance(m, dict) and m.get("user_answer"):
+                    text = f"{text} — answered {m.get('user_answer')}"
+                if text:
+                    out.append(str(text)[:300])
+            if len(out) >= limit:
+                return out[:limit]
+    return out[:limit]

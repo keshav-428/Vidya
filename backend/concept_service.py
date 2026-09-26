@@ -750,3 +750,75 @@ def generate_notes(topic: str, grade: int = 6, language: str = "English",
 
     data["sections"] = sections
     return data
+
+
+def generate_teaching_guide(topic: str, grade: int = 6, language: str = "English",
+                            chapter_id: str = None, section: str = None,
+                            shaky: int = 0, of: int = 0, mistakes: list = None):
+    """A lesson plan for the TEACHER, not the student.
+
+    The teacher app can already say what a class is weak on. This is the other
+    half: what to actually do about it in front of thirty children, in the ten
+    minutes before the bell. Same knowledge base and same house style as the
+    student lessons — a different reader.
+
+    Deliberately shaped for a blackboard and no projector: one misconception,
+    two examples to write up, one question to ask the room, and the wrong
+    answers to expect. Nothing that needs printing or a device per child.
+    """
+    try:
+        context = rag_service.retrieve_context(
+            topic, grade=grade, top_k=5, chapter_id=chapter_id, section=section)
+    except Exception:
+        context = []
+    context_text = "\n\n".join([c.get("content", "") for c in context]) if context else ""
+
+    # What this class in particular got wrong, when we have it. Real mistakes
+    # from their own students beat a textbook's list of common errors.
+    class_note = ""
+    if of:
+        class_note = (f"\nTHIS TEACHER'S CLASS: {shaky} of {of} students are still shaky on this. "
+                      "Pitch it as revision for a class that has already met the idea and not got it.\n")
+    seen = [m for m in (mistakes or []) if m][:8]
+    if seen:
+        class_note += ("\nWHAT THEIR OWN STUDENTS ACTUALLY GOT WRONG (use these, they are real):\n"
+                       + "\n".join(f"- {m}" for m in seen) + "\n")
+
+    prompt = f"""You are an experienced CBSE Class {grade} Mathematics teacher trainer, writing
+a plan for another teacher to use in class TODAY on "{topic}".
+
+LANGUAGE for every text value: {lang_instruction(language)}
+
+{STYLE_GUIDE}
+
+Ground it in this NCERT textbook context if relevant (ignore if unrelated):
+\"\"\"{context_text}\"\"\"
+{class_note}
+WHO IS READING THIS: a teacher with about 30 students, a blackboard, no projector,
+and ten minutes to prepare. Write what they should SAY and WRITE, not a description
+of the topic. No classroom theory, no "engage the learners" language, no group work
+that needs materials.
+
+Return ONLY valid JSON with EXACTLY this structure:
+{{
+  "misconception": "one sentence naming the wrong thinking that causes this — what the students believe that is not true",
+  "opening": "the exact question or line to open with, 1-2 sentences, that exposes that wrong thinking",
+  "board": [
+    {{"title": "short label", "write": "exactly what to write on the board, kept short enough to fit one line", "say": "one or two sentences to say while writing it"}}
+  ],
+  "check": {{"ask": "one question to ask the whole room afterwards", "answer": "the answer", "wrong_if": "what a wrong answer here tells the teacher"}},
+  "watch_for": ["the two or three specific wrong answers to expect, each with the one-line correction"]
+}}
+
+RULES:
+- exactly 2 items in "board" — a teacher has one board and ten minutes.
+- exactly 2 or 3 items in "watch_for".
+- Everything must be usable with chalk. If it cannot be written on a board, leave it out.
+Strictly return ONLY the JSON object."""
+
+    response = gen_client.models.generate_content(
+        model=GEN_MODEL,
+        contents=prompt,
+        config={"response_mime_type": "application/json"},
+    )
+    return json.loads(response.text)

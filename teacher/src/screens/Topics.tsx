@@ -12,11 +12,12 @@ import {
 } from '../api';
 import { TopBar } from '../ui/Chrome';
 
-export default function Topics({ klass, onBack, onProfile, teacherName }: {
+export default function Topics({ klass, onBack, onProfile, teacherName, onTeach }: {
   klass: TeacherClass;
   onBack: () => void;
   onProfile: () => void;
   teacherName: string;
+  onTeach: (t: { title: string; key: string; shaky: number; of: number }) => void;
 }) {
   const [summary, setSummary] = useState<ClassSummary | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -74,6 +75,10 @@ export default function Topics({ klass, onBack, onProfile, teacherName }: {
                   <div style={{ height: 6, borderRadius: 9999, background: 'var(--border)', overflow: 'hidden', marginBottom: 10 }}>
                     <div style={{ width: `${Math.round((r.shaky / Math.max(r.of, 1)) * 100)}%`, height: '100%', background: 'var(--saffron)' }} />
                   </div>
+                  <button className="v-btn-secondary v-tap" style={{ marginBottom: 8 }}
+                    onClick={() => onTeach({ title: r.title, key: r.key, shaky: r.shaky, of: r.of })}>
+                    How to teach it
+                  </button>
                   <button className="v-btn-secondary v-tap"
                     disabled={setting === r.key || already}
                     onClick={() => assign(r.key, r.title)}>

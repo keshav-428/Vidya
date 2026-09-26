@@ -22,6 +22,7 @@ import AddStudents from './screens/AddStudents';
 import Assignments from './screens/Assignments';
 import Topics from './screens/Topics';
 import Profile from './screens/Profile';
+import HowToTeach from './screens/HowToTeach';
 import { TabBar, type Tab } from './ui/Chrome';
 import type { StudentRow, TeacherClass } from './api';
 
@@ -33,6 +34,7 @@ export default function App() {
   // Pushed over a tab, and dismissed back onto it.
   const [student, setStudent] = useState<StudentRow | null>(null);
   const [topics, setTopics] = useState(false);
+  const [teach, setTeach] = useState<{ title: string; key: string; shaky: number; of: number } | null>(null);
   const [profile, setProfile] = useState(false);
   const [classCount, setClassCount] = useState(0);
 
@@ -48,9 +50,9 @@ export default function App() {
   // Opening a class always starts at Today, never wherever the last visit
   // happened to end.
   const openClass = (c: TeacherClass) => {
-    setStudent(null); setTopics(false); setTab('today'); setOpen(c);
+    setStudent(null); setTopics(false); setTeach(null); setTab('today'); setOpen(c);
   };
-  const leaveClass = () => { setStudent(null); setTopics(false); setOpen(null); };
+  const leaveClass = () => { setStudent(null); setTopics(false); setTeach(null); setOpen(null); };
 
   if (!ready) return <div className="wrap"><div className="empty">Loading…</div></div>;
   if (!user) return <SignIn />;
@@ -77,8 +79,21 @@ export default function App() {
         onBack={() => setStudent(null)} onProfile={showProfile} teacherName={name} />
     );
   }
+  if (teach) {
+    const [chapterId, section] = teach.key.includes('::')
+      ? [teach.key.slice(0, teach.key.indexOf('::')), teach.key.slice(teach.key.indexOf('::') + 2)]
+      : [teach.key, null];
+    return (
+      <HowToTeach klass={open} topic={teach.title} chapterId={chapterId} section={section}
+        shaky={teach.shaky} of={teach.of}
+        onBack={() => setTeach(null)} onProfile={showProfile} teacherName={name} />
+    );
+  }
   if (topics) {
-    return <Topics klass={open} onBack={() => setTopics(false)} onProfile={showProfile} teacherName={name} />;
+    return (
+      <Topics klass={open} onBack={() => setTopics(false)} onProfile={showProfile}
+        teacherName={name} onTeach={setTeach} />
+    );
   }
 
   // ── The four tabs ──
@@ -86,7 +101,7 @@ export default function App() {
   return (
     <>
       {tab === 'today' && <ClassDetail klass={open} onTopics={() => setTopics(true)}
-        onStudents={() => setTab('students')} {...chrome} />}
+        onStudents={() => setTab('students')} onTeach={setTeach} {...chrome} />}
       {tab === 'students' && <StudentList klass={open} onOpen={setStudent} {...chrome} />}
       {tab === 'practice' && <Assignments klass={open} {...chrome} />}
       {tab === 'class' && <AddStudents klass={open} {...chrome} />}
