@@ -9,12 +9,17 @@ import { auth } from './firebase';
 import SignIn from './screens/SignIn';
 import Classes from './screens/Classes';
 import ClassDetail from './screens/ClassDetail';
-import type { TeacherClass } from './api';
+import StudentList from './screens/StudentList';
+import StudentDetail from './screens/StudentDetail';
+import type { StudentRow, TeacherClass } from './api';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState<TeacherClass | null>(null);
+  // One tap deeper each time: class → students → one student.
+  const [listing, setListing] = useState(false);
+  const [student, setStudent] = useState<StudentRow | null>(null);
 
   useEffect(() => {
     if (!auth) { setReady(true); return; }
@@ -25,12 +30,27 @@ export default function App() {
   if (!ready) return <div className="wrap"><div className="empty">Loading…</div></div>;
   if (!user) return <SignIn />;
 
-  if (open) return <ClassDetail klass={open} onBack={() => setOpen(null)} />;
+  if (open && student) {
+    return (
+      <StudentDetail klass={open} studentId={student.student_id} name={student.name}
+        onBack={() => setStudent(null)} />
+    );
+  }
+  if (open && listing) {
+    return <StudentList klass={open} onBack={() => setListing(false)} onOpen={setStudent} />;
+  }
+  if (open) {
+    return (
+      <ClassDetail klass={open}
+        onBack={() => { setListing(false); setStudent(null); setOpen(null); }}
+        onStudents={() => setListing(true)} />
+    );
+  }
 
   return (
     <Classes
       teacherName={user.displayName || ''}
-      onOpen={setOpen}
+      onOpen={(c) => { setListing(false); setStudent(null); setOpen(c); }}
       onSignOut={() => { if (auth) signOut(auth); }}
     />
   );

@@ -693,6 +693,30 @@ async def join_class_endpoint(request: JoinClassRequest, uid: str = Depends(requ
         print(f"Error in POST /classes/join: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/classes/{class_id}/students")
+async def class_students_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return {"students": class_service.class_students(class_id, uid)}
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}/students: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}/students/{student_id}")
+async def student_detail_endpoint(class_id: str, student_id: str, uid: str = Depends(require_uid)):
+    try:
+        return class_service.student_detail(class_id, student_id, uid)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your student")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}/students/{student_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/classes/{class_id}/summary")
 async def class_summary_endpoint(class_id: str, uid: str = Depends(require_uid)):
     try:

@@ -87,3 +87,32 @@ export interface ClassSummary {
 
 export const getSummary = (classId: string) =>
   request<ClassSummary>(`/classes/${classId}/summary`);
+
+export type StudentState = 'needs_you' | 'no_data' | 'slipping' | 'on_track';
+
+/** One row in the student list: a state and why — deliberately no numbers. */
+export interface StudentRow {
+  student_id: string;
+  name: string;
+  state: StudentState;
+  reason: string;
+}
+
+export interface WeakSkill { key: string; title: string; percent: number }
+
+/** One student, where the numbers are allowed to live. */
+export interface StudentDetail {
+  student_id: string;
+  name: string;
+  state: StudentState;
+  reason: string;
+  skills_with_evidence: number;
+  idle_days: number;
+  weak: WeakSkill[];
+}
+
+export const getStudents = (classId: string) =>
+  request<{ students: StudentRow[] }>(`/classes/${classId}/students`).then((d) => d.students || []);
+
+export const getStudent = (classId: string, studentId: string) =>
+  request<StudentDetail>(`/classes/${classId}/students/${studentId}`);

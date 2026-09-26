@@ -384,3 +384,111 @@ def my_classes(student_uid: str) -> list:
             "teacher_name": data.get("teacher_name") or "",
         })
     return out
+
+
+# ─────────────────────────────────────────────────────────────
+#  Level 2 and 3: the students, and one student.
+#
+#  Thirty numbers is exactly the overwhelming thing a teacher cannot act
+#  on. The list carries a STATE per student and nothing else; the numbers
+#  live one tap down, where they are about one child and a decision.
+# ─────────────────────────────────────────────────────────────
+
+# Two shaky subtopics is where "keep an eye on them" becomes "sit with them".
+NEEDS_YOU_WEAK = int(os.getenv("CLASS_NEEDS_YOU_WEAK", "2"))
+
+# Read order for the list: who the teacher should deal with first. A child we
+# have heard nothing from ranks above one who is merely shaky, because silence
+# is the state a teacher cannot see from the front of the room.
+STATE_ORDER = {"needs_you": 0, "no_data": 1, "slipping": 2, "on_track": 3}
+
+
+def _student_stats(profile: dict) -> dict:
+    """Weak/evidence/idle for one student, from their mastery map."""
+    mastery = profile.get("mastery") or {}
+    weak, evidence, idle = 0, 0, -1
+    weak_keys = []
+    for key, m in mastery.items():
+        if not isinstance(m, dict):
+            continue
+        days = _days_since(m.get("lastSeen"))
+        if days >= 0 and (idle < 0 or days < idle):
+            idle = days
+        if int(m.get("attempts") or 0) < MIN_EVIDENCE:
+            continue
+        evidence += 1
+        ewma = float(m.get("ewma") or 0)
+        if _bucket(ewma) in WEAK:
+            weak += 1
+            weak_keys.append((key, ewma))
+    return {
+        "weak": weak, "weak_keys": weak_keys, "evidence": evidence,
+        "idle_days": idle, "started": bool(mastery),
+    }
+
+
+def _state_for(st: dict) -> tuple:
+    """(state, reason) for one student. No scores — the list is for triage."""
+    if not st["evidence"]:
+        return ("no_data",
+                "only just started" if st["started"] else "has not practised yet")
+    stale = st["idle_days"] >= STALE_DAYS
+    if st["weak"] >= NEEDS_YOU_WEAK or (st["weak"] and stale):
+        return ("needs_you", f"shaky on {st['weak']} topic{'s' if st['weak'] != 1 else ''}")
+    if stale:
+        return ("slipping", f"nothing for {st['idle_days']} days")
+    if st["weak"]:
+        return ("slipping", "shaky on 1 topic")
+    return ("on_track", "keeping up")
+
+
+def class_students(class_id: str, teacher_uid: str) -> list:
+    """Every student in the class as one row: a state, and why."""
+    get_class(class_id, teacher_uid)
+    db = _db()
+    docs = db.collection(PROFILES).where("class_ids", "array_contains", class_id).stream()
+    rows = []
+    for d in docs:
+        p = d.to_dict() or {}
+        st = _student_stats(p)
+        state, reason = _state_for(st)
+        rows.append({
+            "student_id": d.id,
+            "name": p.get("name") or p.get("student_name") or "",
+            "state": state,
+            "reason": reason,
+        })
+    rows.sort(key=lambda r: (STATE_ORDER.get(r["state"], 9), (r["name"] or "").lower()))
+    return rows
+
+
+def student_detail(class_id: str, student_id: str, teacher_uid: str) -> dict:
+    """One student — where the numbers are allowed to live.
+
+    Checked twice: the teacher must own the class, and the student must be in
+    THAT class. Owning any class cannot become a way to read any child.
+    """
+    get_class(class_id, teacher_uid)
+    db = _db()
+    snap = db.collection(PROFILES).document(student_id).get()
+    if not snap.exists:
+        raise LookupError("No such student")
+    p = snap.to_dict() or {}
+    if class_id not in (p.get("class_ids") or []):
+        raise PermissionError("That student is not in this class")
+
+    st = _student_stats(p)
+    state, reason = _state_for(st)
+    weak = [
+        {"key": k, "title": _title_for(k), "percent": round(e * 100)}
+        for k, e in sorted(st["weak_keys"], key=lambda x: x[1])
+    ]
+    return {
+        "student_id": student_id,
+        "name": p.get("name") or p.get("student_name") or "",
+        "state": state,
+        "reason": reason,
+        "skills_with_evidence": st["evidence"],
+        "idle_days": st["idle_days"],
+        "weak": weak,
+    }

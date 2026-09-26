@@ -15,9 +15,11 @@ import {
   type ClassSummary, type RosterStudent, type TeacherClass,
 } from '../api';
 
-export default function ClassDetail({ klass, onBack }: {
+export default function ClassDetail({ klass, onBack, onStudents }: {
   klass: TeacherClass;
   onBack: () => void;
+  /** Into the student list — where "who needs me" is answered per child. */
+  onStudents: () => void;
 }) {
   const [summary, setSummary] = useState<ClassSummary | null>(null);
   const [students, setStudents] = useState<RosterStudent[] | null>(null);
@@ -119,6 +121,16 @@ export default function ClassDetail({ klass, onBack }: {
             Students open the Vidya app, go to Profile → Join a class, and enter
             this code. It does not expire.
           </p>
+        </div>
+
+        <div className="v-card-soft v-tap row" style={{ marginBottom: 12 }} onClick={onStudents}>
+          <div className="grow">
+            <div style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 16 }}>
+              Every student
+            </div>
+            <div className="note">Who is keeping up, and who needs you</div>
+          </div>
+          <span aria-hidden style={{ color: 'var(--muted-2)', fontSize: 18 }}>›</span>
         </div>
 
         <div className="v-card-soft">
