@@ -29,26 +29,18 @@
 
 * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
+/* The phone shell lives in main.tsx, exactly as the student app does it:
+   a real phone fills the screen, a desktop browser gets the app inside a
+   phone mockup — so the page behind is the desk the phone sits on, and
+   #root only has to get out of the way. */
 html, body {
   margin: 0; padding: 0;
-  background: var(--bg);
+  background: #1a1a1a;
   font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   color: var(--ink);
   min-height: 100vh;
 }
-
-/* The teacher reads this on a phone. On a laptop it stays the same app in
-   a phone-width column rather than stretching a one-column layout across
-   1400px, which is what made it look like a different product. */
-#root {
-  width: 100%;
-  max-width: 460px;
-  margin: 0 auto;
-  min-height: 100vh;
-  background: var(--bg);
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
+#root { width: 100%; min-height: 100vh; }
 
 .v-h1 { font-family: 'Quicksand','Baloo 2','Nunito',system-ui,sans-serif; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; color: #000; font-size: 26px; margin: 0 0 8px; }
 .v-h2 { font-family: 'Quicksand','Baloo 2','Nunito',system-ui,sans-serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--ink); font-size: 17px; margin: 0 0 6px; }
