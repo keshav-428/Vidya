@@ -49,44 +49,52 @@ export default function SignIn() {
   };
 
   return (
-    <div className="wrap">
-      <div className="eyebrow">Vidya for teachers</div>
-      <h1>{mode === 'in' ? 'Sign in' : 'Create your account'}</h1>
-      <p className="sub">
+    <div className="wrap v-enter" style={{ paddingTop: 56 }}>
+      <div className="v-logo-wordmark" style={{ fontSize: 30, marginBottom: 28 }}>Vidya</div>
+
+      <div className="v-eyebrow" style={{ marginBottom: 8 }}>For teachers</div>
+      <h1 className="v-h1">{mode === 'in' ? 'Welcome back' : 'Create your account'}</h1>
+      <p className="v-body" style={{ marginBottom: 24 }}>
         See what your class is struggling with, before the test tells you.
       </p>
 
       {!isFirebaseConfigured() && (
         <div className="error">
-          Firebase is not configured. Copy <code>.env.example</code> to <code>.env.local</code> and fill it in.
+          Firebase is not configured. Copy <b>.env.example</b> to <b>.env.local</b> and fill it in.
         </div>
       )}
       {err && <div className="error">{err}</div>}
 
-      <form className="card" onSubmit={submit}>
+      <form className="v-card" onSubmit={submit} style={{ marginBottom: 16 }}>
         {mode === 'up' && (
-          <>
+          <div className="field">
             <label htmlFor="name">Your name</label>
             <input id="name" value={name} onChange={(e) => setName(e.target.value)}
               autoComplete="name" placeholder="Mrs Sharma" />
-          </>
+          </div>
         )}
-        <label htmlFor="email">Email</label>
-        <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email" required />
+        <div className="field">
+          <label htmlFor="email">Email</label>
+          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email" required />
+        </div>
 
-        <label htmlFor="password">Password</label>
-        <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-          autoComplete={mode === 'up' ? 'new-password' : 'current-password'} required />
+        <div className="field" style={{ marginBottom: 22 }}>
+          <label htmlFor="password">Password</label>
+          <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === 'up' ? 'new-password' : 'current-password'} required />
+        </div>
 
-        <button type="submit" disabled={busy || !isFirebaseConfigured()}>
+        <button type="submit" className="v-btn-primary v-tap" disabled={busy || !isFirebaseConfigured()}>
           {busy ? 'Just a moment…' : mode === 'in' ? 'Sign in' : 'Create account'}
         </button>
       </form>
 
-      <button className="link" onClick={() => { setErr(null); setMode(mode === 'in' ? 'up' : 'in'); }}>
-        {mode === 'in' ? 'New here? Create an account' : 'I already have an account'}
-      </button>
+      <div style={{ textAlign: 'center' }}>
+        <button className="v-link" onClick={() => { setErr(null); setMode(mode === 'in' ? 'up' : 'in'); }}>
+          {mode === 'in' ? 'New here? Create an account' : 'I already have an account'}
+        </button>
+      </div>
     </div>
   );
 }

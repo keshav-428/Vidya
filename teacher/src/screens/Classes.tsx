@@ -50,59 +50,78 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
   };
 
   return (
-    <div className="wrap">
-      <div className="top">
-        <div className="grow">
-          <div className="eyebrow">Vidya for teachers</div>
-          <h1>{teacherName ? `Hello, ${teacherName}` : 'Your classes'}</h1>
-        </div>
-        <button className="link" onClick={onSignOut}>Sign out</button>
+    <>
+      <div className="v-topbar">
+        <span className="v-logo-wordmark" style={{ fontSize: 20 }}>Vidya</span>
+        <button className="v-link" onClick={onSignOut}>Sign out</button>
       </div>
 
-      {err && <div className="error">{err}</div>}
+      <div className="wrap v-enter">
+        <div className="v-eyebrow" style={{ marginBottom: 8 }}>For teachers</div>
+        <h1 className="v-h1">{teacherName ? `Hello, ${teacherName}` : 'Your classes'}</h1>
+        <p className="v-body" style={{ marginBottom: 22 }}>
+          {classes && classes.length
+            ? 'Open a class to see its code and who has joined.'
+            : 'Start by making one class.'}
+        </p>
 
-      {classes === null && <div className="empty">Loading your classes…</div>}
+        {err && <div className="error">{err}</div>}
 
-      {classes !== null && classes.length === 0 && !adding && (
-        <div className="card">
-          <h2>Start with one class</h2>
-          <p className="note">
-            Make a class, then write its code on the board. Students enter the
-            code in the Vidya app and they are in — you do not have to create
-            accounts for them.
-          </p>
-        </div>
-      )}
+        {classes === null && <div className="empty">Loading your classes…</div>}
 
-      {(classes || []).map((c) => (
-        <div key={c.class_id} className="card row" onClick={() => onOpen(c)} style={{ cursor: 'pointer' }}>
-          <div className="avatar">{(c.name || '?').slice(0, 2).toUpperCase()}</div>
-          <div className="grow">
-            <div style={{ fontWeight: 700 }}>{c.name}</div>
-            <div className="note">Class {c.grade} · code {c.join_code}</div>
+        {classes !== null && classes.length === 0 && !adding && (
+          <div className="v-card" style={{ marginBottom: 16 }}>
+            <h2 className="v-h2">One class is enough to start</h2>
+            <p className="note">
+              Make a class, then write its code on the board. Students enter the
+              code in the Vidya app and they are in — you do not have to create
+              accounts for them.
+            </p>
           </div>
-          <span aria-hidden style={{ color: 'var(--muted-2)' }}>›</span>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+          {(classes || []).map((c) => (
+            <div key={c.class_id} className="v-card-soft v-tap row" onClick={() => onOpen(c)}>
+              <div className="avatar">{(c.name || '?').slice(0, 2).toUpperCase()}</div>
+              <div className="grow">
+                <div style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 16 }}>{c.name}</div>
+                <div className="note">Class {c.grade} · code {c.join_code}</div>
+              </div>
+              <span aria-hidden style={{ color: 'var(--muted-2)', fontSize: 20 }}>›</span>
+            </div>
+          ))}
         </div>
-      ))}
 
-      {adding ? (
-        <form className="card" onSubmit={add}>
-          <h2>New class</h2>
-          <label htmlFor="cname">What do you call it?</label>
-          <input id="cname" value={name} onChange={(e) => setName(e.target.value)}
-            placeholder="6B" required autoFocus />
+        {adding ? (
+          <form className="v-card v-enter" onSubmit={add}>
+            <h2 className="v-h2" style={{ marginBottom: 16 }}>New class</h2>
+            <div className="field">
+              <label htmlFor="cname">What do you call it?</label>
+              <input id="cname" value={name} onChange={(e) => setName(e.target.value)}
+                placeholder="6B" required autoFocus />
+            </div>
 
-          <label htmlFor="grade">Which class are they in?</label>
-          <select id="grade" value={grade} onChange={(e) => setGrade(Number(e.target.value))}>
-            {GRADES.map((g) => <option key={g} value={g}>Class {g}</option>)}
-          </select>
+            <div className="field" style={{ marginBottom: 22 }}>
+              <label htmlFor="grade">Which class are they in?</label>
+              <select id="grade" value={grade} onChange={(e) => setGrade(Number(e.target.value))}>
+                {GRADES.map((g) => <option key={g} value={g}>Class {g}</option>)}
+              </select>
+            </div>
 
-          <button type="submit" disabled={busy}>{busy ? 'Creating…' : 'Create class'}</button>
-          <button type="button" className="link" onClick={() => setAdding(false)}>Cancel</button>
-        </form>
-      ) : (
-        classes !== null && <button onClick={() => setAdding(true)}>Create a class</button>
-      )}
-    </div>
+            <button type="submit" className="v-btn-primary v-tap" disabled={busy}>
+              {busy ? 'Creating…' : 'Create class'}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="v-link" onClick={() => setAdding(false)}>Cancel</button>
+            </div>
+          </form>
+        ) : (
+          classes !== null && (
+            <button className="v-btn-primary v-tap" onClick={() => setAdding(true)}>Create a class</button>
+          )
+        )}
+      </div>
+    </>
   );
 }

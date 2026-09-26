@@ -3,11 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#3D5AFE" />
+    <meta name="theme-color" content="#FAF9F6" />
     <title>Vidya for Teachers</title>
+
+    <!-- A teacher keeps this on their phone, so it gets the same Add to Home
+         Screen treatment as the student app. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Vidya Teacher" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- The same families the student app loads, so the two read as one
+         product (Mukta and Baloo 2 carry Devanagari for when Hindi lands here). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700&family=Baloo+2:wght@400;500;600;700&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
