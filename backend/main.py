@@ -630,7 +630,13 @@ async def create_class_endpoint(request: CreateClassRequest, uid: str = Depends(
         name = (request.name or "").strip()
         if not name:
             raise HTTPException(status_code=400, detail="A class needs a name")
-        return class_service.create_class(uid, name, request.grade)
+        teacher_name = ""
+        try:
+            from firebase_admin import auth as _fb_auth
+            teacher_name = _fb_auth.get_user(uid).display_name or ""
+        except Exception:
+            pass   # a missing display name is not worth failing a class over
+        return class_service.create_class(uid, name, request.grade, teacher_name)
     except HTTPException:
         raise
     except Exception as e:
@@ -667,6 +673,14 @@ async def class_roster_endpoint(class_id: str, uid: str = Depends(require_uid)):
         raise HTTPException(status_code=403, detail="Not your class")
     except Exception as e:
         print(f"Error in GET /classes/{class_id}/roster: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/my-classes")
+async def my_classes_endpoint(uid: str = Depends(require_uid)):
+    try:
+        return {"classes": class_service.my_classes(uid)}
+    except Exception as e:
+        print(f"Error in GET /my-classes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/classes/join")

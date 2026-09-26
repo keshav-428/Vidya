@@ -60,12 +60,32 @@ async function postAuthed<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// Same as postAuthed, for reads.
+async function getAuthed<T>(path: string): Promise<T> {
+  const { auth } = await import('../firebase');
+  const user = auth?.currentUser;
+  if (!user) throw new Error('SIGNED_OUT');
+  const token = await user.getIdToken();
+  const res = await fetch(`${BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`${path} → ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
 // ── Joining a teacher's class ────────────────────────────────
 //  The teacher writes a code on the board; this puts the student in that
 //  class. Idempotent on the backend, so tapping twice is harmless.
 export interface JoinedClass { class_id: string; name: string; grade: number }
 export const joinClass = (code: string): Promise<JoinedClass> =>
   postAuthed<JoinedClass>('/classes/join', { code });
+
+/** Which class(es) the student is in — the app keeps no local record of a
+ *  join, so this is how it can still say so tomorrow, on another device. */
+export interface MyClass { class_id: string; name: string; grade: number; teacher_name?: string }
+export const myClasses = (): Promise<MyClass[]> =>
+  getAuthed<{ classes: MyClass[] }>('/my-classes').then((d) => d.classes || []);
+
+export const leaveClass = (classId: string): Promise<unknown> =>
+  postAuthed<unknown>(`/classes/${classId}/leave`, {});
 
 // Map app classLevel ('6'/'7'/'8') → integer grade. KB has grades 6, 7 and 8 ingested.
 export const toGrade = (classLevel?: string | number | null): number => Number(classLevel) || 6;
@@ -493,6 +513,8 @@ export default {
   identifyConcept,
   checkWork,
   joinClass,
+  myClasses,
+  leaveClass,
   generatePaper,
   gradePaper,
   dailyGreeting,

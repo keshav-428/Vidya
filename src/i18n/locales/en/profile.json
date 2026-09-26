@@ -13,7 +13,8 @@
     "notifications": "Notifications",
     "subscription": "Subscription",
     "help": "Help & support",
-    "joinClass": "Join a class"
+    "joinClass": "Join a class",
+    "myClass": "Your class"
   },
   "signOut": "Sign out",
   "languageSheet": {
@@ -38,6 +39,12 @@
     "doneBody": "Keep practising as usual — your teacher can now see which topics you find hard.",
     "errBadCode": "No class has that code. Please check it and try again.",
     "errSignedOut": "Please sign in first — a class code needs an account.",
-    "errGeneric": "Could not join that class. Please try again."
+    "errGeneric": "Could not join that class. Please try again.",
+    "inClass": "You are in",
+    "teacherIs": "{{name}}'s class",
+    "shared": "Your teacher can see which topics you find hard.",
+    "leave": "Leave this class",
+    "leaving": "Leaving…",
+    "labelAnother": "Join another class"
   }
 }

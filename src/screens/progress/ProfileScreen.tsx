@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
 import { useAuth } from '../../auth/auth-context';
+import api from '../../api/vidya';
 import { LANGUAGES, normalizeLang } from '../../i18n';
 import { getLog, overallStats } from '../../lib/progress';
 import { LANGUAGE_PICKER_ENABLED } from '../../lib/features';
@@ -23,7 +24,19 @@ interface SubjectOption {
 
 export default function ProfileScreen({ go, state, set }: ScreenProps) {
   const { t } = useTranslation('profile');
-  const { logOut } = useAuth();
+  const { logOut, user } = useAuth();
+  // The class they are in, if any. Without this the row said "Join a class"
+  // even to a student who had already joined one, so the app looked like it
+  // had forgotten.
+  const [myClass, setMyClass] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    const load = user ? api.myClasses() : Promise.resolve([]);
+    load
+      .then((cs) => { if (live && cs.length) setMyClass(cs[0].name); })
+      .catch(() => { /* the row simply stays an invitation */ });
+    return () => { live = false; };
+  }, [user]);
   const [langSheet, setLangSheet] = useState(false);
   const [classSheet, setClassSheet] = useState(false);
   const current = normalizeLang(state?.language);
@@ -49,7 +62,8 @@ export default function ProfileScreen({ go, state, set }: ScreenProps) {
     }] : []),
     // Opt-in: a student with no teacher never taps this, and nothing else
     // in the app changes for those who do.
-    { key: 'joinClass', icon: 'user', onClick: () => go('join-class') },
+    { key: myClass ? 'myClass' : 'joinClass', icon: 'user', onClick: () => go('join-class'),
+      value: myClass || undefined },
   ];
 
   const pickLang = (code: string) => { set && set({ language: code }); setLangSheet(false); };

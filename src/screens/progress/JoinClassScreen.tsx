@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VTopBar } from '../../prototype/shared';
 import { useAuth } from '../../auth/auth-context';
 import api from '../../api/vidya';
+import type { MyClass } from '../../api/vidya';
 import type { ScreenProps } from '../../types';
 
 // ─────────────────────────────────────────────────────────────
@@ -27,6 +28,33 @@ export default function JoinClassScreen({ go }: ScreenProps) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [joined, setJoined] = useState<{ name: string } | null>(null);
+  // Which class they are already in. The app keeps no local record of a join,
+  // so this is asked fresh — it has to be right on a new phone too.
+  const [mine, setMine] = useState<MyClass[] | null>(null);
+  const [leaving, setLeaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    // Signed out has no memberships to fetch, and resolving to [] keeps the
+    // "not loaded yet" state (null) meaning only that.
+    const load = user ? api.myClasses() : Promise.resolve([] as MyClass[]);
+    load
+      .then((cs) => { if (live) setMine(cs); })
+      .catch(() => { if (live) setMine([]); });
+    return () => { live = false; };
+  }, [user, joined]);
+
+  const leave = async (classId: string) => {
+    setLeaving(classId);
+    try {
+      await api.leaveClass(classId);
+      setMine((cs) => (cs || []).filter((c) => c.class_id !== classId));
+    } catch {
+      setErr(t('joinClass.errGeneric'));
+    } finally {
+      setLeaving(null);
+    }
+  };
 
   const clean = code.replace(/\s/g, '').toUpperCase();
 
@@ -81,8 +109,28 @@ export default function JoinClassScreen({ go }: ScreenProps) {
           </div>
         )}
 
+        {(mine || []).map((c) => (
+          <div key={c.class_id} className="v-card" style={{ marginBottom: 14 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 6 }}>{t('joinClass.inClass')}</div>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2',system-ui,sans-serif", fontSize: 22, marginBottom: 2 }}>
+              {c.name}
+            </div>
+            <div className="v-body" style={{ fontSize: 13, marginBottom: 14 }}>
+              {c.teacher_name
+                ? t('joinClass.teacherIs', { name: c.teacher_name })
+                : t('joinClass.shared')}
+            </div>
+            <button className="v-btn-secondary v-tap" disabled={leaving === c.class_id}
+              onClick={() => leave(c.class_id)}>
+              {leaving === c.class_id ? t('joinClass.leaving') : t('joinClass.leave')}
+            </button>
+          </div>
+        ))}
+
         <div className="v-card" style={{ marginBottom: 18 }}>
-          <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>{t('joinClass.label')}</div>
+          <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>
+            {mine && mine.length ? t('joinClass.labelAnother') : t('joinClass.label')}
+          </div>
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.slice(0, CODE_LENGTH + 4))}

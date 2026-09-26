@@ -61,12 +61,17 @@ def generate_join_code() -> str:
     raise RuntimeError("Could not allocate an unused class code")
 
 
-def create_class(teacher_uid: str, name: str, grade: int) -> dict:
-    """Creates a class owned by this teacher and returns it, code included."""
+def create_class(teacher_uid: str, name: str, grade: int, teacher_name: str = "") -> dict:
+    """Creates a class owned by this teacher and returns it, code included.
+
+    `teacher_name` is stored so a student can be shown whose class they joined —
+    "Mrs Sharma's 6B" means something to a child; a class id does not.
+    """
     db = _db()
     code = generate_join_code()
     data = {
         "teacher_id": teacher_uid,
+        "teacher_name": teacher_name or "",
         "name": name,
         "grade": grade,
         "join_code": code,
@@ -352,3 +357,30 @@ def class_summary(class_id: str, teacher_uid: str) -> dict:
         "attention": attention,
         "safe": safe[:MAX_RETEACH],
     }
+
+
+def my_classes(student_uid: str) -> list:
+    """The classes this student has joined.
+
+    The student app holds no record of it — a join writes to the profile and
+    the confirmation screen is the last the child sees of it. This is how the
+    app can show them, later and on any device, which class they are in.
+    """
+    db = _db()
+    snap = db.collection(PROFILES).document(student_uid).get()
+    profile = (snap.to_dict() or {}) if snap.exists else {}
+    out = []
+    for cid in (profile.get("class_ids") or []):
+        doc = db.collection(CLASSES).document(cid).get()
+        if not doc.exists:
+            continue          # class deleted — silently drop, never show a ghost
+        data = doc.to_dict() or {}
+        if data.get("archived"):
+            continue
+        out.append({
+            "class_id": doc.id,
+            "name": data.get("name"),
+            "grade": data.get("grade"),
+            "teacher_name": data.get("teacher_name") or "",
+        })
+    return out
