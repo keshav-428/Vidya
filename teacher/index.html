@@ -2,15 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#FAF9F6" />
     <title>Vidya for Teachers</title>
 
-    <!-- A teacher keeps this on their phone, so it gets the same Add to Home
-         Screen treatment as the student app. -->
+    <!-- Add to Home Screen, exactly as the student app does it. A teacher
+         opens this from a link and keeps it on their home screen — no store,
+         no install, nothing to update. iOS ignores the manifest's icons and
+         reads apple-touch-icon (PNG only, it will not take WebP), and without
+         apple-mobile-web-app-capable it opens in a Safari tab with browser
+         chrome instead of full screen. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Vidya Teacher" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#FAF9F6" />
 
     <!-- The same families the student app loads, so the two read as one
          product (Mukta and Baloo 2 carry Devanagari for when Hindi lands here). -->

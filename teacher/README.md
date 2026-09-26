@@ -64,11 +64,20 @@ Two things that are easy to forget and both fail loudly:
   answering before this is used with a real class.
 - Teacher identity is unverified: anyone can sign up and create a class.
 
-## As a phone app
+## On a phone
 
-The teacher app also builds as a native app (Capacitor), the same way the
-student app does — a separate app id (`com.vidya.teacher`), so a teacher and a
-student can have both installed on one phone.
+**The intended route is Add to Home Screen**, the same as the student app's free
+iPhone path. The teacher opens the deployed URL in Chrome or Safari and adds it
+to their home screen: it then runs full screen with the Vidya icon, no browser
+chrome, no store, nothing to install or update. Works on both Android and iOS.
+The manifest and `apple-touch-icon` for that live in `public/`.
+
+### Also builds native (optional)
+
+Capacitor is set up as well, under a separate app id (`com.vidya.teacher`) so a
+teacher and a student can have both installed on one phone. This is not needed
+for the Add to Home Screen route — it is there if a store listing is ever
+wanted.
 
 ```bash
 cd teacher

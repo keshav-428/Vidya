@@ -1,0 +1,21 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="vidyaBadge" x1="20" y1="12" x2="104" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF6A4C"/>
+      <stop offset="1" stop-color="#FF8C12"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#vidyaBadge)"/>
+  <!-- open book pages forming a V -->
+  <path d="M57 41 C45 34 31 34 21 43 L24 72 C38 71 50 75 60 81 Z" fill="#ffffff"/>
+  <path d="M63 41 C75 34 89 34 99 43 L96 72 C82 71 70 75 60 81 Z" fill="#ffffff"/>
+  <!-- page leaf lines -->
+  <g stroke="#FF8C12" stroke-width="1.6" stroke-linecap="round" fill="none">
+    <path d="M29 61 C40 61 50 65 56 70"/>
+    <path d="M28 67 C40 67 50 71 57 76"/>
+    <path d="M91 61 C80 61 70 65 64 70"/>
+    <path d="M92 67 C80 67 70 71 63 76"/>
+  </g>
+  <!-- bindu -->
+  <circle cx="60" cy="64" r="5.5" fill="#FF7A28"/>
+</svg>
