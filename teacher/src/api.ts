@@ -156,3 +156,33 @@ export const splitKey = (key: string): { chapterId: string; section: string | nu
   const i = key.indexOf('::');
   return i === -1 ? { chapterId: key, section: null } : { chapterId: key.slice(0, i), section: key.slice(i + 2) };
 };
+
+// ── Home: the classes, with the two numbers a home screen earns ──
+export interface ClassOverview extends TeacherClass {
+  student_count: number;
+  needs_count: number;
+}
+export const getClassesOverview = () =>
+  request<{ classes: ClassOverview[] }>('/classes-overview').then((d) => d.classes || []);
+
+// ── One student, in full ─────────────────────────────────────
+export interface StudentAssignment {
+  assignment_id: string;
+  title: string;
+  created_at: string;
+  just_them: boolean;
+  done: boolean;
+}
+export interface RecentQuiz { topic: string; score: number; total: number; when: string }
+
+export interface StudentReport extends StudentDetail {
+  chapters_touched: number;
+  chapters_practised: number;
+  quizzes_completed: number;
+  recent_quizzes: RecentQuiz[];
+  teach_today: { key: string; title: string; percent: number } | null;
+  assignments: StudentAssignment[];
+}
+
+export const getStudentReport = (classId: string, studentId: string) =>
+  request<StudentReport>(`/classes/${classId}/students/${studentId}/report`);

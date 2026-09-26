@@ -767,3 +767,105 @@ def respond_to_invite(invite_id: str, student_uid: str, accept: bool) -> dict:
         pref.set({"class_ids": ids}, merge=True)
     return {"invite_id": invite_id, "status": status,
             "class_id": data.get("class_id"), "class_name": data.get("class_name")}
+
+
+# ─────────────────────────────────────────────────────────────
+#  Screens are funnels, so each level carries only what that level
+#  needs: the class list needs counts, a class needs a summary, a
+#  student needs their whole picture.
+# ─────────────────────────────────────────────────────────────
+
+def _members(class_id: str) -> dict:
+    db = _db()
+    return {d.id: (d.to_dict() or {})
+            for d in db.collection(PROFILES).where("class_ids", "array_contains", class_id).stream()}
+
+
+def classes_overview(teacher_uid: str) -> list:
+    """The teacher's classes, each with the two numbers worth a home screen:
+    how many students, and how many of them want the teacher's time."""
+    out = []
+    for c in list_classes(teacher_uid):
+        members = _members(c["class_id"])
+        needs = 0
+        for p in members.values():
+            state, _ = _state_for(_student_stats(p))
+            if state in ("needs_you", "no_data"):
+                needs += 1
+        out.append({**c, "student_count": len(members), "needs_count": needs})
+    return out
+
+
+def _quiz_history(student_id: str, limit: int = 3):
+    """Recent quizzes and how many there have been, from the attempts the
+    student app already writes after every session analysis."""
+    db = _db()
+    try:
+        col = db.collection(PROFILES).document(student_id).collection("quiz_attempts")
+        docs = [d.to_dict() or {} for d in col.stream()]
+    except Exception:
+        # A student with no attempts yet, or a backend that cannot serve them,
+        # must not take down the rest of the report.
+        return 0, []
+    docs.sort(key=lambda a: a.get("timestamp") or "", reverse=True)
+    recent = [{
+        "topic": a.get("topic") or "",
+        "score": a.get("score"),
+        "total": a.get("total"),
+        "when": a.get("timestamp"),
+    } for a in docs[:limit]]
+    return len(docs), recent
+
+
+def student_report(class_id: str, student_id: str, teacher_uid: str) -> dict:
+    """Everything about one student, on the one screen that is about them.
+
+    Built on student_detail so the two can never disagree about a state or a
+    weak topic; the extra work here is the things only this screen shows.
+    """
+    base = student_detail(class_id, student_id, teacher_uid)
+
+    db = _db()
+    profile = (db.collection(PROFILES).document(student_id).get().to_dict() or {})
+    mastery = profile.get("mastery") or {}
+
+    chapters = {k.split("::")[0] for k in mastery.keys() if k}
+    practised = {k.split("::")[0] for k, m in mastery.items()
+                 if isinstance(m, dict) and int(m.get("attempts") or 0) >= MIN_EVIDENCE}
+
+    quizzes, recent = _quiz_history(student_id)
+
+    # What this student's teacher should do with them today: their weakest
+    # subtopic, named. One thing, not a list — this is the screen's answer.
+    teach_today = None
+    if base["weak"]:
+        w = base["weak"][0]
+        teach_today = {"key": w["key"], "title": w["title"], "percent": w["percent"]}
+    elif base["skills_with_evidence"] == 0:
+        teach_today = None
+
+    # What has been set for them, and whether they have done it.
+    assignments = []
+    for d in db.collection(ASSIGNMENTS).where("class_id", "==", class_id).stream():
+        a = d.to_dict() or {}
+        targets = a.get("student_ids")
+        if targets and student_id not in targets:
+            continue
+        assignments.append({
+            "assignment_id": d.id,
+            "title": a.get("title"),
+            "created_at": a.get("created_at"),
+            "just_them": bool(targets),
+            "done": _has_done(profile, a.get("skill_key") or "", a.get("created_at") or ""),
+        })
+    assignments.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+
+    return {
+        **base,
+        "chapters_touched": len(chapters),
+        "chapters_practised": len(practised),
+        "quizzes_completed": quizzes,
+        "recent_quizzes": recent,
+        "teach_today": teach_today,
+        "assignments": assignments,
+    }

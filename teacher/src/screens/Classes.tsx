@@ -1,11 +1,12 @@
 // ─────────────────────────────────────────────────────────────
-//  The teacher's classes, and making a new one.
+//  Home: the teacher's classes.
 //
-//  Phase 0/1 only: a class exists, it has a code, students can join it.
-//  The "what to reteach tomorrow" screen comes next and hangs off here.
+//  A home screen earns two numbers per class and no more — how many
+//  students, and how many of them want the teacher's time. Everything
+//  else is one tap in.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
-import { listClasses, createClass, type TeacherClass } from '../api';
+import { getClassesOverview, createClass, type ClassOverview, type TeacherClass } from '../api';
 
 // Class 6 is where the student app's content starts; keeping the choice
 // small avoids a dropdown of grades we have no syllabus for.
@@ -16,7 +17,7 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
   teacherName: string;
   onSignOut: () => void;
 }) {
-  const [classes, setClasses] = useState<TeacherClass[] | null>(null);
+  const [classes, setClasses] = useState<ClassOverview[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -25,7 +26,7 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
 
   useEffect(() => {
     let live = true;
-    listClasses()
+    getClassesOverview()
       .then((cs) => { if (live) setClasses(cs); })
       .catch((e) => { if (live) { setErr(e.message); setClasses([]); } });
     return () => { live = false; };
@@ -38,16 +39,17 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
     setErr(null);
     try {
       const made = await createClass(name.trim(), grade);
-      setClasses((cs) => [made, ...(cs || [])]);
       setName('');
       setAdding(false);
-      onOpen(made);   // straight to the code — that is what they need next
+      onOpen(made);   // straight to the class — the code is what they need next
     } catch (e2) {
       setErr((e2 as Error).message);
     } finally {
       setBusy(false);
     }
   };
+
+  const totalNeeding = (classes || []).reduce((n, c) => n + c.needs_count, 0);
 
   return (
     <>
@@ -60,21 +62,20 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
         <div className="v-eyebrow" style={{ marginBottom: 8 }}>For teachers</div>
         <h1 className="v-h1">{teacherName ? `Hello, ${teacherName}` : 'Your classes'}</h1>
         <p className="v-body" style={{ marginBottom: 22 }}>
-          {classes && classes.length
-            ? 'Open a class to see its code and who has joined.'
-            : 'Start by making one class.'}
+          {classes === null ? 'Reading your classes…'
+            : classes.length === 0 ? 'Start by making one class.'
+            : totalNeeding > 0 ? `${totalNeeding} student${totalNeeding === 1 ? '' : 's'} could use your time today.`
+            : 'Everyone is keeping up.'}
         </p>
 
         {err && <div className="error">{err}</div>}
-
-        {classes === null && <div className="empty">Loading your classes…</div>}
 
         {classes !== null && classes.length === 0 && !adding && (
           <div className="v-card" style={{ marginBottom: 16 }}>
             <h2 className="v-h2">One class is enough to start</h2>
             <p className="note">
-              Make a class, then write its code on the board. Students enter the
-              code in the Vidya app and they are in — you do not have to create
+              Make a class, then give your students its code — or invite them by
+              the Vidya ID in their own profile. You never have to create
               accounts for them.
             </p>
           </div>
@@ -82,13 +83,26 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
           {(classes || []).map((c) => (
-            <div key={c.class_id} className="v-card-soft v-tap row" onClick={() => onOpen(c)}>
-              <div className="avatar">{(c.name || '?').slice(0, 2).toUpperCase()}</div>
-              <div className="grow">
-                <div style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 16 }}>{c.name}</div>
-                <div className="note">Class {c.grade} · code {c.join_code}</div>
+            <div key={c.class_id} className="v-card v-tap" onClick={() => onOpen(c)}>
+              <div className="row">
+                <div className="avatar">{(c.name || '?').slice(0, 2).toUpperCase()}</div>
+                <div className="grow">
+                  <div style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 18 }}>
+                    {c.name}
+                  </div>
+                  <div className="note">Class {c.grade}</div>
+                </div>
+                <span aria-hidden style={{ color: 'var(--muted-2)', fontSize: 20 }}>›</span>
               </div>
-              <span aria-hidden style={{ color: 'var(--muted-2)', fontSize: 20 }}>›</span>
+
+              <div className="row" style={{ marginTop: 14, gap: 10 }}>
+                <div className="v-pill">{c.student_count} student{c.student_count === 1 ? '' : 's'}</div>
+                {c.needs_count > 0 && (
+                  <div className="v-pill" style={{ color: '#C2410C', borderColor: '#EFC6AE' }}>
+                    {c.needs_count} need you
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

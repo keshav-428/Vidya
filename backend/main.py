@@ -826,6 +826,26 @@ async def student_detail_endpoint(class_id: str, student_id: str, uid: str = Dep
         print(f"Error in GET /classes/{class_id}/students/{student_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/classes-overview")
+async def classes_overview_endpoint(uid: str = Depends(require_uid)):
+    try:
+        return {"classes": class_service.classes_overview(uid)}
+    except Exception as e:
+        print(f"Error in GET /classes-overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}/students/{student_id}/report")
+async def student_report_endpoint(class_id: str, student_id: str, uid: str = Depends(require_uid)):
+    try:
+        return class_service.student_report(class_id, student_id, uid)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your student")
+    except Exception as e:
+        print(f"Error in GET student report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/classes/{class_id}/summary")
 async def class_summary_endpoint(class_id: str, uid: str = Depends(require_uid)):
     try:

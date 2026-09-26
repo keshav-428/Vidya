@@ -1,6 +1,11 @@
 // ─────────────────────────────────────────────────────────────
-//  Three screens, held in state. No router yet: there is one path
-//  through this app (sign in → your classes → one class), and a router
+//  The funnel, held in state. Each step narrows:
+//
+//    classes → one class → students → one student
+//                       ↘ practice set
+//                       ↘ add students
+//
+//  No router yet: there is one path through this app, and a router
 //  would be more moving parts than that earns.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
@@ -11,14 +16,17 @@ import Classes from './screens/Classes';
 import ClassDetail from './screens/ClassDetail';
 import StudentList from './screens/StudentList';
 import StudentDetail from './screens/StudentDetail';
+import AddStudents from './screens/AddStudents';
+import Assignments from './screens/Assignments';
 import type { StudentRow, TeacherClass } from './api';
+
+type View = 'class' | 'students' | 'add' | 'assignments';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState<TeacherClass | null>(null);
-  // One tap deeper each time: class → students → one student.
-  const [listing, setListing] = useState(false);
+  const [view, setView] = useState<View>('class');
   const [student, setStudent] = useState<StudentRow | null>(null);
 
   useEffect(() => {
@@ -26,6 +34,11 @@ export default function App() {
     // Fires once with the restored session, then on every sign in/out.
     return onAuthStateChanged(auth, (u) => { setUser(u); setReady(true); });
   }, []);
+
+  // Opening a class always starts AT the class, never wherever the last
+  // visit happened to end.
+  const openClass = (c: TeacherClass) => { setStudent(null); setView('class'); setOpen(c); };
+  const closeClass = () => { setStudent(null); setView('class'); setOpen(null); };
 
   if (!ready) return <div className="wrap"><div className="empty">Loading…</div></div>;
   if (!user) return <SignIn />;
@@ -36,21 +49,30 @@ export default function App() {
         onBack={() => setStudent(null)} />
     );
   }
-  if (open && listing) {
-    return <StudentList klass={open} onBack={() => setListing(false)} onOpen={setStudent} />;
+
+  if (open && view === 'students') {
+    return <StudentList klass={open} onBack={() => setView('class')} onOpen={setStudent} />;
+  }
+  if (open && view === 'add') {
+    return <AddStudents klass={open} onBack={() => setView('class')} />;
+  }
+  if (open && view === 'assignments') {
+    return <Assignments klass={open} onBack={() => setView('class')} />;
   }
   if (open) {
     return (
       <ClassDetail klass={open}
-        onBack={() => { setListing(false); setStudent(null); setOpen(null); }}
-        onStudents={() => setListing(true)} />
+        onBack={closeClass}
+        onStudents={() => setView('students')}
+        onAdd={() => setView('add')}
+        onAssignments={() => setView('assignments')} />
     );
   }
 
   return (
     <Classes
       teacherName={user.displayName || ''}
-      onOpen={(c) => { setListing(false); setStudent(null); setOpen(c); }}
+      onOpen={openClass}
       onSignOut={() => { if (auth) signOut(auth); }}
     />
   );
