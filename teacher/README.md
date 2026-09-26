@@ -15,8 +15,8 @@ Phase 0 and 1 of the plan:
 
 - A teacher creates an account and signs in.
 - They create a class and get a join code.
-- Students enter that code (in the student app — **not built yet**, see below)
-  and appear on the class roster.
+- Students enter that code in the student app (Profile → Join a class) and
+  appear on the class roster.
 
 The "what to reteach tomorrow" screen is phase 2/3 and is not built.
 
@@ -56,10 +56,9 @@ Two things that are easy to forget and both fail loudly:
 
 ## Not done yet
 
-- **Students cannot join a class from the student app.** The backend accepts
-  `POST /classes/join`, but there is no screen in the student app for entering
-  a code — that is a change to the student app and was left out on purpose.
-  Until it exists, rosters stay empty.
+- **The reteach dashboard.** Phases 2-3: the class summary endpoint and the
+  "what to reteach tomorrow" screen. Until then a class shows its code and its
+  roster, and says so rather than faking empty charts.
 - **Parent consent.** Children's data becoming visible to a teacher needs
   answering before this is used with a real class.
 - Teacher identity is unverified: anyone can sign up and create a class.

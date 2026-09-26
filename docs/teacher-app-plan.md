@@ -79,7 +79,7 @@ scroll.
 | Phase | What | Done when |
 |---|---|---|
 | 0 | `classes` collection, join code generation, `classIds` on the student profile | a code can be made and redeemed via the API |
-| 1 | Teacher sign-up + create class; join-code entry in student onboarding (replaces the dead end on the role screen) | 5 real students join one class |
+| 1 | Teacher sign-up + create class; join-code entry in the student app (Profile → Join a class) | 5 real students join one class |
 | 2 | `GET /class-summary/{classId}` — aggregation **on the server** | returns the three blocks with evidence counts |
 | 3 | The one screen, mobile-first web, same repo, deployed alongside | a teacher reads it in 30 seconds |
 | 4 | Per-student drill-down (one tap from "sit with these") | — |

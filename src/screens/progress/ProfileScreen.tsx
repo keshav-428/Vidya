@@ -47,6 +47,9 @@ export default function ProfileScreen({ go, state, set }: ScreenProps) {
       key: 'language', icon: 'globe', onClick: () => setLangSheet(true),
       value: (LANGUAGES.find((l) => l.code === current) || LANGUAGES[0]).native,
     }] : []),
+    // Opt-in: a student with no teacher never taps this, and nothing else
+    // in the app changes for those who do.
+    { key: 'joinClass', icon: 'user', onClick: () => go('join-class') },
   ];
 
   const pickLang = (code: string) => { set && set({ language: code }); setLangSheet(false); };

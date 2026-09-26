@@ -1,6 +1,10 @@
 {
   "title": "Profile",
-  "stats": { "streak": "day streak", "mastery": "mastery", "concepts": "concepts" },
+  "stats": {
+    "streak": "day streak",
+    "mastery": "mastery",
+    "concepts": "concepts"
+  },
   "menu": {
     "editProfile": "Edit profile",
     "classSubject": "Class & subject",
@@ -8,9 +12,32 @@
     "linkedTutor": "Linked tutor",
     "notifications": "Notifications",
     "subscription": "Subscription",
-    "help": "Help & support"
+    "help": "Help & support",
+    "joinClass": "Join a class"
   },
   "signOut": "Sign out",
-  "languageSheet": { "title": "Choose your language", "subtitle": "Vidya's interface and lessons will use this." },
-  "classSheet": { "title": "Class & subject", "subtitle": "Your chapters, quizzes and exams will match these.", "classLabel": "Class", "subjectLabel": "Subject" }
+  "languageSheet": {
+    "title": "Choose your language",
+    "subtitle": "Vidya's interface and lessons will use this."
+  },
+  "classSheet": {
+    "title": "Class & subject",
+    "subtitle": "Your chapters, quizzes and exams will match these.",
+    "classLabel": "Class",
+    "subjectLabel": "Subject"
+  },
+  "joinClass": {
+    "topbar": "Join a class",
+    "title": "Got a code from your teacher?",
+    "body": "Type the code your teacher wrote on the board. Your teacher will then be able to see which topics you need help with.",
+    "label": "Class code",
+    "cta": "Join class",
+    "joining": "Joining…",
+    "note": "Only your teacher sees this. Nothing else in Vidya changes.",
+    "doneTitle": "You have joined {{name}}",
+    "doneBody": "Keep practising as usual — your teacher can now see which topics you find hard.",
+    "errBadCode": "No class has that code. Please check it and try again.",
+    "errSignedOut": "Please sign in first — a class code needs an account.",
+    "errGeneric": "Could not join that class. Please try again."
+  }
 }

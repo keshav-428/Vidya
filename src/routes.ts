@@ -52,6 +52,7 @@ export const SCREEN_ROUTES = {
   'progress': '/progress',
   'topic-mastery': '/progress/topic-mastery',
   'profile': '/profile',
+  'join-class': '/profile/join-class',
 } as const;
 
 /** A valid screen identifier — the keys of {@link SCREEN_ROUTES}. */

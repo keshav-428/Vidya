@@ -35,6 +35,38 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// ── Authenticated POST ────────────────────────────────────────
+//  The class routes read and write who a child belongs to, so the backend
+//  will not take a user id from the body — it verifies a Firebase token.
+//  Left separate from post() above so every existing call is untouched.
+async function postAuthed<T>(path: string, body: unknown): Promise<T> {
+  const { auth } = await import('../firebase');
+  const user = auth?.currentUser;
+  if (!user) throw new Error('SIGNED_OUT');
+  const token = await user.getIdToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let detail = `${path} → ${res.status}`;
+    try {
+      const j = await res.json();
+      if (j?.detail) detail = String(j.detail);
+    } catch { /* keep the status message */ }
+    throw new Error(detail);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ── Joining a teacher's class ────────────────────────────────
+//  The teacher writes a code on the board; this puts the student in that
+//  class. Idempotent on the backend, so tapping twice is harmless.
+export interface JoinedClass { class_id: string; name: string; grade: number }
+export const joinClass = (code: string): Promise<JoinedClass> =>
+  postAuthed<JoinedClass>('/classes/join', { code });
+
 // Map app classLevel ('6'/'7'/'8') → integer grade. KB has grades 6, 7 and 8 ingested.
 export const toGrade = (classLevel?: string | number | null): number => Number(classLevel) || 6;
 
@@ -460,6 +492,7 @@ export default {
   generateNotes,
   identifyConcept,
   checkWork,
+  joinClass,
   generatePaper,
   gradePaper,
   dailyGreeting,

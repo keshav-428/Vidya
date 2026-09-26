@@ -67,6 +67,7 @@ import SessionAnalysisScreen from './screens/progress/SessionAnalysisScreen';
 import ProgressScreen        from './screens/progress/ProgressScreen';
 import TopicMasteryScreen    from './screens/progress/TopicMasteryScreen';
 import ProfileScreen         from './screens/progress/ProfileScreen';
+import JoinClassScreen       from './screens/progress/JoinClassScreen';
 
 // Reverse lookup: path → screen-id
 const PATH_TO_SCREEN: Record<string, ScreenId> = Object.fromEntries(
@@ -283,6 +284,7 @@ function AppInner() {
           <Route path="/progress"                element={<ProgressScreen        go={go} state={state} set={set} />} />
           <Route path="/progress/topic-mastery"  element={<TopicMasteryScreen    go={go} state={state} set={set} />} />
           <Route path="/profile"                 element={<ProfileScreen         go={go} state={state} set={set} />} />
+          <Route path="/profile/join-class"      element={<JoinClassScreen       go={go} state={state} set={set} />} />
 
           {/* Fallback */}
           <Route path="*" element={<SplashScreen go={go} state={state} set={set} />} />
