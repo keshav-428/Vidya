@@ -45,6 +45,8 @@
     "shared": "Your teacher can see which topics you find hard.",
     "leave": "Leave this class",
     "leaving": "Leaving…",
-    "labelAnother": "Join another class"
+    "labelAnother": "Join another class",
+    "vidyaIdLabel": "Your Vidya ID",
+    "vidyaIdNote": "Read this out to your teacher and they can invite you to their class."
   }
 }

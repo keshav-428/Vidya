@@ -624,6 +624,18 @@ class CreateClassRequest(BaseModel):
 class JoinClassRequest(BaseModel):
     code: str
 
+class CreateAssignmentRequest(BaseModel):
+    chapter_id: str
+    section: Optional[str] = None
+    title: Optional[str] = ""
+    student_ids: Optional[List[str]] = None   # absent ⇒ the whole class
+
+class InviteStudentRequest(BaseModel):
+    vidya_id: str
+
+class InviteResponseRequest(BaseModel):
+    accept: bool
+
 @app.post("/classes")
 async def create_class_endpoint(request: CreateClassRequest, uid: str = Depends(require_uid)):
     try:
@@ -673,6 +685,103 @@ async def class_roster_endpoint(class_id: str, uid: str = Depends(require_uid)):
         raise HTTPException(status_code=403, detail="Not your class")
     except Exception as e:
         print(f"Error in GET /classes/{class_id}/roster: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ── Setting practice (phase 6) ───────────────────────────────
+
+@app.post("/classes/{class_id}/assignments")
+async def create_assignment_endpoint(class_id: str, request: CreateAssignmentRequest,
+                                     uid: str = Depends(require_uid)):
+    try:
+        return class_service.create_assignment(
+            class_id, uid, request.chapter_id, request.section,
+            request.title or "", request.student_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in POST /classes/{class_id}/assignments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}/assignments")
+async def class_assignments_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return {"assignments": class_service.class_assignments(class_id, uid)}
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}/assignments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/my-assignments")
+async def my_assignments_endpoint(uid: str = Depends(require_uid)):
+    try:
+        return {"assignments": class_service.my_assignments(uid)}
+    except Exception as e:
+        print(f"Error in GET /my-assignments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ── Vidya IDs and invitations (phase 7) ──────────────────────
+
+@app.get("/my-vidya-id")
+async def my_vidya_id_endpoint(uid: str = Depends(require_uid)):
+    try:
+        return class_service.get_or_make_vidya_id(uid)
+    except Exception as e:
+        print(f"Error in GET /my-vidya-id: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/classes/{class_id}/invites")
+async def invite_student_endpoint(class_id: str, request: InviteStudentRequest,
+                                  uid: str = Depends(require_uid)):
+    try:
+        return class_service.invite_student(class_id, uid, request.vidya_id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in POST /classes/{class_id}/invites: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/classes/{class_id}/invites")
+async def class_invites_endpoint(class_id: str, uid: str = Depends(require_uid)):
+    try:
+        return {"invites": class_service.class_invites(class_id, uid)}
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such class")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your class")
+    except Exception as e:
+        print(f"Error in GET /classes/{class_id}/invites: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/my-invites")
+async def my_invites_endpoint(uid: str = Depends(require_uid)):
+    try:
+        return {"invites": class_service.my_invites(uid)}
+    except Exception as e:
+        print(f"Error in GET /my-invites: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/invites/{invite_id}/respond")
+async def respond_invite_endpoint(invite_id: str, request: InviteResponseRequest,
+                                  uid: str = Depends(require_uid)):
+    try:
+        return class_service.respond_to_invite(invite_id, uid, request.accept)
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not your invitation")
+    except Exception as e:
+        print(f"Error in POST /invites/{invite_id}/respond: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/my-classes")

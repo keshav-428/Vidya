@@ -5,7 +5,10 @@
 //  and a decision — not thirty rows a teacher has to scan.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
-import { getStudent, type StudentDetail as Detail, type TeacherClass } from '../api';
+import {
+  getStudent, setPractice, splitKey,
+  type StudentDetail as Detail, type TeacherClass,
+} from '../api';
 import { STATE_STYLE } from './StudentList';
 
 export default function StudentDetail({ klass, studentId, name, onBack }: {
@@ -16,6 +19,24 @@ export default function StudentDetail({ klass, studentId, name, onBack }: {
 }) {
   const [d, setD] = useState<Detail | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [setting, setSetting] = useState<string | null>(null);
+  const [setDone, setSetDone] = useState<string[]>([]);
+
+  // Practice for THIS child only — the other half of the same loop as the
+  // class screen, aimed at one student instead of everyone.
+  const assign = async (key: string, title: string) => {
+    const { chapterId, section } = splitKey(key);
+    setSetting(key);
+    setErr(null);
+    try {
+      await setPractice(klass.class_id, chapterId, section, title, [studentId]);
+      setSetDone((d) => [...d, key]);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setSetting(null);
+    }
+  };
 
   useEffect(() => {
     let live = true;
@@ -65,6 +86,13 @@ export default function StudentDetail({ klass, studentId, name, onBack }: {
                 <div style={{ height: 6, borderRadius: 9999, background: 'var(--border)', overflow: 'hidden' }}>
                   <div style={{ width: `${w.percent}%`, height: '100%', background: 'var(--saffron)' }} />
                 </div>
+                <button className="v-btn-secondary v-tap" style={{ marginTop: 10 }}
+                  disabled={setting === w.key || setDone.includes(w.key)}
+                  onClick={() => assign(w.key, w.title)}>
+                  {setDone.includes(w.key) ? 'Practice set'
+                    : setting === w.key ? 'Setting…'
+                    : 'Set practice on this'}
+                </button>
               </div>
             ))}
           </div>
@@ -98,9 +126,8 @@ export default function StudentDetail({ klass, studentId, name, onBack }: {
           </div>
         )}
 
-        {/* Phase 6 hangs here: "set practice for this student". */}
         <p className="note" style={{ textAlign: 'center' }}>
-          Setting practice for one student is coming next.
+          Practice you set here goes only to {name || 'this student'}.
         </p>
       </div>
     </>

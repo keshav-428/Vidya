@@ -11,8 +11,10 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import {
-  getRoster, getSummary,
-  type ClassSummary, type RosterStudent, type TeacherClass,
+  getRoster, getSummary, getAssignments, setPractice, splitKey,
+  getInvites, inviteStudent,
+  type Assignment, type ClassSummary, type PendingInvite,
+  type RosterStudent, type TeacherClass,
 } from '../api';
 
 export default function ClassDetail({ klass, onBack, onStudents }: {
@@ -25,6 +27,13 @@ export default function ClassDetail({ klass, onBack, onStudents }: {
   const [students, setStudents] = useState<RosterStudent[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [showRoster, setShowRoster] = useState(false);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  // Which reteach row we are setting, so only that button shows it is working.
+  const [setting, setSetting] = useState<string | null>(null);
+  const [invites, setInvites] = useState<PendingInvite[]>([]);
+  const [vidyaId, setVidyaId] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [invited, setInvited] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -32,13 +41,51 @@ export default function ClassDetail({ klass, onBack, onStudents }: {
     Promise.all([
       getSummary(klass.class_id).catch((e) => { if (live) setErr(e.message); return null; }),
       getRoster(klass.class_id).catch(() => [] as RosterStudent[]),
-    ]).then(([s, r]) => {
+      getAssignments(klass.class_id).catch(() => [] as Assignment[]),
+      getInvites(klass.class_id).catch(() => [] as PendingInvite[]),
+    ]).then(([s, r, a, i]) => {
       if (!live) return;
       setSummary(s);
       setStudents(r);
+      setAssignments(a);
+      setInvites(i);
     });
     return () => { live = false; };
   }, [klass.class_id]);
+
+  const assign = async (key: string, title: string) => {
+    const { chapterId, section } = splitKey(key);
+    setSetting(key);
+    setErr(null);
+    try {
+      await setPractice(klass.class_id, chapterId, section, title);
+      setAssignments(await getAssignments(klass.class_id));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setSetting(null);
+    }
+  };
+
+  // Inviting by an ID the student handed over — never a search. A teacher
+  // able to look children up is the one thing this product must not contain.
+  const invite = async () => {
+    const id = vidyaId.trim().toUpperCase();
+    if (!id) return;
+    setInviting(true);
+    setErr(null);
+    setInvited(null);
+    try {
+      const res = await inviteStudent(klass.class_id, id);
+      setInvited(res.student_name || 'Invitation sent');
+      setVidyaId('');
+      setInvites(await getInvites(klass.class_id));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const joined = summary?.students ?? students?.length ?? 0;
   const heard = summary?.students_with_data ?? 0;
@@ -81,6 +128,21 @@ export default function ClassDetail({ klass, onBack, onStudents }: {
                     </div>
                   </div>
                 ))}
+                {/* Setting practice starts HERE, from the thing we just
+                    reported — never from a syllabus the teacher must browse. */}
+                {summary.reteach.map((r) => {
+                  const already = assignments.some((a) => a.title === r.title);
+                  return (
+                    <button key={`set-${r.key}`} className="v-btn-secondary v-tap"
+                      style={{ marginTop: 8 }}
+                      disabled={setting === r.key || already}
+                      onClick={() => assign(r.key, r.title)}>
+                      {already ? `Already set · ${r.title}`
+                        : setting === r.key ? 'Setting…'
+                        : `Set practice · ${r.title}`}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -113,6 +175,20 @@ export default function ClassDetail({ klass, onBack, onStudents }: {
           </>
         )}
 
+        {assignments.length > 0 && (
+          <div className="v-card" style={{ marginBottom: 12 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 12 }}>Practice you set</div>
+            {assignments.map((a) => (
+              <div key={a.assignment_id} className="row" style={{ marginBottom: 10 }}>
+                <span className="grow" style={{ fontSize: 14.5 }}>{a.title}</span>
+                {/* Without this a teacher is shouting into a void, and does
+                    not set practice a second time. */}
+                <span className="note">{a.done} of {a.of} done</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Day one: the code is the only thing this screen can usefully say. */}
         <div className="v-card" style={{ marginBottom: 12 }}>
           <div className="v-eyebrow-sm" style={{ marginBottom: 2 }}>Joining code</div>
@@ -121,6 +197,36 @@ export default function ClassDetail({ klass, onBack, onStudents }: {
             Students open the Vidya app, go to Profile → Join a class, and enter
             this code. It does not expire.
           </p>
+        </div>
+
+        {/* The second door in: the student reads their ID out, the teacher
+            types it, and the student accepts. Nothing is searchable. */}
+        <div className="v-card" style={{ marginBottom: 12 }}>
+          <div className="v-eyebrow-sm" style={{ marginBottom: 10 }}>Add a student by Vidya ID</div>
+          <div className="field" style={{ marginBottom: 12 }}>
+            <input value={vidyaId} onChange={(e) => setVidyaId(e.target.value)}
+              placeholder="ABCD234" autoCapitalize="characters" autoCorrect="off"
+              spellCheck={false} aria-label="Vidya ID"
+              style={{ textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700 }} />
+          </div>
+          <button className="v-btn-secondary v-tap" disabled={inviting || !vidyaId.trim()}
+            onClick={invite}>
+            {inviting ? 'Sending…' : 'Send invitation'}
+          </button>
+          {invited && <p className="note" style={{ marginTop: 10 }}>Invited {invited}. They join once they accept.</p>}
+          <p className="note" style={{ marginTop: 10 }}>
+            Your student finds their ID in the Vidya app under Profile.
+          </p>
+          {invites.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div className="v-eyebrow-sm" style={{ marginBottom: 8 }}>Waiting to accept</div>
+              {invites.map((i) => (
+                <div key={i.invite_id} className="note" style={{ marginBottom: 4 }}>
+                  {i.student_name || 'A student'}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="v-card-soft v-tap row" style={{ marginBottom: 12 }} onClick={onStudents}>

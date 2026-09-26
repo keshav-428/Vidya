@@ -32,6 +32,8 @@ export default function JoinClassScreen({ go }: ScreenProps) {
   // so this is asked fresh — it has to be right on a new phone too.
   const [mine, setMine] = useState<MyClass[] | null>(null);
   const [leaving, setLeaving] = useState<string | null>(null);
+  // Their own ID, to read out to a teacher. Made the first time they look.
+  const [vidyaId, setVidyaId] = useState<string>('');
 
   useEffect(() => {
     let live = true;
@@ -43,6 +45,13 @@ export default function JoinClassScreen({ go }: ScreenProps) {
       .catch(() => { if (live) setMine([]); });
     return () => { live = false; };
   }, [user, joined]);
+
+  useEffect(() => {
+    let live = true;
+    const load = user ? api.myVidyaId() : Promise.resolve('');
+    load.then((id) => { if (live) setVidyaId(id); }).catch(() => { /* the block simply stays hidden */ });
+    return () => { live = false; };
+  }, [user]);
 
   const leave = async (classId: string) => {
     setLeaving(classId);
@@ -106,6 +115,21 @@ export default function JoinClassScreen({ go }: ScreenProps) {
         {err && (
           <div style={{ marginBottom: 16, borderRadius: 14, padding: '12px 14px', background: '#FBEFE8', border: '1px solid #EFC6AE', fontFamily: 'Inter', fontSize: 12.5, color: 'var(--accent-warn)', lineHeight: 1.45 }}>
             {err}
+          </div>
+        )}
+
+        {/* The other way in: they read this out, the teacher types it, and
+            the invitation comes back to them to accept. */}
+        {vidyaId && (
+          <div className="v-card" style={{ marginBottom: 14 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 6 }}>{t('joinClass.vidyaIdLabel')}</div>
+            <div style={{
+              fontFamily: "'Quicksand','Baloo 2',system-ui,sans-serif", fontWeight: 700,
+              fontSize: 30, letterSpacing: '0.18em', color: 'var(--indigo-ink)',
+              background: 'var(--indigo-air)', borderRadius: 16, padding: '14px 10px 14px 20px',
+              textAlign: 'center', marginBottom: 10,
+            }}>{vidyaId}</div>
+            <div className="v-body" style={{ fontSize: 12.5 }}>{t('joinClass.vidyaIdNote')}</div>
           </div>
         )}
 

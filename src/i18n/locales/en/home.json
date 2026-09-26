@@ -106,5 +106,16 @@
     "reading": "Reading your page…",
     "errNoTopic": "Couldn't spot a maths topic in that photo. Try a clearer shot.",
     "errGeneric": "Something went wrong reading that photo. Please try again."
+  },
+  "teacherSet": {
+    "from": "{{name}} set this",
+    "fromClass": "Set for {{name}}"
+  },
+  "invite": {
+    "eyebrow": "Invitation",
+    "title": "{{teacher}} has invited you to {{klass}}",
+    "titleNoName": "You have been invited to {{klass}}",
+    "accept": "Join",
+    "decline": "No thanks"
   }
 }

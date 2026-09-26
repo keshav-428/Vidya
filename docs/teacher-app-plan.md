@@ -1,7 +1,8 @@
 # Teacher App — Plan
 
-Status: **phases 0-3 built and deployed** (class + join code + the one screen).
-Stage two (§8-11: invites, per-student tracking, setting practice) is agreed, not built.
+Status: **phases 0-7 built** — class, join code, the one screen, per-student
+tracking, setting practice, Vidya IDs and invitations. Never yet run with a
+real class.
 Decided: phone-first web page, **read-only**, aimed at the school classroom teacher.
 
 ## 1. What it is for

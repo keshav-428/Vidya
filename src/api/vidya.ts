@@ -87,6 +87,37 @@ export const myClasses = (): Promise<MyClass[]> =>
 export const leaveClass = (classId: string): Promise<unknown> =>
   postAuthed<unknown>(`/classes/${classId}/leave`, {});
 
+// ── Practice a teacher set ───────────────────────────────────
+//  Only what is still outstanding: work already done is not a chore the
+//  app should keep nagging a child about.
+export interface MyAssignment {
+  assignment_id: string;
+  title: string;
+  chapter_id: string;
+  section: string | null;
+  class_name: string;
+  teacher_name: string;
+}
+export const myAssignments = (): Promise<MyAssignment[]> =>
+  getAuthed<{ assignments: MyAssignment[] }>('/my-assignments').then((d) => d.assignments || []);
+
+// ── Invitations from a teacher ───────────────────────────────
+export interface MyInvite {
+  invite_id: string;
+  class_id: string;
+  class_name: string;
+  teacher_name: string;
+}
+export const myInvites = (): Promise<MyInvite[]> =>
+  getAuthed<{ invites: MyInvite[] }>('/my-invites').then((d) => d.invites || []);
+
+export const respondToInvite = (inviteId: string, accept: boolean) =>
+  postAuthed<{ status: string; class_name?: string }>(`/invites/${inviteId}/respond`, { accept });
+
+/** The student's own ID, to read out to a teacher. Made on first look. */
+export const myVidyaId = (): Promise<string> =>
+  getAuthed<{ vidya_id: string }>('/my-vidya-id').then((d) => d.vidya_id || '');
+
 // Map app classLevel ('6'/'7'/'8') → integer grade. KB has grades 6, 7 and 8 ingested.
 export const toGrade = (classLevel?: string | number | null): number => Number(classLevel) || 6;
 
@@ -515,6 +546,10 @@ export default {
   joinClass,
   myClasses,
   leaveClass,
+  myAssignments,
+  myInvites,
+  respondToInvite,
+  myVidyaId,
   generatePaper,
   gradePaper,
   dailyGreeting,

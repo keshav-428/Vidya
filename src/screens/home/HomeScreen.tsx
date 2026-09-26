@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import VIcon from '../../prototype/icons';
 import { VSoftBackdrop, VTopBar, VBottomNav, VProfileChip, VContextChip, VidyaAvatar } from '../../prototype/shared';
-import api, { type TrickResult } from '../../api/vidya';
+import api, { type TrickResult, type MyAssignment, type MyInvite } from '../../api/vidya';
 import { classChapters, chapterInfo, chapterTitleById, type SyllabusChapter } from '../../content/syllabus';
 import { levelFor, skillKey, weakestSkills, type MasteryLevel } from '../../lib/mastery';
 import { capturePhotos } from '../../lib/camera';
@@ -544,6 +544,46 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
   };
   const handleCoachDismiss = () => set({ coachStep: 99, ownPlan: false });
 
+  // ── What a teacher set, and any invitation waiting ──────────
+  //  Both are additive: a student with no teacher sees neither, and their
+  //  own daily plan below is untouched either way.
+  const [teacherWork, setTeacherWork] = useState<MyAssignment[]>([]);
+  const [invites, setInvites] = useState<MyInvite[]>([]);
+  const signedIn = !!state?.userId;
+  useEffect(() => {
+    let live = true;
+    const work = signedIn ? api.myAssignments() : Promise.resolve([] as MyAssignment[]);
+    const inv = signedIn ? api.myInvites() : Promise.resolve([] as MyInvite[]);
+    Promise.all([work.catch(() => []), inv.catch(() => [])]).then(([w, i]) => {
+      if (!live) return;
+      setTeacherWork(w);
+      setInvites(i);
+    });
+    return () => { live = false; };
+  }, [signedIn]);
+
+  // Teach it, then quiz it — the same route the app already uses when a
+  // student picks a subtopic themselves.
+  const startAssignment = (a: MyAssignment) => {
+    const sel: PracticeSelection[] = [{
+      chapterId: a.chapter_id,
+      // A chapter-wide assignment has no section; the lesson widens to the
+      // chapter in that case, which is what PracticeSelection's '' means.
+      section: a.section || '',
+      title: a.title,
+    }];
+    set({ lessonSel: sel, lessonNext: 'navigable-quiz', revisionSel: sel });
+    go('learn-concept');
+  };
+
+  const answerInvite = async (inviteId: string, accept: boolean) => {
+    setInvites((cur) => cur.filter((i) => i.invite_id !== inviteId));   // answered either way
+    try {
+      await api.respondToInvite(inviteId, accept);
+      if (accept) setTeacherWork(await api.myAssignments().catch(() => []));
+    } catch { /* the card is gone; a failed accept can be retried from Profile */ }
+  };
+
   // One vision call serves all three offers, so it runs here, once, before the
   // student picks — that's what lets the next screen rank the options.
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -666,6 +706,49 @@ export default function HomeScreen({ go, state, set }: ScreenProps) {
             {allDone ? t('sessionComplete') : t('ready')}
           </div>
         </div>
+
+        {/* Set by a teacher. Sits ABOVE the student's own plan and never
+            replaces it — a child who ignores this loses nothing of theirs. */}
+        {teacherWork.map((a) => (
+          <div key={a.assignment_id} className="v-tap v-enter" onClick={() => startAssignment(a)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 14, padding: '16px 16px',
+              background: 'var(--indigo-air)', borderRadius: 20, border: '1px solid var(--indigo-soft)',
+            }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--indigo)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <VIcon name="book" size={21} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="v-eyebrow-sm" style={{ marginBottom: 2 }}>
+                {a.teacher_name
+                  ? t('teacherSet.from', { name: a.teacher_name })
+                  : t('teacherSet.fromClass', { name: a.class_name })}
+              </div>
+              <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1.15, color: 'var(--ink)' }}>
+                {a.title}
+              </div>
+            </div>
+            <VIcon name="chevron-right" size={18} color="var(--indigo)" />
+          </div>
+        ))}
+
+        {/* An invitation is the child's to accept or refuse. */}
+        {invites.map((inv) => (
+          <div key={inv.invite_id} className="v-card-soft v-enter" style={{ padding: 16 }}>
+            <div className="v-eyebrow-sm" style={{ marginBottom: 4 }}>{t('invite.eyebrow')}</div>
+            <div style={{ fontFamily: "'Quicksand','Baloo 2','Nunito',system-ui,sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>
+              {inv.teacher_name
+                ? t('invite.title', { teacher: inv.teacher_name, klass: inv.class_name })
+                : t('invite.titleNoName', { klass: inv.class_name })}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="v-btn-primary v-tap" style={{ flex: 1, padding: '13px 18px' }}
+                onClick={() => answerInvite(inv.invite_id, true)}>{t('invite.accept')}</button>
+              <button className="v-btn-secondary v-tap" style={{ flex: 1, padding: '12px 18px' }}
+                onClick={() => answerInvite(inv.invite_id, false)}>{t('invite.decline')}</button>
+            </div>
+          </div>
+        ))}
 
         {/* The one camera in the app. Learn and Practice each used to carry
             their own near-identical photo card, so the same gesture sat behind

@@ -116,3 +116,43 @@ export const getStudents = (classId: string) =>
 
 export const getStudent = (classId: string, studentId: string) =>
   request<StudentDetail>(`/classes/${classId}/students/${studentId}`);
+
+// ── Setting practice ─────────────────────────────────────────
+export interface Assignment {
+  assignment_id: string;
+  title: string;
+  chapter_id: string;
+  section: string | null;
+  created_at: string;
+  for_whole_class: boolean;
+  done: number;
+  of: number;
+}
+
+export const setPractice = (classId: string, chapterId: string, section: string | null,
+                            title: string, studentIds?: string[]) =>
+  request<{ assignment_id: string }>(`/classes/${classId}/assignments`, {
+    method: 'POST',
+    body: JSON.stringify({ chapter_id: chapterId, section, title, student_ids: studentIds || null }),
+  });
+
+export const getAssignments = (classId: string) =>
+  request<{ assignments: Assignment[] }>(`/classes/${classId}/assignments`).then((d) => d.assignments || []);
+
+// ── Invitations ──────────────────────────────────────────────
+export interface PendingInvite { invite_id: string; student_name: string; created_at: string }
+
+export const inviteStudent = (classId: string, vidyaId: string) =>
+  request<{ invite_id: string; student_name?: string }>(`/classes/${classId}/invites`, {
+    method: 'POST',
+    body: JSON.stringify({ vidya_id: vidyaId }),
+  });
+
+export const getInvites = (classId: string) =>
+  request<{ invites: PendingInvite[] }>(`/classes/${classId}/invites`).then((d) => d.invites || []);
+
+/** A skill key ("g6-fractions::7.2") split for the assignment call. */
+export const splitKey = (key: string): { chapterId: string; section: string | null } => {
+  const i = key.indexOf('::');
+  return i === -1 ? { chapterId: key, section: null } : { chapterId: key.slice(0, i), section: key.slice(i + 2) };
+};

@@ -492,3 +492,278 @@ def student_detail(class_id: str, student_id: str, teacher_uid: str) -> dict:
         "idle_days": st["idle_days"],
         "weak": weak,
     }
+
+
+# ─────────────────────────────────────────────────────────────
+#  Phase 6 — setting practice.
+#
+#  The loop the product is: the dashboard says what is weak, the teacher
+#  taps it, it lands in those students' app, they do it, the dashboard
+#  updates. So an assignment is created FROM a weak subtopic, not from a
+#  syllabus browser.
+#
+#  No due dates and no marks, deliberately. Both turn this into school
+#  administration, which is the direction that kills it.
+# ─────────────────────────────────────────────────────────────
+
+ASSIGNMENTS = "assignments"
+
+
+def create_assignment(class_id: str, teacher_uid: str, chapter_id: str,
+                      section: str = None, title: str = "",
+                      student_ids: list = None) -> dict:
+    """Sets practice for the class, or for named students within it."""
+    get_class(class_id, teacher_uid)
+    if not chapter_id:
+        raise ValueError("An assignment needs a chapter")
+    db = _db()
+    key = f"{chapter_id}::{section}" if section else chapter_id
+    data = {
+        "class_id": class_id,
+        "teacher_id": teacher_uid,
+        "chapter_id": chapter_id,
+        "section": section or None,
+        "skill_key": key,
+        "title": title or _title_for(key),
+        # None means the whole class, including anyone who joins later.
+        "student_ids": list(student_ids) if student_ids else None,
+        "created_at": _now(),
+    }
+    ref = db.collection(ASSIGNMENTS).document()
+    ref.set(data)
+    return {"assignment_id": ref.id, **data}
+
+
+def _has_done(profile: dict, skill_key: str, since_iso: str) -> bool:
+    """Done = they have practised that subtopic since it was set.
+
+    Needs no new tracking: mastery already records when a skill was last
+    touched. A teacher gets "12 of 18 done" for free, and without that,
+    setting practice feels like shouting into a void.
+    """
+    m = (profile.get("mastery") or {}).get(skill_key)
+    if not isinstance(m, dict):
+        return False
+    seen, since = m.get("lastSeen"), since_iso
+    try:
+        a = datetime.fromisoformat(str(seen).replace("Z", "+00:00"))
+        b = datetime.fromisoformat(str(since).replace("Z", "+00:00"))
+        if a.tzinfo is None:
+            a = a.replace(tzinfo=timezone.utc)
+        if b.tzinfo is None:
+            b = b.replace(tzinfo=timezone.utc)
+        return a >= b
+    except Exception:
+        return False
+
+
+def class_assignments(class_id: str, teacher_uid: str) -> list:
+    """What has been set for this class, and how many have done it."""
+    get_class(class_id, teacher_uid)
+    db = _db()
+    rows = [{"assignment_id": d.id, **(d.to_dict() or {})}
+            for d in db.collection(ASSIGNMENTS).where("class_id", "==", class_id).stream()]
+    if not rows:
+        return []
+
+    members = {}
+    for d in db.collection(PROFILES).where("class_ids", "array_contains", class_id).stream():
+        members[d.id] = d.to_dict() or {}
+
+    out = []
+    for a in rows:
+        targets = a.get("student_ids") or list(members.keys())
+        done = sum(1 for sid in targets
+                   if sid in members and _has_done(members[sid], a["skill_key"], a["created_at"]))
+        out.append({
+            "assignment_id": a["assignment_id"],
+            "title": a.get("title"),
+            "chapter_id": a.get("chapter_id"),
+            "section": a.get("section"),
+            "created_at": a.get("created_at"),
+            "for_whole_class": a.get("student_ids") is None,
+            "done": done,
+            "of": len(targets),
+        })
+    out.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    return out
+
+
+def my_assignments(student_uid: str) -> list:
+    """What this student's teachers have set, newest first.
+
+    Only the ones still outstanding — practice already done is not a chore
+    the app should keep nagging a child about.
+    """
+    db = _db()
+    snap = db.collection(PROFILES).document(student_uid).get()
+    profile = (snap.to_dict() or {}) if snap.exists else {}
+    class_ids = profile.get("class_ids") or []
+    if not class_ids:
+        return []
+
+    out = []
+    for cid in class_ids:
+        cls = db.collection(CLASSES).document(cid).get()
+        cls_data = (cls.to_dict() or {}) if cls.exists else {}
+        for d in db.collection(ASSIGNMENTS).where("class_id", "==", cid).stream():
+            a = d.to_dict() or {}
+            targets = a.get("student_ids")
+            if targets and student_uid not in targets:
+                continue
+            if _has_done(profile, a.get("skill_key") or "", a.get("created_at") or ""):
+                continue
+            out.append({
+                "assignment_id": d.id,
+                "title": a.get("title"),
+                "chapter_id": a.get("chapter_id"),
+                "section": a.get("section"),
+                "class_name": cls_data.get("name") or "",
+                "teacher_name": cls_data.get("teacher_name") or "",
+                "created_at": a.get("created_at"),
+            })
+    out.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    return out
+
+
+# ─────────────────────────────────────────────────────────────
+#  Phase 7 — Vidya IDs and invitations.
+#
+#  A teacher adding 30 students one by one needs to name them somehow.
+#  It must NOT be a lookup: if a teacher can search for children, then any
+#  account calling itself a teacher can browse a directory of children,
+#  and no feature is worth that.
+#
+#  So the direction is reversed. Every student has a Vidya ID shown in
+#  their own profile. They hand it over; the teacher types it; the student
+#  gets an invitation and accepts. The teacher's experience is the same as
+#  a search. Nothing is searchable, and the child agrees.
+# ─────────────────────────────────────────────────────────────
+
+INVITES = "invites"
+ID_LENGTH = int(os.getenv("VIDYA_ID_LENGTH", "7"))
+
+
+def _find_by_vidya_id(vidya_id: str):
+    db = _db()
+    for doc in db.collection(PROFILES).where("vidya_id", "==", vidya_id).limit(1).stream():
+        return doc
+    return None
+
+
+def get_or_make_vidya_id(student_uid: str) -> dict:
+    """The student's own ID, made the first time they look at it.
+
+    Longer than a class code and from the same unambiguous alphabet: a
+    class code is written on a board once, but an ID identifies one child,
+    so guessing at it should not land on someone.
+    """
+    db = _db()
+    ref = db.collection(PROFILES).document(student_uid)
+    snap = ref.get()
+    profile = (snap.to_dict() or {}) if snap.exists else {}
+    existing = profile.get("vidya_id")
+    if existing:
+        return {"vidya_id": existing}
+    for _ in range(CODE_ATTEMPTS):
+        candidate = "".join(random.choices(CODE_ALPHABET, k=ID_LENGTH))
+        if _find_by_vidya_id(candidate) is None:
+            ref.set({"vidya_id": candidate}, merge=True)
+            return {"vidya_id": candidate}
+    raise RuntimeError("Could not allocate a Vidya ID")
+
+
+def invite_student(class_id: str, teacher_uid: str, vidya_id: str) -> dict:
+    """Invites one student, by the ID they gave the teacher."""
+    klass = get_class(class_id, teacher_uid)
+    doc = _find_by_vidya_id((vidya_id or "").strip().upper())
+    if doc is None:
+        raise LookupError("No student has that Vidya ID")
+    profile = doc.to_dict() or {}
+    if class_id in (profile.get("class_ids") or []):
+        raise ValueError("They are already in this class")
+
+    db = _db()
+    # One live invitation per student per class — inviting twice should not
+    # leave a child with a stack of identical cards to dismiss.
+    for d in db.collection(INVITES).where("student_id", "==", doc.id).stream():
+        prev = d.to_dict() or {}
+        if prev.get("class_id") == class_id and prev.get("status") == "pending":
+            return {"invite_id": d.id, **prev}
+
+    data = {
+        "class_id": class_id,
+        "class_name": klass.get("name"),
+        "teacher_name": klass.get("teacher_name") or "",
+        "student_id": doc.id,
+        "student_name": profile.get("name") or "",
+        "status": "pending",
+        "created_at": _now(),
+    }
+    ref = db.collection(INVITES).document()
+    ref.set(data)
+    return {"invite_id": ref.id, **data}
+
+
+def class_invites(class_id: str, teacher_uid: str) -> list:
+    """Invitations still waiting on a student to accept."""
+    get_class(class_id, teacher_uid)
+    db = _db()
+    out = []
+    for d in db.collection(INVITES).where("class_id", "==", class_id).stream():
+        a = d.to_dict() or {}
+        if a.get("status") != "pending":
+            continue
+        out.append({"invite_id": d.id, "student_name": a.get("student_name") or "",
+                    "created_at": a.get("created_at")})
+    out.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    return out
+
+
+def my_invites(student_uid: str) -> list:
+    """Invitations waiting for this student to say yes or no."""
+    db = _db()
+    out = []
+    for d in db.collection(INVITES).where("student_id", "==", student_uid).stream():
+        a = d.to_dict() or {}
+        if a.get("status") != "pending":
+            continue
+        out.append({
+            "invite_id": d.id,
+            "class_id": a.get("class_id"),
+            "class_name": a.get("class_name") or "",
+            "teacher_name": a.get("teacher_name") or "",
+            "created_at": a.get("created_at"),
+        })
+    out.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    return out
+
+
+def respond_to_invite(invite_id: str, student_uid: str, accept: bool) -> dict:
+    """The student's own decision — nobody else may answer for them."""
+    db = _db()
+    ref = db.collection(INVITES).document(invite_id)
+    snap = ref.get()
+    if not snap.exists:
+        raise LookupError("No such invitation")
+    data = snap.to_dict() or {}
+    if data.get("student_id") != student_uid:
+        raise PermissionError("Not your invitation")
+    if data.get("status") != "pending":
+        return {"invite_id": invite_id, "status": data.get("status")}
+
+    status = "accepted" if accept else "declined"
+    ref.set({"status": status, "responded_at": _now()}, merge=True)
+    if accept:
+        cls = db.collection(CLASSES).document(data["class_id"]).get()
+        if not cls.exists:
+            raise LookupError("That class no longer exists")
+        pref = db.collection(PROFILES).document(student_uid)
+        psnap = pref.get()
+        prof = (psnap.to_dict() or {}) if psnap.exists else {}
+        ids = list(prof.get("class_ids") or [])
+        if data["class_id"] not in ids:
+            ids.append(data["class_id"])
+        pref.set({"class_ids": ids}, merge=True)
+    return {"invite_id": invite_id, "status": status,
+            "class_id": data.get("class_id"), "class_name": data.get("class_name")}
