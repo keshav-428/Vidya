@@ -16,13 +16,14 @@ import {
   getSummary, getAssignments, setPractice, splitKey,
   type Assignment, type ClassSummary, type TeacherClass,
 } from '../api';
+import { TopBar } from '../ui/Chrome';
 
-export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssignments, onTopics }: {
+export default function ClassDetail({ klass, onBack, onProfile, teacherName, onStudents, onTopics }: {
   klass: TeacherClass;
   onBack: () => void;
+  onProfile: () => void;
+  teacherName: string;
   onStudents: () => void;
-  onAdd: () => void;
-  onAssignments: () => void;
   onTopics: () => void;
 }) {
   const [summary, setSummary] = useState<ClassSummary | null>(null);
@@ -68,12 +69,9 @@ export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssign
 
   return (
     <>
-      <div className="v-topbar">
-        <button className="v-link" onClick={onBack}>‹ Classes</button>
-        <span className="v-eyebrow">Class {klass.grade}</span>
-      </div>
+      <TopBar title={`Class ${klass.grade}`} onBack={onBack} onProfile={onProfile} teacherName={teacherName} />
 
-      <div className="wrap v-enter">
+      <div className="wrap with-tabs v-enter">
         <h1 className="v-h1">{klass.name}</h1>
 
         {/* The denominator, before anything that rests on it. */}
@@ -111,32 +109,29 @@ export default function ClassDetail({ klass, onBack, onStudents, onAdd, onAssign
           </div>
         )}
 
-        {/* Ways out. Each is a screen, and each says what it holds. */}
-        <Door title="Students"
-          sub={joined === 0 ? 'Nobody has joined yet'
-            : needing > 0 ? `${needing} of ${joined} could use your time`
-            : `${joined} in this class · all keeping up`}
-          onClick={onStudents} />
-        <Door title="Topics"
-          sub={more > 0 ? `${more} more topic${more === 1 ? '' : 's'} to look at` : 'Where the class stands, topic by topic'}
-          onClick={onTopics} />
-        <Door title="Practice you set"
-          sub={assignments.length ? `${assignments.length} set · who has done it` : 'Nothing set yet'}
-          onClick={onAssignments} />
-        <Door title="Add students" sub="Class code, or invite by Vidya ID" onClick={onAdd} />
+        {/* One line, not a second copy of the student list: the names are
+            a tab away, and printing them twice is what made this screen a
+            report in the first place. */}
+        {needing > 0 && (
+          <div className="v-card-soft v-tap row" style={{ marginBottom: 10 }} onClick={onStudents}>
+            <div className="grow">
+              <div style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 15 }}>
+                {needing} student{needing === 1 ? '' : 's'} could use your time
+              </div>
+            </div>
+            <span aria-hidden style={{ color: 'var(--muted-2)', fontSize: 18 }}>›</span>
+          </div>
+        )}
+
+        {more > 0 && (
+          <div style={{ textAlign: 'center' }}>
+            <button className="v-link" onClick={onTopics}>
+              {more} more topic{more === 1 ? '' : 's'} ›
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
 }
 
-function Door({ title, sub, onClick }: { title: string; sub: string; onClick: () => void }) {
-  return (
-    <div className="v-card-soft v-tap row" style={{ marginBottom: 10 }} onClick={onClick}>
-      <div className="grow">
-        <div style={{ fontFamily: "'Quicksand','Baloo 2',sans-serif", fontWeight: 700, fontSize: 16 }}>{title}</div>
-        <div className="note">{sub}</div>
-      </div>
-      <span aria-hidden style={{ color: 'var(--muted-2)', fontSize: 18 }}>›</span>
-    </div>
-  );
-}

@@ -7,15 +7,18 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { getClassesOverview, createClass, type ClassOverview, type TeacherClass } from '../api';
+import { TopBar } from '../ui/Chrome';
 
 // Class 6 is where the student app's content starts; keeping the choice
 // small avoids a dropdown of grades we have no syllabus for.
 const GRADES = [6, 7, 8];
 
-export default function Classes({ onOpen, teacherName, onSignOut }: {
+export default function Classes({ onOpen, teacherName, onProfile, onCount }: {
   onOpen: (c: TeacherClass) => void;
   teacherName: string;
-  onSignOut: () => void;
+  onProfile: () => void;
+  /** Reports how many classes there are, for the profile screen. */
+  onCount?: (n: number) => void;
 }) {
   const [classes, setClasses] = useState<ClassOverview[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
   useEffect(() => {
     let live = true;
     getClassesOverview()
-      .then((cs) => { if (live) setClasses(cs); })
+      .then((cs) => { if (live) { setClasses(cs); onCount?.(cs.length); } })
       .catch((e) => { if (live) { setErr(e.message); setClasses([]); } });
     return () => { live = false; };
   }, []);
@@ -53,10 +56,7 @@ export default function Classes({ onOpen, teacherName, onSignOut }: {
 
   return (
     <>
-      <div className="v-topbar">
-        <span className="v-logo-wordmark" style={{ fontSize: 20 }}>Vidya</span>
-        <button className="v-link" onClick={onSignOut}>Sign out</button>
-      </div>
+      <TopBar onProfile={onProfile} teacherName={teacherName} />
 
       <div className="wrap v-enter">
         <div className="v-eyebrow" style={{ marginBottom: 8 }}>For teachers</div>

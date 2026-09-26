@@ -10,10 +10,13 @@ import {
   getInvites, inviteStudent, getRoster,
   type PendingInvite, type RosterStudent, type TeacherClass,
 } from '../api';
+import { TopBar } from '../ui/Chrome';
 
-export default function AddStudents({ klass, onBack }: {
+export default function AddStudents({ klass, onBack, onProfile, teacherName }: {
   klass: TeacherClass;
   onBack: () => void;
+  onProfile: () => void;
+  teacherName: string;
 }) {
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [students, setStudents] = useState<RosterStudent[] | null>(null);
@@ -57,12 +60,9 @@ export default function AddStudents({ klass, onBack }: {
 
   return (
     <>
-      <div className="v-topbar">
-        <button className="v-link" onClick={onBack}>‹ {klass.name}</button>
-        <span className="v-eyebrow">Add students</span>
-      </div>
+      <TopBar title="Class" onBack={onBack} onProfile={onProfile} teacherName={teacherName} />
 
-      <div className="wrap v-enter">
+      <div className="wrap with-tabs v-enter">
         <h1 className="v-h1">Add students</h1>
         <p className="v-body" style={{ marginBottom: 22 }}>
           Two ways in. Either way the student agrees — you never create an

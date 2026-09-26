@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { getAssignments, type Assignment, type TeacherClass } from '../api';
+import { TopBar } from '../ui/Chrome';
 
 function when(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -13,9 +14,11 @@ function when(iso: string): string {
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`;
 }
 
-export default function Assignments({ klass, onBack }: {
+export default function Assignments({ klass, onBack, onProfile, teacherName }: {
   klass: TeacherClass;
   onBack: () => void;
+  onProfile: () => void;
+  teacherName: string;
 }) {
   const [rows, setRows] = useState<Assignment[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -30,12 +33,9 @@ export default function Assignments({ klass, onBack }: {
 
   return (
     <>
-      <div className="v-topbar">
-        <button className="v-link" onClick={onBack}>‹ {klass.name}</button>
-        <span className="v-eyebrow">Practice</span>
-      </div>
+      <TopBar title="Practice" onBack={onBack} onProfile={onProfile} teacherName={teacherName} />
 
-      <div className="wrap v-enter">
+      <div className="wrap with-tabs v-enter">
         <h1 className="v-h1">Practice you set</h1>
         <p className="v-body" style={{ marginBottom: 22 }}>
           {rows === null ? 'Loading…'

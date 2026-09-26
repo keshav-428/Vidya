@@ -11,13 +11,16 @@ import {
   getStudentReport, setPractice, splitKey,
   type StudentReport, type TeacherClass,
 } from '../api';
+import { TopBar } from '../ui/Chrome';
 import { STATE_STYLE } from './StudentList';
 
-export default function StudentDetail({ klass, studentId, name, onBack }: {
+export default function StudentDetail({ klass, studentId, name, onBack, onProfile, teacherName }: {
   klass: TeacherClass;
   studentId: string;
   name: string;
   onBack: () => void;
+  onProfile: () => void;
+  teacherName: string;
 }) {
   const [d, setD] = useState<StudentReport | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -56,10 +59,7 @@ export default function StudentDetail({ klass, studentId, name, onBack }: {
 
   return (
     <>
-      <div className="v-topbar">
-        <button className="v-link" onClick={onBack}>‹ Students</button>
-        <span className="v-eyebrow">{klass.name}</span>
-      </div>
+      <TopBar title="Student" onBack={onBack} onProfile={onProfile} teacherName={teacherName} />
 
       <div className="wrap v-enter">
         <div className="row" style={{ marginBottom: 20 }}>

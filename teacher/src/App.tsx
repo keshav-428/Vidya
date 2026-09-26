@@ -1,12 +1,14 @@
 // ─────────────────────────────────────────────────────────────
-//  The funnel, held in state. Each step narrows:
+//  The shape, held in state.
 //
-//    classes → one class → students → one student
-//                       ↘ practice set
-//                       ↘ add students
+//    classes ─▶ a class ─┬─ Today      (one thing to do) ─▶ Topics
+//                        ├─ Students   ─▶ one student
+//                        ├─ Practice
+//                        └─ Class      (code, invites, roster)
 //
-//  No router yet: there is one path through this app, and a router
-//  would be more moving parts than that earns.
+//  Tabs sit INSIDE a class because everything here belongs to one
+//  class; a global tab bar would have had one real destination. The
+//  profile chip is top right on every screen, as in the student app.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
@@ -19,16 +21,20 @@ import StudentDetail from './screens/StudentDetail';
 import AddStudents from './screens/AddStudents';
 import Assignments from './screens/Assignments';
 import Topics from './screens/Topics';
+import Profile from './screens/Profile';
+import { TabBar, type Tab } from './ui/Chrome';
 import type { StudentRow, TeacherClass } from './api';
-
-type View = 'class' | 'students' | 'add' | 'assignments' | 'topics';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState<TeacherClass | null>(null);
-  const [view, setView] = useState<View>('class');
+  const [tab, setTab] = useState<Tab>('today');
+  // Pushed over a tab, and dismissed back onto it.
   const [student, setStudent] = useState<StudentRow | null>(null);
+  const [topics, setTopics] = useState(false);
+  const [profile, setProfile] = useState(false);
+  const [classCount, setClassCount] = useState(0);
 
   useEffect(() => {
     if (!auth) { setReady(true); return; }
@@ -36,49 +42,55 @@ export default function App() {
     return onAuthStateChanged(auth, (u) => { setUser(u); setReady(true); });
   }, []);
 
-  // Opening a class always starts AT the class, never wherever the last
-  // visit happened to end.
-  const openClass = (c: TeacherClass) => { setStudent(null); setView('class'); setOpen(c); };
-  const closeClass = () => { setStudent(null); setView('class'); setOpen(null); };
+  const name = user?.displayName || '';
+  const showProfile = () => setProfile(true);
+
+  // Opening a class always starts at Today, never wherever the last visit
+  // happened to end.
+  const openClass = (c: TeacherClass) => {
+    setStudent(null); setTopics(false); setTab('today'); setOpen(c);
+  };
+  const leaveClass = () => { setStudent(null); setTopics(false); setOpen(null); };
 
   if (!ready) return <div className="wrap"><div className="empty">Loading…</div></div>;
   if (!user) return <SignIn />;
 
-  if (open && student) {
+  if (profile) {
+    return (
+      <Profile name={name} email={user.email || ''} classCount={classCount}
+        onBack={() => setProfile(false)}
+        onSignOut={() => { if (auth) signOut(auth); setProfile(false); }} />
+    );
+  }
+
+  if (!open) {
+    return (
+      <Classes teacherName={name} onOpen={openClass} onProfile={showProfile}
+        onCount={setClassCount} />
+    );
+  }
+
+  // ── Pushed screens: no tabs, they are one level deeper ──
+  if (student) {
     return (
       <StudentDetail klass={open} studentId={student.student_id} name={student.name}
-        onBack={() => setStudent(null)} />
+        onBack={() => setStudent(null)} onProfile={showProfile} teacherName={name} />
     );
   }
-
-  if (open && view === 'students') {
-    return <StudentList klass={open} onBack={() => setView('class')} onOpen={setStudent} />;
-  }
-  if (open && view === 'add') {
-    return <AddStudents klass={open} onBack={() => setView('class')} />;
-  }
-  if (open && view === 'assignments') {
-    return <Assignments klass={open} onBack={() => setView('class')} />;
-  }
-  if (open && view === 'topics') {
-    return <Topics klass={open} onBack={() => setView('class')} />;
-  }
-  if (open) {
-    return (
-      <ClassDetail klass={open}
-        onBack={closeClass}
-        onStudents={() => setView('students')}
-        onAdd={() => setView('add')}
-        onAssignments={() => setView('assignments')}
-        onTopics={() => setView('topics')} />
-    );
+  if (topics) {
+    return <Topics klass={open} onBack={() => setTopics(false)} onProfile={showProfile} teacherName={name} />;
   }
 
+  // ── The four tabs ──
+  const chrome = { onBack: leaveClass, onProfile: showProfile, teacherName: name };
   return (
-    <Classes
-      teacherName={user.displayName || ''}
-      onOpen={openClass}
-      onSignOut={() => { if (auth) signOut(auth); }}
-    />
+    <>
+      {tab === 'today' && <ClassDetail klass={open} onTopics={() => setTopics(true)}
+        onStudents={() => setTab('students')} {...chrome} />}
+      {tab === 'students' && <StudentList klass={open} onOpen={setStudent} {...chrome} />}
+      {tab === 'practice' && <Assignments klass={open} {...chrome} />}
+      {tab === 'class' && <AddStudents klass={open} {...chrome} />}
+      <TabBar active={tab} onChange={setTab} />
+    </>
   );
 }

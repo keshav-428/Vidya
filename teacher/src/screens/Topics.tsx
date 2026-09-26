@@ -10,10 +10,13 @@ import {
   getSummary, getAssignments, setPractice, splitKey,
   type Assignment, type ClassSummary, type TeacherClass,
 } from '../api';
+import { TopBar } from '../ui/Chrome';
 
-export default function Topics({ klass, onBack }: {
+export default function Topics({ klass, onBack, onProfile, teacherName }: {
   klass: TeacherClass;
   onBack: () => void;
+  onProfile: () => void;
+  teacherName: string;
 }) {
   const [summary, setSummary] = useState<ClassSummary | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -49,12 +52,9 @@ export default function Topics({ klass, onBack }: {
 
   return (
     <>
-      <div className="v-topbar">
-        <button className="v-link" onClick={onBack}>‹ {klass.name}</button>
-        <span className="v-eyebrow">Topics</span>
-      </div>
+      <TopBar title="Topics" onBack={onBack} onProfile={onProfile} teacherName={teacherName} />
 
-      <div className="wrap v-enter">
+      <div className="wrap with-tabs v-enter">
         <h1 className="v-h1">Topics</h1>
         <p className="v-body" style={{ marginBottom: 22 }}>
           {summary === null ? 'Loading…' : 'Where the class stands, topic by topic.'}

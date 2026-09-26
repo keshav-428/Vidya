@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { getStudents, type StudentRow, type StudentState, type TeacherClass } from '../api';
+import { TopBar } from '../ui/Chrome';
 
 // The dot is the whole signal, so the four states have to be tellable apart
 // at a glance — and not by colour alone, since the label carries it too.
@@ -17,9 +18,11 @@ export const STATE_STYLE: Record<StudentState, { dot: string; label: string }> =
   on_track:  { dot: '#047857', label: 'On track' },
 };
 
-export default function StudentList({ klass, onBack, onOpen }: {
+export default function StudentList({ klass, onBack, onProfile, teacherName, onOpen }: {
   klass: TeacherClass;
   onBack: () => void;
+  onProfile: () => void;
+  teacherName: string;
   onOpen: (s: StudentRow) => void;
 }) {
   const [rows, setRows] = useState<StudentRow[] | null>(null);
@@ -37,12 +40,9 @@ export default function StudentList({ klass, onBack, onOpen }: {
 
   return (
     <>
-      <div className="v-topbar">
-        <button className="v-link" onClick={onBack}>‹ {klass.name}</button>
-        <span className="v-eyebrow">Students</span>
-      </div>
+      <TopBar title="Students" onBack={onBack} onProfile={onProfile} teacherName={teacherName} />
 
-      <div className="wrap v-enter">
+      <div className="wrap with-tabs v-enter">
         <h1 className="v-h1">Your students</h1>
         <p className="v-body" style={{ marginBottom: 22 }}>
           {rows === null ? 'Reading your class…'
